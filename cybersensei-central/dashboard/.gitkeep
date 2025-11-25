@@ -1,0 +1,21 @@
+# CyberSensei Central Dashboard
+
+React admin dashboard for the SaaS platform.
+
+## Structure
+
+```
+dashboard/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── services/
+│   ├── types/
+│   └── App.tsx
+├── public/
+├── package.json
+└── README.md
+```
+
+This directory will contain the React dashboard for CyberSensei Central.
+

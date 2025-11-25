@@ -1,0 +1,15 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "CyberSensei Central PostgreSQL",
+      "Group": "CyberSensei",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "cybersensei_central",
+      "Username": "cybersensei",
+      "SSLMode": "prefer",
+      "Comment": "Main PostgreSQL database for CyberSensei Central Backend"
+    }
+  }
+}
+

@@ -1,0 +1,22 @@
+# CyberSensei Central Backend
+
+Spring Boot 3 backend for the SaaS platform.
+
+## Structure
+
+```
+backend/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── io/
+│   │   │       └── cybersensei/
+│   │   │           └── central/
+│   │   └── resources/
+│   └── test/
+├── pom.xml
+└── README.md
+```
+
+This directory will contain the full Spring Boot application for CyberSensei Central.
+

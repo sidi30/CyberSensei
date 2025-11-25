@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="008-create-phishing-trackers-table" author="cybersensei">
+        <createTable tableName="phishing_trackers">
+            <column name="id" type="bigserial" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="token" type="varchar(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="campaign_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="clicked" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="clicked_at" type="timestamp"/>
+            <column name="opened" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="opened_at" type="timestamp"/>
+            <column name="reported" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reported_at" type="timestamp"/>
+            <column name="sent_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="phishing_trackers"
+                baseColumnNames="user_id"
+                constraintName="fk_tracker_user"
+                referencedTableName="users"
+                referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+                baseTableName="phishing_trackers"
+                baseColumnNames="campaign_id"
+                constraintName="fk_tracker_campaign"
+                referencedTableName="phishing_campaigns"
+                referencedColumnNames="id"/>
+
+        <createIndex tableName="phishing_trackers" indexName="idx_tracker_token" unique="true">
+            <column name="token"/>
+        </createIndex>
+
+        <createIndex tableName="phishing_trackers" indexName="idx_tracker_user">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex tableName="phishing_trackers" indexName="idx_tracker_campaign">
+            <column name="campaign_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
+
+

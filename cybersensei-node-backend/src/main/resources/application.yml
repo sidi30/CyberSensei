@@ -1,0 +1,140 @@
+spring:
+  application:
+    name: cybersensei-node-backend
+  
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:cybersensei}
+    username: ${POSTGRES_USER:cybersensei}
+    password: ${POSTGRES_PASSWORD:cybersensei123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+  
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  
+  # ====== MAIL CONFIGURATION ======
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+  
+  # ====== THYMELEAF (for email templates) ======
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false
+
+# ====== JWT CONFIGURATION ======
+jwt:
+  secret: ${JWT_SECRET:YourSuperSecretKeyForJWTTokenGenerationWithAtLeast256Bits}
+  expiration: 86400000 # 24 hours in milliseconds
+  refresh-expiration: 604800000 # 7 days
+
+# ====== CYBERSENSEI CONFIGURATION ======
+cybersensei:
+  # AI Service configuration
+  ai:
+    base-url: ${AI_SERVICE_URL:http://localhost:8001}
+  
+  # Phishing mailer configuration
+  phishing:
+    enabled: ${PHISHING_ENABLED:true}
+    tracking-url: ${TRACKING_BASE_URL:http://localhost:8080}
+    daily-send-cron: ${PHISHING_CRON:0 0 9 * * MON-FRI}  # 9:00 AM, weekdays
+  
+  # Sync agent configuration
+  sync:
+    enabled: ${SYNC_ENABLED:false}
+    central-url: ${CENTRAL_URL:https://central.cybersensei.io}
+    tenant-id: ${TENANT_ID:demo}
+    version: ${APP_VERSION:1.0.0}
+    nightly-cron: ${SYNC_CRON:0 0 3 * * *}  # 3:00 AM daily
+  
+  # Metrics computation
+  metrics:
+    enabled: ${METRICS_ENABLED:true}
+    computation-cron: ${METRICS_CRON:0 0 1 * * *}  # 1:00 AM daily
+  
+  # Sync agent configuration
+  sync:
+    enabled: ${SYNC_ENABLED:false}
+    central-url: ${CENTRAL_URL:https://central.cybersensei.io}
+    tenant-id: ${TENANT_ID:demo}
+    nightly-cron: ${SYNC_CRON:0 0 3 * * *}  # 3:00 AM daily
+    telemetry-interval: ${TELEMETRY_INTERVAL:900000}  # 15 minutes
+
+# ====== SERVER CONFIGURATION ======
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+  compression:
+    enabled: true
+
+# ====== LOGGING ======
+logging:
+  level:
+    root: INFO
+    io.cybersensei: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  file:
+    name: logs/cybersensei.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# ====== ACTUATOR (Health checks) ======
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+    mail:
+      enabled: true
+
+# ====== SPRINGDOC (OpenAPI/Swagger) ======
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  show-actuator: true

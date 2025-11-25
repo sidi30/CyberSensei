@@ -1,0 +1,93 @@
+# Code Owners for CyberSensei
+# This file defines who is responsible for reviewing and approving changes
+# to specific parts of the codebase.
+#
+# Format: <pattern> @owner1 @owner2
+# More specific patterns override less specific ones
+
+# Default owners for everything in the repo
+* @cybersensei-team/core
+
+# Documentation
+/docs/ @cybersensei-team/docs
+*.md @cybersensei-team/docs
+/CONTRIBUTING.md @cybersensei-team/core
+/README.md @cybersensei-team/core
+
+# CI/CD and GitHub configurations
+/.github/ @cybersensei-team/devops
+/scripts/ @cybersensei-team/devops
+
+# CyberSensei Central (SaaS Platform)
+/cybersensei-central/ @cybersensei-team/central
+/cybersensei-central/backend/ @cybersensei-team/backend @cybersensei-team/central
+/cybersensei-central/dashboard/ @cybersensei-team/frontend @cybersensei-team/central
+/cybersensei-central/infrastructure/ @cybersensei-team/devops @cybersensei-team/central
+
+# CyberSensei Node (On-Premise)
+/cybersensei-node/ @cybersensei-team/node
+/cybersensei-node/backend/ @cybersensei-team/backend @cybersensei-team/node
+/cybersensei-node/dashboard/ @cybersensei-team/frontend @cybersensei-team/node
+/cybersensei-node/ai/ @cybersensei-team/ai @cybersensei-team/node
+/cybersensei-node/compose/ @cybersensei-team/devops @cybersensei-team/node
+
+# CyberSensei Teams App
+/cybersensei-teams-app/ @cybersensei-team/teams
+/cybersensei-teams-app/tabs/ @cybersensei-team/frontend @cybersensei-team/teams
+/cybersensei-teams-app/bot/ @cybersensei-team/backend @cybersensei-team/teams
+/cybersensei-teams-app/manifest/ @cybersensei-team/teams
+
+# Backend specific (all Java/Spring Boot code)
+**/backend/src/main/java/io/cybersensei/security/ @cybersensei-team/security
+**/backend/src/main/java/io/cybersensei/service/ @cybersensei-team/backend
+**/backend/src/main/java/io/cybersensei/api/ @cybersensei-team/backend
+**/backend/pom.xml @cybersensei-team/backend
+**/backend/src/main/resources/application*.yml @cybersensei-team/backend @cybersensei-team/devops
+
+# Database migrations (Liquibase)
+**/db/changelog/ @cybersensei-team/backend @cybersensei-team/database
+**/database/ @cybersensei-team/database
+
+# Frontend specific (React/TypeScript)
+**/dashboard/src/ @cybersensei-team/frontend
+**/tabs/src/ @cybersensei-team/frontend
+**/dashboard/package.json @cybersensei-team/frontend
+**/tabs/package.json @cybersensei-team/frontend
+
+# AI Service (Python/ML)
+/cybersensei-node/ai/ @cybersensei-team/ai
+**/ai/server.py @cybersensei-team/ai
+**/ai/requirements.txt @cybersensei-team/ai
+
+# Docker and Infrastructure
+**/Dockerfile @cybersensei-team/devops
+**/docker-compose*.yml @cybersensei-team/devops
+**/.dockerignore @cybersensei-team/devops
+
+# Security sensitive files
+/SECURITY.md @cybersensei-team/security
+**/security/ @cybersensei-team/security
+**/*Security*.java @cybersensei-team/security
+**/*Auth*.java @cybersensei-team/security
+**/*Jwt*.java @cybersensei-team/security
+
+# Configuration files
+**/.env* @cybersensei-team/devops
+**/application*.yml @cybersensei-team/backend @cybersensei-team/devops
+
+# Tests
+**/src/test/ @cybersensei-team/qa
+**/*.test.ts @cybersensei-team/qa
+**/*.test.tsx @cybersensei-team/qa
+**/*.test.java @cybersensei-team/qa
+
+# Build and deployment scripts
+/scripts/ @cybersensei-team/devops
+**/Makefile @cybersensei-team/devops
+
+# Dependency files (require careful review)
+**/package.json @cybersensei-team/frontend @cybersensei-team/security
+**/package-lock.json @cybersensei-team/frontend @cybersensei-team/security
+**/pom.xml @cybersensei-team/backend @cybersensei-team/security
+**/requirements.txt @cybersensei-team/ai @cybersensei-team/security
+

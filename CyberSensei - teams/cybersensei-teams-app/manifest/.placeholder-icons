@@ -1,0 +1,22 @@
+# Placeholder pour les icônes
+
+Les fichiers suivants doivent être créés :
+
+1. **color.png** (192x192px)
+   - Icône couleur avec le logo CyberSensei
+   - Fond bleu #0078D4
+   - Logo visible et centré
+
+2. **outline.png** (32x32px)
+   - Icône outline blanche sur fond transparent
+   - Trait de 1-2px d'épaisseur
+   - Version simplifiée du logo
+
+Vous pouvez créer ces icônes avec :
+- Adobe Illustrator / Photoshop
+- Figma
+- Canva
+- Ou tout autre outil de design graphique
+
+Pour le développement, vous pouvez utiliser des icônes temporaires de la même taille.
+

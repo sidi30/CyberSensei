@@ -1,0 +1,21 @@
+{
+  "version": "1.2.0",
+  "changelog": "## Version 1.2.0\n\n### 🚀 Nouvelles Fonctionnalités\n- Amélioration des performances IA (30% plus rapide)\n- Nouveau dashboard interactif\n- Support multi-langue (EN, FR, ES)\n\n### 🔒 Sécurité\n- Correctifs de vulnérabilités critiques (CVE-2024-XXXX)\n- Renforcement de l'authentification\n\n### 🐛 Correctifs\n- Correction du bug de synchronisation\n- Amélioration de la stabilité\n\n### ⚠️ Notes Importantes\n- Nécessite Node v1.0.0 ou supérieur\n- Redémarrage du service requis après installation",
+  "requiredNodeVersion": "1.0.0",
+  "platform": "linux",
+  "architecture": "x64",
+  "breaking": false,
+  "securityUpdate": true,
+  "dependencies": {
+    "node": ">=14.0.0",
+    "postgresql": ">=12.0",
+    "mongodb": ">=4.4"
+  },
+  "createdAt": "2025-11-24T10:30:00.000Z",
+  "releaseNotes": {
+    "en": "Major security update with performance improvements",
+    "fr": "Mise à jour majeure de sécurité avec améliorations de performance",
+    "es": "Actualización de seguridad importante con mejoras de rendimiento"
+  }
+}
+

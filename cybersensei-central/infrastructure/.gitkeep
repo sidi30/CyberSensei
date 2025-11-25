@@ -1,0 +1,18 @@
+# CyberSensei Central Infrastructure
+
+Monitoring and observability configurations.
+
+## Structure
+
+```
+infrastructure/
+├── prometheus/
+│   └── prometheus.yml
+├── grafana/
+│   └── dashboards/
+├── docker-compose.monitoring.yml
+└── README.md
+```
+
+This directory will contain monitoring and infrastructure configurations.
+

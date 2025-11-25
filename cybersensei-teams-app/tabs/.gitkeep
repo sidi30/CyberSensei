@@ -1,0 +1,21 @@
+# CyberSensei Teams Tabs
+
+React application for Microsoft Teams tabs.
+
+## Structure
+
+```
+tabs/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   │   ├── EmployeeTab.tsx
+│   │   └── ManagerTab.tsx
+│   ├── services/
+│   └── App.tsx
+├── package.json
+└── README.md
+```
+
+This directory will contain the Teams tabs React application.
+

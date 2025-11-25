@@ -1,0 +1,19 @@
+# CyberSensei Teams Bot
+
+Bot Framework bot for Microsoft Teams.
+
+## Structure
+
+```
+bot/
+├── src/
+│   ├── bot.ts
+│   ├── dialogs/
+│   ├── cards/
+│   └── services/
+├── package.json
+└── README.md
+```
+
+This directory will contain the Teams bot application.
+

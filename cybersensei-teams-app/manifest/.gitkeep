@@ -1,0 +1,22 @@
+# CyberSensei Teams App Manifest
+
+Microsoft Teams app package.
+
+## Files
+
+- `manifest.json` - App manifest
+- `color.png` - App icon (color, 192x192)
+- `outline.png` - App icon (outline, 32x32)
+
+## Structure
+
+```
+manifest/
+├── manifest.json
+├── color.png
+├── outline.png
+└── README.md
+```
+
+This directory contains the Teams app manifest and assets.
+
