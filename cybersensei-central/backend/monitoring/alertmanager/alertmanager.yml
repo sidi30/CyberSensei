@@ -1,0 +1,145 @@
+# ============================================
+# ALERTMANAGER CONFIGURATION
+# CyberSensei Central
+# ============================================
+
+global:
+  resolve_timeout: 5m
+  # SMTP configuration (à configurer)
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@cybersensei.com'
+  smtp_auth_username: 'your-email@gmail.com'
+  smtp_auth_password: 'your-app-password'
+  smtp_require_tls: true
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/*.tmpl'
+
+# Route configuration
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+  
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      repeat_interval: 5m
+      continue: true
+
+    # Warning alerts - less frequent
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      repeat_interval: 1h
+
+    # Backend service alerts
+    - match:
+        service: backend
+      receiver: 'backend-team'
+
+    # Database alerts
+    - match:
+        service: database
+      receiver: 'database-team'
+
+    # Telemetry alerts
+    - match:
+        service: telemetry
+      receiver: 'ops-team'
+
+# Receivers configuration
+receivers:
+  # Default receiver (fallback)
+  - name: 'default'
+    email_configs:
+      - to: 'ops@cybersensei.com'
+        headers:
+          Subject: '[CyberSensei] Alert: {{ .GroupLabels.alertname }}'
+
+  # Critical alerts - multiple channels
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'critical@cybersensei.com'
+        headers:
+          Subject: '🚨 [CRITICAL] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>🚨 CRITICAL ALERT</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Severity:</strong> {{ .CommonLabels.severity }}</p>
+          <p><strong>Service:</strong> {{ .CommonLabels.service }}</p>
+          <h3>Alerts:</h3>
+          {{ range .Alerts }}
+          <p>{{ .Annotations.summary }}</p>
+          <p>{{ .Annotations.description }}</p>
+          <hr>
+          {{ end }}
+    # Slack webhook (optionnel - décommenter et configurer)
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    #     channel: '#critical-alerts'
+    #     title: '🚨 Critical Alert'
+    #     text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+    # PagerDuty (optionnel)
+    # pagerduty_configs:
+    #   - service_key: 'YOUR_PAGERDUTY_KEY'
+
+  # Warning alerts
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'warnings@cybersensei.com'
+        headers:
+          Subject: '⚠️  [WARNING] {{ .GroupLabels.alertname }}'
+
+  # Backend team
+  - name: 'backend-team'
+    email_configs:
+      - to: 'backend@cybersensei.com'
+        headers:
+          Subject: '[Backend] {{ .GroupLabels.alertname }}'
+
+  # Database team
+  - name: 'database-team'
+    email_configs:
+      - to: 'database@cybersensei.com'
+        headers:
+          Subject: '[Database] {{ .GroupLabels.alertname }}'
+
+  # Ops team
+  - name: 'ops-team'
+    email_configs:
+      - to: 'ops@cybersensei.com'
+        headers:
+          Subject: '[Ops] {{ .GroupLabels.alertname }}'
+
+# Inhibition rules - suppress alerts when others are active
+inhibit_rules:
+  # If backend is down, suppress all other backend alerts
+  - source_match:
+      alertname: 'BackendDown'
+    target_match:
+      service: 'backend'
+    equal: ['instance']
+
+  # If PostgreSQL is down, suppress DB-related alerts
+  - source_match:
+      alertname: 'PostgreSQLDown'
+    target_match:
+      service: 'database'
+    equal: ['instance']
+
+  # If node is down, suppress system alerts
+  - source_match:
+      alertname: 'HostDown'
+    target_match:
+      service: 'system'
+    equal: ['instance']
+

@@ -28,8 +28,15 @@ echo -e "${GREEN}✅ Prerequisites OK${NC}"
 echo -e "${YELLOW}Setting up environment files...${NC}"
 
 if [ ! -f .env ]; then
-    cp .env.example .env
-    echo -e "${GREEN}✅ Created .env file${NC}"
+    if [ -f env.template ]; then
+        cp env.template .env
+        echo -e "${GREEN}✅ Created .env file from env.template${NC}"
+    elif [ -f .env.example ]; then
+        cp .env.example .env
+        echo -e "${GREEN}✅ Created .env file from .env.example${NC}"
+    else
+        echo -e "${YELLOW}⚠️  No env.template or .env.example found, skipping${NC}"
+    fi
 else
     echo -e "${YELLOW}⚠️  .env already exists, skipping${NC}"
 fi

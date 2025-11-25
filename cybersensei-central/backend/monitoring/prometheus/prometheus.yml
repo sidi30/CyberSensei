@@ -1,0 +1,93 @@
+# ============================================
+# PROMETHEUS CONFIGURATION
+# CyberSensei Central Monitoring
+# ============================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'cybersensei-central'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - 'alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # ============================================
+  # PROMETHEUS SELF-MONITORING
+  # ============================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # ============================================
+  # NESTJS BACKEND - Application Metrics
+  # ============================================
+  - job_name: 'nestjs-backend'
+    scrape_interval: 10s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+        labels:
+          service: 'cybersensei-backend'
+          app: 'nestjs'
+    # Relabel pour extraire des métadonnées
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'backend-api'
+
+  # ============================================
+  # NODE EXPORTER - System Metrics
+  # ============================================
+  - job_name: 'node-exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'system'
+          type: 'host-metrics'
+
+  # ============================================
+  # POSTGRES EXPORTER - Database Metrics
+  # ============================================
+  - job_name: 'postgres-exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgresql'
+          database: 'cybersensei_central'
+
+  # ============================================
+  # CADVISOR - Container Metrics
+  # ============================================
+  - job_name: 'cadvisor'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'docker'
+          type: 'container-metrics'
+
+  # ============================================
+  # ALERTMANAGER - Alert Management
+  # ============================================
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+        labels:
+          service: 'alertmanager'
+

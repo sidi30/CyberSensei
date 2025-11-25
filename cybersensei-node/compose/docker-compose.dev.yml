@@ -1,0 +1,50 @@
+version: '3.8'
+
+# ============================================================================
+# CyberSensei Development Docker Compose Override
+# ============================================================================
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  # Backend - Development settings
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      # Enable debug logging
+      LOGGING_LEVEL_IO_CYBERSENSEI: DEBUG
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: DEBUG
+      # Use MailCatcher for SMTP
+      SMTP_HOST: mailcatcher
+      SMTP_PORT: 1025
+    # Mount source code for hot reload (if using Spring DevTools)
+    volumes:
+      - ./cybersensei-node-backend/src:/app/src:ro
+      - backend-data:/app/data
+      - backend-logs:/app/logs
+
+  # Dashboard - Development with hot reload
+  dashboard:
+    build:
+      context: ./cybersensei-node-dashboard
+      dockerfile: Dockerfile
+      target: development  # Use dev stage if multi-stage
+    command: npm run dev
+    volumes:
+      - ./cybersensei-node-dashboard/src:/app/src
+      - ./cybersensei-node-dashboard/public:/app/public
+      - /app/node_modules  # Prevent overwriting node_modules
+    environment:
+      VITE_API_URL: http://localhost:8080/api
+    ports:
+      - "3000:3000"
+      - "24678:24678"  # Vite HMR
+
+  # MailCatcher - Always enabled in dev
+  mailcatcher:
+    profiles: []  # Remove profile restriction
+
+  # PgAdmin - Always enabled in dev
+  pgadmin:
+    profiles: []  # Remove profile restriction
+
+

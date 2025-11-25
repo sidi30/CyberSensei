@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="010-insert-sample-data" author="cybersensei">
+        
+        <!-- Admin user (password: admin123) -->
+        <insert tableName="users">
+            <column name="name" value="Admin User"/>
+            <column name="email" value="admin@cybersensei.io"/>
+            <column name="role" value="ADMIN"/>
+            <column name="department" value="IT Security"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="password_hash" value="$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"/>
+        </insert>
+
+        <!-- Sample phishing template -->
+        <insert tableName="phishing_templates">
+            <column name="label" value="Urgent Password Reset"/>
+            <column name="subject" value="[URGENT] Verify your account immediately"/>
+            <column name="html_content" value="&lt;html&gt;&lt;body&gt;&lt;h1&gt;Account Security Alert&lt;/h1&gt;&lt;p&gt;Dear {{USER_NAME}},&lt;/p&gt;&lt;p&gt;We detected unusual activity on your account. Click &lt;a href='{{PHISHING_LINK}}'&gt;here&lt;/a&gt; to verify your identity.&lt;/p&gt;&lt;img src='{{TRACKING_PIXEL}}' width='1' height='1'/&gt;&lt;/body&gt;&lt;/html&gt;"/>
+            <column name="text_content" value="Account Security Alert - Please verify your account."/>
+            <column name="type" value="CREDENTIAL_HARVESTING"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+
+        <!-- Sample exercises -->
+        <insert tableName="exercises">
+            <column name="topic" value="Phishing Recognition"/>
+            <column name="type" value="QUIZ"/>
+            <column name="difficulty" value="BEGINNER"/>
+            <column name="payload_json" value='{"question":"What is a common sign of a phishing email?","options":["Poor grammar","Urgent language","Suspicious links","All of the above"],"correctAnswer":3}'/>
+            <column name="active" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="exercises">
+            <column name="topic" value="Password Security"/>
+            <column name="type" value="QUIZ"/>
+            <column name="difficulty" value="INTERMEDIATE"/>
+            <column name="payload_json" value='{"question":"What is the recommended minimum length for a secure password?","options":["6 characters","8 characters","12 characters","16 characters"],"correctAnswer":2}'/>
+            <column name="active" valueBoolean="true"/>
+        </insert>
+
+        <!-- Sample configs -->
+        <insert tableName="configs">
+            <column name="config_key" value="company.name"/>
+            <column name="config_value" value="CyberSensei Demo"/>
+            <column name="description" value="Company name displayed in emails and UI"/>
+            <column name="updated_at" valueDate="now()"/>
+        </insert>
+
+        <insert tableName="configs">
+            <column name="config_key" value="smtp.enabled"/>
+            <column name="config_value" value="true"/>
+            <column name="description" value="Enable/disable email sending"/>
+            <column name="updated_at" valueDate="now()"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>
+
+

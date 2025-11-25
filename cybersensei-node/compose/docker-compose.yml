@@ -1,0 +1,241 @@
+version: '3.8'
+
+# ============================================================================
+# CyberSensei Full Stack Docker Compose
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # PostgreSQL Database
+  # ==========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: cybersensei-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cybersensei}
+      POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./cybersensei-node-backend/database/init-scripts:/docker-entrypoint-initdb.d/init-scripts:ro
+      - ./cybersensei-node-backend/database/seeds:/docker-entrypoint-initdb.d/seeds:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybersensei}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cybersensei-network
+
+  # ==========================================================================
+  # AI Service (Mistral 7B with llama.cpp)
+  # ==========================================================================
+  ai:
+    build:
+      context: ./cybersensei-node-ai
+      dockerfile: Dockerfile
+    container_name: cybersensei-ai
+    restart: unless-stopped
+    environment:
+      MODEL_PATH: ${AI_MODEL_PATH:-/app/models/mistral-7b-instruct.Q4_K_M.gguf}
+      LLAMA_CPP_SERVER_HOST: ${AI_SERVER_HOST:-0.0.0.0}
+      LLAMA_CPP_SERVER_PORT: ${AI_SERVER_PORT:-8080}
+    volumes:
+      - ai-models:/app/models
+    ports:
+      - "${AI_PORT:-8000}:8000"
+      - "${AI_INTERNAL_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # AI service needs significant resources
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    networks:
+      - cybersensei-network
+
+  # ==========================================================================
+  # Backend (Spring Boot)
+  # ==========================================================================
+  backend:
+    build:
+      context: ./cybersensei-node-backend
+      dockerfile: Dockerfile
+    container_name: cybersensei-backend
+    restart: unless-stopped
+    environment:
+      # Database
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-cybersensei}
+      POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      
+      # Server
+      SERVER_PORT: 8080
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-YourSuperSecretKeyForJWTTokenGenerationWithAtLeast256Bits}
+      
+      # AI Service
+      AI_SERVICE_URL: http://ai:8000
+      
+      # SMTP (MailCatcher for development)
+      SMTP_HOST: ${SMTP_HOST:-mailcatcher}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      
+      # Phishing
+      PHISHING_ENABLED: ${PHISHING_ENABLED:-true}
+      TRACKING_BASE_URL: ${TRACKING_BASE_URL:-http://localhost:8080}
+      PHISHING_CRON: ${PHISHING_CRON:-0 0 9 * * MON-FRI}
+      
+      # Sync Agent
+      SYNC_ENABLED: ${SYNC_ENABLED:-false}
+      CENTRAL_URL: ${CENTRAL_URL:-https://central.cybersensei.io}
+      TENANT_ID: ${TENANT_ID:-demo}
+      SYNC_CRON: ${SYNC_CRON:-0 0 3 * * *}
+      TELEMETRY_INTERVAL: ${TELEMETRY_INTERVAL:-900000}
+      
+      # Metrics
+      METRICS_ENABLED: ${METRICS_ENABLED:-true}
+      METRICS_CRON: ${METRICS_CRON:-0 0 1 * * *}
+      
+      # Spring profiles
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+    volumes:
+      - backend-data:/app/data
+      - backend-logs:/app/logs
+      - backend-updates:/app/updates
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - cybersensei-network
+
+  # ==========================================================================
+  # Dashboard (React)
+  # ==========================================================================
+  dashboard:
+    build:
+      context: ./cybersensei-node-dashboard
+      dockerfile: Dockerfile
+    container_name: cybersensei-dashboard
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+    ports:
+      - "${DASHBOARD_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cybersensei-network
+
+  # ==========================================================================
+  # MailCatcher (Optional - SMTP debugging)
+  # ==========================================================================
+  mailcatcher:
+    image: schickling/mailcatcher:latest
+    container_name: cybersensei-mailcatcher
+    restart: unless-stopped
+    ports:
+      - "${MAILCATCHER_SMTP_PORT:-1025}:1025"  # SMTP
+      - "${MAILCATCHER_WEB_PORT:-1080}:1080"   # Web UI
+    profiles:
+      - debug
+      - dev
+    networks:
+      - cybersensei-network
+
+  # ==========================================================================
+  # PgAdmin (Optional - Database UI)
+  # ==========================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cybersensei-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@cybersensei.io}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - postgres
+    profiles:
+      - debug
+      - dev
+    networks:
+      - cybersensei-network
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  db-data:
+    name: cybersensei-db-data
+    driver: local
+  
+  ai-models:
+    name: cybersensei-ai-models
+    driver: local
+  
+  backend-data:
+    name: cybersensei-backend-data
+    driver: local
+  
+  backend-logs:
+    name: cybersensei-backend-logs
+    driver: local
+  
+  backend-updates:
+    name: cybersensei-backend-updates
+    driver: local
+  
+  pgadmin-data:
+    name: cybersensei-pgadmin-data
+    driver: local
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  cybersensei-network:
+    name: cybersensei-network
+    driver: bridge
+
+

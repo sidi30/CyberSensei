@@ -1,0 +1,108 @@
+package io.cybersensei.service;
+
+import io.cybersensei.api.dto.AuthRequest;
+import io.cybersensei.api.dto.AuthResponse;
+import io.cybersensei.api.dto.UserDto;
+import io.cybersensei.api.mapper.UserMapper;
+import io.cybersensei.domain.entity.User;
+import io.cybersensei.domain.repository.UserRepository;
+import io.cybersensei.security.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * User Management Service
+ */
+@Service
+@RequiredArgsConstructor
+public class UserService {
+
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider tokenProvider;
+
+    @Transactional(readOnly = true)
+    public UserDto getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return userMapper.toDto(user);
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        return userMapper.toDto(user);
+    }
+
+    @Transactional
+    public AuthResponse authenticate(AuthRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = tokenProvider.generateToken(authentication);
+        String refreshToken = tokenProvider.generateRefreshToken(user.getId(), user.getEmail());
+
+        return AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .user(userMapper.toDto(user))
+                .build();
+    }
+
+    @Transactional
+    public UserDto createUser(String email, String name, String password, User.UserRole role) {
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("User already exists with email: " + email);
+        }
+
+        User user = User.builder()
+                .email(email)
+                .name(name)
+                .passwordHash(passwordEncoder.encode(password))
+                .role(role)
+                .active(true)
+                .build();
+
+        user = userRepository.save(user);
+        return userMapper.toDto(user);
+    }
+
+    @Transactional
+    public UserDto createOrUpdateFromMsTeams(String msTeamsId, String email, String name) {
+        User user = userRepository.findByMsTeamsId(msTeamsId)
+                .orElseGet(() -> userRepository.findByEmail(email)
+                        .orElse(User.builder()
+                                .msTeamsId(msTeamsId)
+                                .email(email)
+                                .name(name)
+                                .role(User.UserRole.EMPLOYEE)
+                                .active(true)
+                                .build()));
+
+        user.setMsTeamsId(msTeamsId);
+        user.setEmail(email);
+        user.setName(name);
+        
+        user = userRepository.save(user);
+        return userMapper.toDto(user);
+    }
+}
+
+

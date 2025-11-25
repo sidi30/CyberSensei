@@ -1,0 +1,98 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "{{MICROSOFT_APP_ID}}",
+  "packageName": "com.cybersensei.teamsapp",
+  "developer": {
+    "name": "CyberSensei Team",
+    "websiteUrl": "https://cybersensei.local",
+    "privacyUrl": "https://cybersensei.local/privacy",
+    "termsOfUseUrl": "https://cybersensei.local/terms"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "CyberSensei",
+    "full": "CyberSensei - Formation en Cybersécurité"
+  },
+  "description": {
+    "short": "Formation en cybersécurité pour votre entreprise",
+    "full": "CyberSensei est votre plateforme de formation en cybersécurité intégrée à Microsoft Teams. Accédez à des quiz quotidiens, suivez vos progrès et chattez avec notre assistant IA."
+  },
+  "accentColor": "#0078D4",
+  "bots": [
+    {
+      "botId": "{{BOT_ID}}",
+      "scopes": [
+        "personal",
+        "team",
+        "groupchat"
+      ],
+      "supportsFiles": false,
+      "isNotificationOnly": false,
+      "commandLists": [
+        {
+          "scopes": [
+            "personal",
+            "team",
+            "groupchat"
+          ],
+          "commands": [
+            {
+              "title": "quiz",
+              "description": "Commencer le quiz du jour"
+            },
+            {
+              "title": "score",
+              "description": "Voir vos résultats"
+            },
+            {
+              "title": "help",
+              "description": "Obtenir de l'aide"
+            },
+            {
+              "title": "explain",
+              "description": "Obtenir une explication sur un sujet"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "staticTabs": [
+    {
+      "entityId": "employee",
+      "name": "Formation",
+      "contentUrl": "https://{{HOSTNAME}}/tabs/employee/index.html",
+      "websiteUrl": "https://{{HOSTNAME}}/tabs/employee/index.html",
+      "scopes": [
+        "personal"
+      ]
+    },
+    {
+      "entityId": "manager",
+      "name": "Manager",
+      "contentUrl": "https://{{HOSTNAME}}/tabs/manager/index.html",
+      "websiteUrl": "https://{{HOSTNAME}}/tabs/manager/index.html",
+      "scopes": [
+        "personal"
+      ]
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "{{HOSTNAME}}",
+    "cybersensei.local"
+  ],
+  "webApplicationInfo": {
+    "id": "{{MICROSOFT_APP_ID}}",
+    "resource": "api://{{HOSTNAME}}/{{MICROSOFT_APP_ID}}"
+  }
+}
+
