@@ -73,7 +73,7 @@ public class MetricsService {
         log.info("Company metrics updated - Score: {}, Risk: {}", score, riskLevel);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public CompanyMetricsDto getLatestMetrics() {
         CompanyMetrics metrics = metricsRepository.findLatest()
                 .orElseGet(() -> {

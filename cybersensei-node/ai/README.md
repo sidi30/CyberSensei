@@ -36,6 +36,8 @@ Microservice IA basé sur **Mistral 7B Instruct** avec **llama.cpp** et **FastAP
 - **API**: FastAPI (Python 3.11)
 - **Context**: 4096 tokens
 - **Language**: Français
+- **RAG**: In-memory knowledge base with keyword/topic matching
+- **Features**: Personalized responses, topic suggestions, risk hints
 
 ## 🚀 Installation
 
@@ -112,13 +114,22 @@ docker logs -f cybersensei-ai
 
 ### POST /api/ai/chat
 
-**Request:**
+**Request (CyberSensei format with RAG):**
 ```bash
 curl -X POST http://localhost:8000/api/ai/chat \
   -H "Content-Type: application/json" \
   -d '{
-    "prompt": "Qu'\''est-ce que le phishing ?",
-    "context": "cybersecurity training",
+    "userId": "user-123",
+    "role": "EMPLOYEE",
+    "message": "Qu'\''est-ce que le phishing ?",
+    "context": {
+      "topic": "PHISHING",
+      "difficulty": "EASY",
+      "lastResults": {
+        "score": 7,
+        "maxScore": 10
+      }
+    },
     "temperature": 0.7,
     "max_tokens": 512
   }'
@@ -127,10 +138,13 @@ curl -X POST http://localhost:8000/api/ai/chat \
 **Response:**
 ```json
 {
-  "response": "Le phishing est une technique d'attaque...",
-  "session_id": null,
-  "model": "mistral-7b-instruct",
-  "tokens_generated": 245
+  "response": "Le phishing est une technique d'escroquerie par email visant à obtenir des informations personnelles. Les attaquants se font passer pour des entités de confiance...",
+  "suggestedNextExerciseTopic": "PASSWORDS",
+  "riskHints": [
+    "Vérifiez toujours l'expéditeur avant de cliquer sur un lien",
+    "Cherchez les fautes d'orthographe dans les emails suspects",
+    "Ne partagez jamais vos identifiants par email"
+  ]
 }
 ```
 
@@ -138,12 +152,23 @@ curl -X POST http://localhost:8000/api/ai/chat \
 
 | Paramètre | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `prompt` | string | **required** | Question de l'utilisateur |
-| `context` | string | null | Contexte additionnel |
+| `userId` | string | null | ID utilisateur pour personnalisation |
+| `role` | string | "EMPLOYEE" | Rôle (EMPLOYEE, MANAGER, ADMIN) |
+| `message` | string | **required** | Question/message de l'utilisateur |
+| `context` | object | null | Contexte d'apprentissage |
+| `context.topic` | string | null | Sujet actuel (PHISHING, PASSWORDS, etc.) |
+| `context.difficulty` | string | null | Niveau (EASY, MEDIUM, HARD) |
+| `context.lastResults` | object | null | Derniers résultats d'exercice |
 | `temperature` | float | 0.7 | Créativité (0.0-2.0) |
 | `max_tokens` | int | 512 | Tokens maximum à générer |
-| `top_p` | float | 0.9 | Nucleus sampling |
-| `top_k` | int | 40 | Top-k sampling |
+
+**Topics supportés pour RAG:**
+- `PHISHING` - Attaques par email/SMS
+- `PASSWORDS` - Gestion des mots de passe
+- `MALWARE` - Virus et logiciels malveillants
+- `SOCIAL_ENGINEERING` - Ingénierie sociale
+- `NETWORK_SECURITY` - Sécurité réseau
+- `DATA_PROTECTION` - Protection des données
 
 ### GET /health
 

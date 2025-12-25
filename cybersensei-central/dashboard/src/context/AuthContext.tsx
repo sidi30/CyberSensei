@@ -19,25 +19,21 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // MODE BYPASS - Utilisateur par défaut toujours connecté
+  const [user, setUser] = useState<User | null>({
+    id: 1,
+    name: 'Admin',
+    email: 'admin@cybersensei.io',
+    role: 'SUPERADMIN' as AdminRole,
+    active: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Vérifier le token au chargement
-    async function checkAuth() {
-      if (api.isAuthenticated()) {
-        try {
-          const profile = await api.getProfile();
-          setUser(profile);
-        } catch (error) {
-          console.error('Failed to fetch profile:', error);
-          api.clearAuth();
-        }
-      }
-      setLoading(false);
-    }
-
-    checkAuth();
+    // Authentification désactivée - utilisateur toujours connecté
+    console.warn('⚠️ MODE BYPASS ACTIVÉ - Authentification désactivée');
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
@@ -60,8 +56,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextValue = {
     user,
     loading,
-    isAuthenticated: api.isAuthenticated(),
-    isSuperAdmin: user?.role === 'SUPERADMIN',
+    isAuthenticated: true, // Toujours authentifié
+    isSuperAdmin: true, // Toujours super admin
     login,
     logout,
     refreshProfile,

@@ -27,7 +27,8 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+// Mode bypass : on désactive les contrôles @PreAuthorize / @Secured / @RolesAllowed
+@EnableMethodSecurity(prePostEnabled = false, securedEnabled = false, jsr250Enabled = false)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -47,25 +48,12 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/health",
-                                "/api/phishing/track/**",
-                                "/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/actuator/health"
-                        ).permitAll()
-                        // Manager-only endpoints
-                        .requestMatchers("/api/manager/**").hasRole("MANAGER")
-                        // Admin-only endpoints
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        // All other endpoints require authentication
-                        .anyRequest().authenticated()
-                )
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        // ⚠️ MODE BYPASS - TOUS LES ENDPOINTS SONT PUBLICS
+                        .anyRequest().permitAll()
+                );
+                // ⚠️ Filtres JWT et authentication provider désactivés pour le mode bypass
+                // .authenticationProvider(authenticationProvider())
+                // .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

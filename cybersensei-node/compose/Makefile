@@ -173,16 +173,15 @@ update:
 init:
 	@echo "$(GREEN)Initializing CyberSensei...$(NC)"
 	@if [ ! -f .env ]; then \
-		cp .env.template .env; \
+		cp ENV_TEMPLATE .env; \
 		echo "$(GREEN)✅ .env file created$(NC)"; \
+		echo "$(YELLOW)⚠️  Please edit .env and change passwords!$(NC)"; \
 	else \
 		echo "$(YELLOW).env file already exists$(NC)"; \
 	fi
-	@echo "$(YELLOW)Please download AI model manually:$(NC)"
-	@echo "  mkdir -p ai-models"
-	@echo "  cd ai-models"
-	@echo "  wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
-	@echo "  mv mistral-7b-instruct-v0.2.Q4_K_M.gguf mistral-7b-instruct.Q4_K_M.gguf"
+	@echo ""
+	@echo "$(YELLOW)AI model will be downloaded automatically on first startup$(NC)"
+	@echo "This may take 5-15 minutes depending on your connection."
 
 ##@ Health
 

@@ -19,7 +19,7 @@ export interface BotConfig {
 export const config: BotConfig = {
   botId: process.env.BOT_ID || '',
   botPassword: process.env.BOT_PASSWORD || '',
-  backendBaseUrl: process.env.BACKEND_BASE_URL || 'https://cybersensei.local:8080',
+  backendBaseUrl: process.env.BACKEND_BASE_URL || 'https://localhost:8080',
   port: parseInt(process.env.PORT || '3978', 10),
   environment: (process.env.NODE_ENV as 'development' | 'production') || 'development',
 };

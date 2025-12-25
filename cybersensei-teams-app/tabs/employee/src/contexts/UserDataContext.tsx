@@ -26,18 +26,18 @@ interface UserDataContextType {
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
 
 export function UserDataProvider({ children }: { children: ReactNode }) {
-  const { token } = useAuth();
-  const { apiClient } = useApi(token);
+  const { backendToken } = useAuth();
+  const { apiClient } = useApi(backendToken);
   const [backendUser, setBackendUser] = useState<User | null>(null);
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (token && apiClient) {
+    if (backendToken && apiClient) {
       loadUserData();
     }
-  }, [token, apiClient]);
+  }, [backendToken, apiClient]);
 
   const loadUserData = async () => {
     if (!apiClient) return;

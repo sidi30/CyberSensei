@@ -53,21 +53,35 @@ cybersensei/
 
 ### Prérequis
 
-- **Node.js** 18+
-- **Java** 17+
-- **Docker** 20.10+
-- **Docker Compose** 2.0+
-- **Maven** 3.8+
+- **Docker Desktop** (inclut tout le nécessaire)
+- **Windows PowerShell** (déjà installé sur Windows)
 
-### Installation Rapide
+> **Note :** Pas besoin d'installer Java, Maven ou Node.js ! Tout est dans Docker.
 
-```bash
+### Installation Rapide Windows
+
+```powershell
 # Clone le repository
 git clone https://github.com/your-org/cybersensei.git
 cd cybersensei
 
-# Option 1: Démarrer le node on-premise (recommandé pour test)
-cd cybersensei-node
+# Démarrer CyberSensei (un seul script automatique !)
+.\start-cybersensei.ps1
+
+# Choisir 'n' pour démarrage rapide sans IA (5-10 min)
+# Choisir 'o' pour démarrage complet avec IA (30-45 min)
+```
+
+**Accès :** http://localhost:3000  
+**Login :** admin@cybersensei.io / Demo123!
+
+📖 **Guide Complet :** [START_HERE_WINDOWS.md](./START_HERE_WINDOWS.md)
+
+### Autres Options
+
+```bash
+# Option 1: Manuel depuis compose (Linux/Mac)
+cd cybersensei-node/compose
 docker-compose up -d
 
 # Option 2: Développement local

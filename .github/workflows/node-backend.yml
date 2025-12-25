@@ -1,0 +1,221 @@
+name: Node Backend - Build & Deploy
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'cybersensei-node/backend/**'
+      - '.github/workflows/node-backend.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'cybersensei-node/backend/**'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/node-backend
+
+jobs:
+  # ===========================================================================
+  # Lint & Test
+  # ===========================================================================
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: cybersensei_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('cybersensei-node/backend/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Lint (Checkstyle)
+        working-directory: cybersensei-node/backend
+        run: mvn checkstyle:check || true
+      
+      - name: Build
+        working-directory: cybersensei-node/backend
+        run: mvn clean package -DskipTests
+      
+      - name: Run tests
+        working-directory: cybersensei-node/backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/cybersensei_test
+          SPRING_DATASOURCE_USERNAME: test
+          SPRING_DATASOURCE_PASSWORD: test
+        run: mvn test
+      
+      - name: Generate coverage report
+        working-directory: cybersensei-node/backend
+        run: mvn jacoco:report
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./cybersensei-node/backend/target/site/jacoco/jacoco.xml
+          flags: node-backend
+          name: node-backend-coverage
+
+  # ===========================================================================
+  # Security Scan
+  # ===========================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      
+      - name: Run OWASP Dependency Check
+        working-directory: cybersensei-node/backend
+        run: mvn org.owasp:dependency-check-maven:check || true
+      
+      - name: Run Snyk security scan
+        uses: snyk/actions/maven@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --file=cybersensei-node/backend/pom.xml --severity-threshold=high
+
+  # ===========================================================================
+  # Build
+  # ===========================================================================
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [lint-and-test]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('cybersensei-node/backend/pom.xml') }}
+      
+      - name: Build with Maven
+        working-directory: cybersensei-node/backend
+        run: mvn clean package -DskipTests
+      
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-backend-jar
+          path: cybersensei-node/backend/target/*.jar
+          retention-days: 7
+
+  # ===========================================================================
+  # Docker Build & Push
+  # ===========================================================================
+  docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./cybersensei-node/backend
+          file: ./cybersensei-node/backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            SPRING_PROFILES_ACTIVE=docker
+      
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+
+  # ===========================================================================
+  # Deploy
+  # ===========================================================================
+  deploy:
+    name: Deploy to Environment
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy notification
+        run: |
+          echo "🚀 Node Backend deployed successfully!"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+

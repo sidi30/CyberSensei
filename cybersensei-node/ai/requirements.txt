@@ -17,7 +17,15 @@ python-multipart==0.0.6
 # Logging
 loguru==0.7.2
 
-# CORS
-fastapi-cors==0.0.6
+# Numerical computing
+numpy==1.26.2
+
+# Vector search (optional - for advanced RAG)
+# Uncomment if you want to use FAISS for vector similarity
+# faiss-cpu==1.7.4
+
+# Sentence embeddings (optional - for advanced RAG)
+# Uncomment if you want semantic search capabilities
+# sentence-transformers==2.2.2
 
 

@@ -111,7 +111,7 @@ mvn spring-boot:run
 
 ### Default Admin Credentials
 - **Email**: admin@cybersensei.io
-- **Password**: admin123
+- **Password**: Demo123!
 
 ### Login
 ```bash
@@ -119,7 +119,7 @@ curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@cybersensei.io",
-    "password": "admin123"
+    "password": "Demo123!"
   }'
 ```
 

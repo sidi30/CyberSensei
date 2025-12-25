@@ -12,6 +12,7 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.http.*;
@@ -57,7 +58,9 @@ public class SyncAgentService {
     private final ExerciseRepository exerciseRepository;
     private final UserExerciseResultRepository resultRepository;
     private final DataSource dataSource;
-    private final BuildProperties buildProperties;
+    
+    @Autowired(required = false)
+    private BuildProperties buildProperties;
 
     @Value("${cybersensei.sync.enabled}")
     private boolean syncEnabled;
@@ -490,7 +493,7 @@ public class SyncAgentService {
                 .map(Config::getValue)
                 .orElseGet(() -> {
                     try {
-                        return buildProperties.getVersion();
+                        return buildProperties != null ? buildProperties.getVersion() : "1.0.0";
                     } catch (Exception e) {
                         return "1.0.0";
                     }

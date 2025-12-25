@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
-import Login from './pages/Login';
 import Overview from './pages/Overview';
 
 // Lazy load pages
@@ -12,6 +11,7 @@ const UserDetails = lazy(() => import('./pages/Users/UserDetails'));
 const ExercisesPanel = lazy(() => import('./pages/Exercises/ExercisesPanel'));
 const PhishingPanel = lazy(() => import('./pages/Phishing/PhishingPanel'));
 const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
+const UpdatesPage = lazy(() => import('./pages/Updates/UpdatesPage'));
 
 // Loading fallback
 const LoadingFallback = () => (
@@ -20,33 +20,15 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Protected Route wrapper
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <LoadingFallback />;
-  }
-
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
-};
-
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-
-          {/* Protected routes */}
+          {/* Toutes les routes sans authentification */}
           <Route
             path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
+            element={<Layout />}
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Overview />} />
@@ -94,9 +76,18 @@ function App() {
                 </Suspense>
               }
             />
+            
+            <Route
+              path="updates"
+              element={
+                <Suspense fallback={<LoadingFallback />}>
+                  <UpdatesPage />
+                </Suspense>
+              }
+            />
           </Route>
 
-          {/* 404 */}
+          {/* Toutes les autres routes redirigent vers le dashboard */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AuthProvider>

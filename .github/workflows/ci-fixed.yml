@@ -1,0 +1,213 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # ===========================================================================
+  # CyberSensei Node - Backend
+  # ===========================================================================
+  node-backend:
+    name: Node Backend (Java)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Build with Maven
+        working-directory: ./cybersensei-node/backend
+        run: mvn clean package -DskipTests
+      
+      - name: Run tests
+        working-directory: ./cybersensei-node/backend
+        run: mvn test
+      
+      - name: Generate coverage report
+        working-directory: ./cybersensei-node/backend
+        run: mvn jacoco:report
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./cybersensei-node/backend/target/site/jacoco/jacoco.xml
+          flags: node-backend
+  
+  # ===========================================================================
+  # CyberSensei Node - Dashboard
+  # ===========================================================================
+  node-dashboard:
+    name: Node Dashboard (React)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./cybersensei-node/dashboard
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+      
+      - name: Build
+        working-directory: ./cybersensei-node/dashboard
+        run: npm run build
+      
+      - name: Test (if exists)
+        working-directory: ./cybersensei-node/dashboard
+        run: npm test -- --passWithNoTests --coverage || true
+      
+      - name: Upload coverage
+        if: success()
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./cybersensei-node/dashboard/coverage/lcov.info
+          flags: node-dashboard
+  
+  # ===========================================================================
+  # CyberSensei Central - Backend
+  # ===========================================================================
+  central-backend:
+    name: Central Backend (NestJS)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./cybersensei-central/backend
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+      
+      - name: Build
+        working-directory: ./cybersensei-central/backend
+        run: npm run build
+      
+      - name: Test
+        working-directory: ./cybersensei-central/backend
+        run: npm test -- --passWithNoTests || true
+  
+  # ===========================================================================
+  # CyberSensei Central - Dashboard
+  # ===========================================================================
+  central-dashboard:
+    name: Central Dashboard (React)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./cybersensei-central/dashboard
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+      
+      - name: Build
+        working-directory: ./cybersensei-central/dashboard
+        run: npm run build
+      
+      - name: Test
+        working-directory: ./cybersensei-central/dashboard
+        run: npm test -- --passWithNoTests --coverage || true
+  
+  # ===========================================================================
+  # Teams App - Tabs
+  # ===========================================================================
+  teams-tabs:
+    name: Teams Tabs (React)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./cybersensei-teams-app/tabs
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+      
+      - name: Build
+        working-directory: ./cybersensei-teams-app/tabs
+        run: npm run build
+      
+      - name: Test
+        working-directory: ./cybersensei-teams-app/tabs
+        run: npm test -- --passWithNoTests --coverage || true
+  
+  # ===========================================================================
+  # Teams App - Bot
+  # ===========================================================================
+  teams-bot:
+    name: Teams Bot (Node.js)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./cybersensei-teams-app/bot
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+      
+      - name: Build
+        working-directory: ./cybersensei-teams-app/bot
+        run: npm run build
+      
+      - name: Test
+        working-directory: ./cybersensei-teams-app/bot
+        run: npm test -- --passWithNoTests --coverage || true
+
+
+

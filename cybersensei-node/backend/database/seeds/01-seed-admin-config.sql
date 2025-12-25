@@ -3,12 +3,12 @@
 
 \echo 'Seeding admin configuration...'
 
--- Insert default admin user (password: Admin@123)
--- Password hash generated with BCrypt strength 10
+-- Insert default admin user (password: Demo123!)
+-- Password hash generated with BCrypt strength 12
 INSERT INTO users (name, email, role, department, created_at, active, password_hash) VALUES
-('Admin System', 'admin@cybersensei.io', 'ADMIN', 'IT Security', NOW(), true, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'),
-('Manager Demo', 'manager@cybersensei.io', 'MANAGER', 'Management', NOW(), true, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'),
-('Employee Demo', 'employee@cybersensei.io', 'EMPLOYEE', 'Operations', NOW(), true, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy')
+('Admin System', 'admin@cybersensei.io', 'ADMIN', 'IT Security', NOW(), true, '$2a$12$sqr41mxnozAIKFG1GT65m.IQHLSmcgjSdHN/flpdlwgh9u2eUcsVC'),
+('Manager Demo', 'manager@cybersensei.io', 'MANAGER', 'Management', NOW(), true, '$2a$12$sqr41mxnozAIKFG1GT65m.IQHLSmcgjSdHN/flpdlwgh9u2eUcsVC'),
+('Employee Demo', 'employee@cybersensei.io', 'EMPLOYEE', 'Operations', NOW(), true, '$2a$12$sqr41mxnozAIKFG1GT65m.IQHLSmcgjSdHN/flpdlwgh9u2eUcsVC')
 ON CONFLICT (email) DO NOTHING;
 
 -- Insert system configuration

@@ -1,6 +1,8 @@
 package io.cybersensei.api.controller;
 
 import io.cybersensei.api.dto.PhishingCampaignDto;
+import io.cybersensei.domain.repository.PhishingCampaignRepository;
+import io.cybersensei.domain.repository.PhishingTemplateRepository;
 import io.cybersensei.service.PhishingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -26,6 +28,8 @@ import java.util.List;
 public class PhishingController {
 
     private final PhishingService phishingService;
+    private final PhishingTemplateRepository templateRepository;
+    private final PhishingCampaignRepository campaignRepository;
 
     @PostMapping("/send")
     @Operation(summary = "Manually trigger phishing campaign")
@@ -40,6 +44,18 @@ public class PhishingController {
     @SecurityRequirement(name = "bearer-jwt")
     public ResponseEntity<List<PhishingCampaignDto>> getResults(@RequestParam(defaultValue = "30") int days) {
         return ResponseEntity.ok(phishingService.getRecentCampaigns(days));
+    }
+
+    @GetMapping("/templates")
+    @Operation(summary = "List phishing templates (dev/demo)")
+    public ResponseEntity<List<?>> getTemplates() {
+        return ResponseEntity.ok(templateRepository.findAll());
+    }
+
+    @GetMapping("/campaigns")
+    @Operation(summary = "List phishing campaigns (dev/demo)")
+    public ResponseEntity<List<?>> getCampaigns() {
+        return ResponseEntity.ok(campaignRepository.findAll());
     }
 
     @GetMapping("/track/pixel/{token}")
@@ -112,13 +128,6 @@ public class PhishingController {
                 .body(html);
     }
 
-    @PostMapping("/report/{token}")
-    @Operation(summary = "Report phishing email")
-    @SecurityRequirement(name = "bearer-jwt")
-    public ResponseEntity<Void> reportPhishing(@PathVariable String token) {
-        phishingService.reportPhishing(token);
-        return ResponseEntity.ok().build();
-    }
 }
 
 

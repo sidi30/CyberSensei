@@ -7,7 +7,7 @@
 
     <changeSet id="010-insert-sample-data" author="cybersensei">
         
-        <!-- Admin user (password: admin123) -->
+        <!-- Admin user (password: Demo123!) -->
         <insert tableName="users">
             <column name="name" value="Admin User"/>
             <column name="email" value="admin@cybersensei.io"/>
@@ -15,7 +15,7 @@
             <column name="department" value="IT Security"/>
             <column name="created_at" valueDate="now()"/>
             <column name="active" valueBoolean="true"/>
-            <column name="password_hash" value="$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"/>
+            <column name="password_hash" value="$2a$12$sqr41mxnozAIKFG1GT65m.IQHLSmcgjSdHN/flpdlwgh9u2eUcsVC"/>
         </insert>
 
         <!-- Sample phishing template -->

@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, Mail, Settings, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Mail, Settings, Shield, Download } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/users', icon: Users, label: 'Utilisateurs' },
   { to: '/exercises', icon: BookOpen, label: 'Exercices' },
   { to: '/phishing', icon: Mail, label: 'Phishing' },
+  { to: '/updates', icon: Download, label: 'Mises à jour' },
   { to: '/settings', icon: Settings, label: 'Paramètres' },
 ];
 

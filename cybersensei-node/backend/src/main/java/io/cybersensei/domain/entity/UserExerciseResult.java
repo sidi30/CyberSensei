@@ -45,7 +45,7 @@ public class UserExerciseResult {
     private Integer duration; // in seconds
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "details_json", columnDefinition = "jsonb")
     private Map<String, Object> detailsJSON;
 
     @CreationTimestamp

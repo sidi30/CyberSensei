@@ -10,17 +10,17 @@ import { SettingsSection } from './components/SettingsSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 
 function App() {
-  const { token, loading: authLoading, error: authError } = useAuth();
-  const { apiClient } = useApi(token);
+  const { backendToken, loading: authLoading, error: authError } = useAuth();
+  const { apiClient } = useApi(backendToken);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (token && apiClient) {
+    if (backendToken && apiClient) {
       loadUserData();
     }
-  }, [token, apiClient]);
+  }, [backendToken, apiClient]);
 
   const loadUserData = async () => {
     if (!apiClient) return;

@@ -38,7 +38,7 @@ public class Exercise {
     private Difficulty difficulty;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(nullable = false, columnDefinition = "jsonb")
+    @Column(name = "payload_json", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> payloadJSON;
 
     @Column(nullable = false)

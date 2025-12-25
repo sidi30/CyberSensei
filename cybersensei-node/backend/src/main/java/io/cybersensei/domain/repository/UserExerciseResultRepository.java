@@ -24,4 +24,13 @@ public interface UserExerciseResultRepository extends JpaRepository<UserExercise
     
     @Query("SELECT r FROM UserExerciseResult r WHERE r.userId = :userId ORDER BY r.date DESC")
     List<UserExerciseResult> findRecentByUserId(@Param("userId") Long userId);
+    
+    @Query("SELECT AVG(r.score) FROM UserExerciseResult r WHERE r.userId = :userId")
+    Double findAverageScoreByUserId(@Param("userId") Long userId);
+    
+    @Query("SELECT AVG(r.score) FROM UserExerciseResult r WHERE r.date >= :since")
+    Double findAverageScoreSince(@Param("since") LocalDateTime since);
+    
+    @Query("SELECT COUNT(r) FROM UserExerciseResult r WHERE r.date >= :since")
+    Long countResultsSince(@Param("since") LocalDateTime since);
 }

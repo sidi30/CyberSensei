@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    https: true,
+    https: false,
   },
   build: {
     outDir: 'dist',
@@ -14,7 +14,7 @@ export default defineConfig({
   },
   define: {
     'process.env.BACKEND_BASE_URL': JSON.stringify(
-      process.env.BACKEND_BASE_URL || 'https://cybersensei.local:8080'
+      process.env.BACKEND_BASE_URL || 'http://localhost:8080'
     ),
   },
 });

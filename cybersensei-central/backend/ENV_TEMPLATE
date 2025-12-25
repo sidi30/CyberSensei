@@ -1,0 +1,163 @@
+# ============================================================================
+# CyberSensei Central Backend - Environment Configuration
+# ============================================================================
+# Copy this file to .env and customize for your deployment
+# cp ENV_TEMPLATE .env
+
+# ============================================================================
+# APPLICATION
+# ============================================================================
+NODE_ENV=production
+PORT=3000
+
+# ============================================================================
+# POSTGRESQL (Metadata storage)
+# ============================================================================
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=cybersensei_central
+POSTGRES_USER=cybersensei
+POSTGRES_PASSWORD=changeme_secure_postgres_password
+
+# ============================================================================
+# MONGODB (GridFS for update files)
+# ============================================================================
+MONGODB_URI=mongodb://admin:changeme_secure_mongo_password@mongo:27017/cybersensei?authSource=admin
+
+# ============================================================================
+# JWT AUTHENTICATION
+# ============================================================================
+# Generate a strong random secret: openssl rand -hex 64
+JWT_SECRET=changeme_with_a_very_long_random_secret_key_at_least_256_bits_long_for_production_use
+JWT_EXPIRES_IN=24h
+
+# ============================================================================
+# CORS
+# ============================================================================
+# Comma-separated list of allowed origins
+# For development: http://localhost:3001,http://localhost:5173
+# For production: https://dashboard.cybersensei.io
+CORS_ORIGINS=http://localhost:3001,http://localhost:5173
+
+# ============================================================================
+# FILE UPLOAD
+# ============================================================================
+# Maximum file size for update ZIP uploads (in bytes)
+# Default: 500 MB
+MAX_FILE_SIZE=524288000
+
+# ============================================================================
+# TENANT HEALTH MONITORING
+# ============================================================================
+# Time in minutes before tenant is marked as WARNING
+TENANT_WARNING_THRESHOLD_MINUTES=20
+
+# Time in minutes before tenant is marked as CRITICAL
+TENANT_CRITICAL_THRESHOLD_MINUTES=120
+
+# Time in minutes before tenant is marked as OFFLINE
+TENANT_OFFLINE_THRESHOLD_MINUTES=1440
+
+# ============================================================================
+# TELEMETRY
+# ============================================================================
+# Enable telemetry ingestion
+TELEMETRY_ENABLED=true
+
+# Maximum telemetry records to keep per tenant (for cleanup)
+TELEMETRY_MAX_RECORDS_PER_TENANT=10000
+
+# ============================================================================
+# METRICS & MONITORING
+# ============================================================================
+# Enable Prometheus metrics endpoint (/metrics)
+METRICS_ENABLED=true
+
+# Prometheus metrics port (if different from main app)
+# METRICS_PORT=9090
+
+# ============================================================================
+# LOGGING
+# ============================================================================
+# Log level: error, warn, log, verbose, debug
+LOG_LEVEL=log
+
+# Enable JSON logging (for production)
+LOG_JSON=true
+
+# ============================================================================
+# RATE LIMITING (optional)
+# ============================================================================
+# Enable rate limiting
+RATE_LIMIT_ENABLED=true
+
+# Requests per minute per IP
+RATE_LIMIT_MAX=100
+
+# Rate limit window in milliseconds
+RATE_LIMIT_WINDOW_MS=60000
+
+# ============================================================================
+# ADMIN DEFAULTS
+# ============================================================================
+# Default admin user (created on first startup if not exists)
+DEFAULT_ADMIN_NAME=Super Admin
+DEFAULT_ADMIN_EMAIL=admin@cybersensei.com
+DEFAULT_ADMIN_PASSWORD=Admin@123456
+
+# ⚠️ IMPORTANT: Change the default admin password after first login!
+
+# ============================================================================
+# ALERTING (optional)
+# ============================================================================
+# Webhook URL for critical alerts
+# ALERT_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+
+# Email for critical alerts
+# ALERT_EMAIL=alerts@yourcompany.com
+
+# ============================================================================
+# BACKUP & MAINTENANCE
+# ============================================================================
+# Enable automatic database backups
+BACKUP_ENABLED=false
+
+# Backup schedule (cron format)
+# Daily at 3 AM
+BACKUP_CRON=0 3 * * *
+
+# Backup retention days
+BACKUP_RETENTION_DAYS=30
+
+# ============================================================================
+# FEATURE FLAGS
+# ============================================================================
+# Enable update management
+FEATURE_UPDATES=true
+
+# Enable license management
+FEATURE_LICENSES=true
+
+# Enable telemetry
+FEATURE_TELEMETRY=true
+
+# Enable global metrics dashboard
+FEATURE_GLOBAL_METRICS=true
+
+# ============================================================================
+# TIMEZONE
+# ============================================================================
+TZ=UTC
+
+# ============================================================================
+# DEVELOPMENT / DEBUG
+# ============================================================================
+# Enable debug mode (more verbose logging)
+# DEBUG=true
+
+# Enable TypeORM query logging
+# TYPEORM_LOGGING=true
+
+# Enable GraphQL playground
+# GRAPHQL_PLAYGROUND=true
+

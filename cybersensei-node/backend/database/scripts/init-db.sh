@@ -104,7 +104,7 @@ echo -e "${BLUE}👤 Default Users:${NC}"
 echo "  admin@cybersensei.io     (ADMIN)"
 echo "  manager@cybersensei.io   (MANAGER)"
 echo "  employee@cybersensei.io  (EMPLOYEE)"
-echo "  Password: Admin@123"
+echo "  Password: Demo123!"
 echo ""
 echo -e "${GREEN}🎉 Ready to use!${NC}"
 

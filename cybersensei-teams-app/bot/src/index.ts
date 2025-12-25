@@ -23,14 +23,11 @@ server.listen(config.port, () => {
 });
 
 // Créer l'adaptateur
-const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication(
-  {} as ConfigurationBotFrameworkAuthenticationOptions,
-  {
-    MicrosoftAppId: config.botId,
-    MicrosoftAppPassword: config.botPassword,
-    MicrosoftAppType: 'MultiTenant',
-  }
-);
+const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication({
+  MicrosoftAppId: config.botId || undefined,
+  MicrosoftAppPassword: config.botPassword || undefined,
+  MicrosoftAppType: 'MultiTenant',
+} as ConfigurationBotFrameworkAuthenticationOptions);
 
 const adapter = new CloudAdapter(botFrameworkAuthentication);
 
@@ -56,8 +53,9 @@ server.post('/api/messages', async (req, res) => {
 });
 
 // Endpoint de santé
-server.get('/health', (req, res) => {
+server.get('/health', (req, res, next) => {
   res.send(200, { status: 'healthy', timestamp: new Date().toISOString() });
+  return next();
 });
 
 // Gestion de l'arrêt gracieux

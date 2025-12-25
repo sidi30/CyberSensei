@@ -216,7 +216,7 @@ CREATE TABLE logs (
 ### 1. Admin Config (`01-seed-admin-config.sql`)
 - ✅ 3 utilisateurs par défaut (admin, manager, employee)
 - ✅ 20+ configurations système
-- ✅ Mots de passe : `Admin@123` (BCrypt)
+- ✅ Mots de passe : `Demo123!` (BCrypt strength 12)
 
 ### 2. Exercises (`02-seed-exercises.sql`)
 - ✅ 15 exercices couvrant :

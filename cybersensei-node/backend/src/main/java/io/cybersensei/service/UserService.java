@@ -2,6 +2,8 @@ package io.cybersensei.service;
 
 import io.cybersensei.api.dto.AuthRequest;
 import io.cybersensei.api.dto.AuthResponse;
+import io.cybersensei.api.dto.TeamsTokenExchangeRequest;
+import io.cybersensei.api.dto.TeamsTokenExchangeResponse;
 import io.cybersensei.api.dto.UserDto;
 import io.cybersensei.api.mapper.UserMapper;
 import io.cybersensei.domain.entity.User;
@@ -102,6 +104,36 @@ public class UserService {
         
         user = userRepository.save(user);
         return userMapper.toDto(user);
+    }
+
+    @Transactional
+    public TeamsTokenExchangeResponse exchangeTeamsToken(TeamsTokenExchangeRequest request) {
+        // Find or create user from Teams data
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElse(User.builder()
+                        .email(request.getEmail())
+                        .name(request.getDisplayName())
+                        .department(request.getDepartment())
+                        .role(User.UserRole.EMPLOYEE)
+                        .active(true)
+                        .build());
+
+        // Update user info from Teams
+        user.setName(request.getDisplayName());
+        if (request.getDepartment() != null) {
+            user.setDepartment(request.getDepartment());
+        }
+        
+        user = userRepository.save(user);
+
+        // Generate JWT token for the user
+        String token = tokenProvider.generateToken(user.getId(), user.getEmail());
+
+        return TeamsTokenExchangeResponse.builder()
+                .token(token)
+                .userId(user.getId())
+                .role(user.getRole().name())
+                .build();
     }
 }
 

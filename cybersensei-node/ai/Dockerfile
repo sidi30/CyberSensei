@@ -13,13 +13,16 @@ RUN apt-get update && apt-get install -y \
     git \
     wget \
     curl \
+    libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone and build llama.cpp
+# Clone and build llama.cpp with CMake
 WORKDIR /build
 RUN git clone https://github.com/ggerganov/llama.cpp.git
 WORKDIR /build/llama.cpp
-RUN make -j$(nproc) server
+RUN mkdir build && cd build && \
+    cmake .. -DLLAMA_BUILD_SERVER=ON && \
+    cmake --build . --config Release -j$(nproc)
 
 # Stage 2: Runtime
 FROM python:3.11-slim
@@ -35,8 +38,8 @@ RUN useradd -m -u 1001 aiuser
 # Set working directory
 WORKDIR /app
 
-# Copy llama.cpp server from builder
-COPY --from=builder /build/llama.cpp/server /app/llama-server
+# Copy llama.cpp server from builder (CMake build output)
+COPY --from=builder /build/llama.cpp/build/bin/llama-server /app/llama-server
 
 # Copy application files
 COPY requirements.txt .

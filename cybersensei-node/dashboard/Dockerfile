@@ -5,11 +5,19 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# Build arguments
+ARG VITE_API_URL=http://localhost:8080/api
+ARG VITE_BYPASS_AUTH=true
+
+# Set as environment variables for Vite
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_BYPASS_AUTH=$VITE_BYPASS_AUTH
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (needed for build)
+RUN npm install
 
 # Copy source files
 COPY . .

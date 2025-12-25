@@ -60,31 +60,31 @@ public class JwtTokenProvider {
     }
 
     public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
 
         return Long.parseLong(claims.getSubject());
     }
 
     public String getEmailFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
 
         return claims.get("email", String.class);
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
+            Jwts.parser()
+                    .verifyWith(secretKey)
                     .build()
-                    .parseClaimsJws(token);
+                    .parseSignedClaims(token);
             return true;
         } catch (Exception ex) {
             log.error("JWT token validation error: {}", ex.getMessage());

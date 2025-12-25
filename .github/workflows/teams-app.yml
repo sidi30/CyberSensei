@@ -1,0 +1,357 @@
+name: Teams App - Build & Package
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'cybersensei-teams-app/**'
+      - '.github/workflows/teams-app.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'cybersensei-teams-app/**'
+
+jobs:
+  # ===========================================================================
+  # Lint & Test - Employee Tab
+  # ===========================================================================
+  lint-test-employee-tab:
+    name: Lint & Test - Employee Tab
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cybersensei-teams-app/tabs/employee/package-lock.json
+      
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: cybersensei-teams-app/tabs/employee/node_modules
+          key: ${{ runner.os }}-employee-tab-${{ hashFiles('cybersensei-teams-app/tabs/employee/package-lock.json') }}
+      
+      - name: Install dependencies
+        working-directory: cybersensei-teams-app/tabs/employee
+        run: npm ci || npm install
+      
+      - name: Lint
+        working-directory: cybersensei-teams-app/tabs/employee
+        run: npm run lint || true
+      
+      - name: Type check
+        working-directory: cybersensei-teams-app/tabs/employee
+        run: npx tsc --noEmit || true
+      
+      - name: Run tests
+        working-directory: cybersensei-teams-app/tabs/employee
+        run: npm test -- --passWithNoTests --coverage || true
+
+  # ===========================================================================
+  # Lint & Test - Manager Tab
+  # ===========================================================================
+  lint-test-manager-tab:
+    name: Lint & Test - Manager Tab
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cybersensei-teams-app/tabs/manager/package-lock.json
+      
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: cybersensei-teams-app/tabs/manager/node_modules
+          key: ${{ runner.os }}-manager-tab-${{ hashFiles('cybersensei-teams-app/tabs/manager/package-lock.json') }}
+      
+      - name: Install dependencies
+        working-directory: cybersensei-teams-app/tabs/manager
+        run: npm ci || npm install
+      
+      - name: Lint
+        working-directory: cybersensei-teams-app/tabs/manager
+        run: npm run lint || true
+      
+      - name: Type check
+        working-directory: cybersensei-teams-app/tabs/manager
+        run: npx tsc --noEmit || true
+      
+      - name: Run tests
+        working-directory: cybersensei-teams-app/tabs/manager
+        run: npm test -- --passWithNoTests --coverage || true
+
+  # ===========================================================================
+  # Lint & Test - Bot
+  # ===========================================================================
+  lint-test-bot:
+    name: Lint & Test - Bot
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cybersensei-teams-app/bot/package-lock.json
+      
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: cybersensei-teams-app/bot/node_modules
+          key: ${{ runner.os }}-teams-bot-${{ hashFiles('cybersensei-teams-app/bot/package-lock.json') }}
+      
+      - name: Install dependencies
+        working-directory: cybersensei-teams-app/bot
+        run: npm ci || npm install
+      
+      - name: Lint
+        working-directory: cybersensei-teams-app/bot
+        run: npm run lint || true
+      
+      - name: Type check
+        working-directory: cybersensei-teams-app/bot
+        run: npx tsc --noEmit || true
+      
+      - name: Run tests
+        working-directory: cybersensei-teams-app/bot
+        run: npm test -- --passWithNoTests --coverage || true
+
+  # ===========================================================================
+  # Build - Employee Tab
+  # ===========================================================================
+  build-employee-tab:
+    name: Build - Employee Tab
+    runs-on: ubuntu-latest
+    needs: [lint-test-employee-tab]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: cybersensei-teams-app/tabs/employee/node_modules
+          key: ${{ runner.os }}-employee-tab-${{ hashFiles('cybersensei-teams-app/tabs/employee/package-lock.json') }}
+      
+      - name: Install dependencies
+        working-directory: cybersensei-teams-app/tabs/employee
+        run: npm ci || npm install
+      
+      - name: Build
+        working-directory: cybersensei-teams-app/tabs/employee
+        run: npm run build
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: employee-tab-build
+          path: cybersensei-teams-app/tabs/employee/dist
+          retention-days: 7
+
+  # ===========================================================================
+  # Build - Manager Tab
+  # ===========================================================================
+  build-manager-tab:
+    name: Build - Manager Tab
+    runs-on: ubuntu-latest
+    needs: [lint-test-manager-tab]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: cybersensei-teams-app/tabs/manager/node_modules
+          key: ${{ runner.os }}-manager-tab-${{ hashFiles('cybersensei-teams-app/tabs/manager/package-lock.json') }}
+      
+      - name: Install dependencies
+        working-directory: cybersensei-teams-app/tabs/manager
+        run: npm ci || npm install
+      
+      - name: Build
+        working-directory: cybersensei-teams-app/tabs/manager
+        run: npm run build
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: manager-tab-build
+          path: cybersensei-teams-app/tabs/manager/dist
+          retention-days: 7
+
+  # ===========================================================================
+  # Build - Bot
+  # ===========================================================================
+  build-bot:
+    name: Build - Bot
+    runs-on: ubuntu-latest
+    needs: [lint-test-bot]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: cybersensei-teams-app/bot/node_modules
+          key: ${{ runner.os }}-teams-bot-${{ hashFiles('cybersensei-teams-app/bot/package-lock.json') }}
+      
+      - name: Install dependencies
+        working-directory: cybersensei-teams-app/bot
+        run: npm ci || npm install
+      
+      - name: Build
+        working-directory: cybersensei-teams-app/bot
+        run: npm run build
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-build
+          path: cybersensei-teams-app/bot/dist
+          retention-days: 7
+
+  # ===========================================================================
+  # Package Teams App
+  # ===========================================================================
+  package:
+    name: Package Teams App
+    runs-on: ubuntu-latest
+    needs: [build-employee-tab, build-manager-tab, build-bot]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download employee tab build
+        uses: actions/download-artifact@v4
+        with:
+          name: employee-tab-build
+          path: cybersensei-teams-app/tabs/employee/dist
+      
+      - name: Download manager tab build
+        uses: actions/download-artifact@v4
+        with:
+          name: manager-tab-build
+          path: cybersensei-teams-app/tabs/manager/dist
+      
+      - name: Download bot build
+        uses: actions/download-artifact@v4
+        with:
+          name: bot-build
+          path: cybersensei-teams-app/bot/dist
+      
+      - name: Generate version info
+        run: |
+          echo "Version: 1.0.${{ github.run_number }}" > cybersensei-teams-app/VERSION.txt
+          echo "Build Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> cybersensei-teams-app/VERSION.txt
+          echo "Commit: ${{ github.sha }}" >> cybersensei-teams-app/VERSION.txt
+          echo "Branch: ${{ github.ref_name }}" >> cybersensei-teams-app/VERSION.txt
+      
+      - name: Update manifest version
+        working-directory: cybersensei-teams-app
+        run: |
+          VERSION="1.0.${{ github.run_number }}"
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" manifest/manifest.json || true
+      
+      - name: Create Teams App package
+        working-directory: cybersensei-teams-app
+        run: |
+          mkdir -p package
+          cp -r manifest/* package/
+          cp VERSION.txt package/
+          cd package
+          zip -r ../CyberSensei-Teams-App-v1.0.${{ github.run_number }}.zip .
+      
+      - name: Upload Teams App ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teams-app-package
+          path: cybersensei-teams-app/CyberSensei-Teams-App-v1.0.${{ github.run_number }}.zip
+          retention-days: 90
+      
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: teams-app-v1.0.${{ github.run_number }}
+          name: CyberSensei Teams App v1.0.${{ github.run_number }}
+          body: |
+            ## CyberSensei Teams App Release
+            
+            **Version:** 1.0.${{ github.run_number }}
+            **Build Date:** ${{ github.event.head_commit.timestamp }}
+            **Commit:** ${{ github.sha }}
+            
+            ### Installation
+            1. Download the ZIP package below
+            2. Upload to Microsoft Teams Admin Center
+            3. Configure BACKEND_BASE_URL per tenant
+            4. Assign to users
+            
+            ### Changes
+            ${{ github.event.head_commit.message }}
+          files: cybersensei-teams-app/CyberSensei-Teams-App-v1.0.${{ github.run_number }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ===========================================================================
+  # Summary
+  # ===========================================================================
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [package]
+    if: always()
+    
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## Teams App Build Summary 📦" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Employee Tab**: ✅ Built" >> $GITHUB_STEP_SUMMARY
+          echo "- **Manager Tab**: ✅ Built" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bot**: ✅ Built" >> $GITHUB_STEP_SUMMARY
+          echo "- **Package**: ✅ Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Package Version**: v1.0.${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+

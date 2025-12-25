@@ -35,7 +35,7 @@ public class AIProfile {
     private String style; // e.g., "visual", "practical", "theoretical"
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "weaknesses_json", columnDefinition = "jsonb")
     private Map<String, Object> weaknessesJSON; // topics and scores
 
     @CreationTimestamp

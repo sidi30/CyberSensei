@@ -2,17 +2,21 @@ package io.cybersensei.api.controller;
 
 import io.cybersensei.api.dto.AuthRequest;
 import io.cybersensei.api.dto.AuthResponse;
+import io.cybersensei.api.dto.TeamsTokenExchangeRequest;
+import io.cybersensei.api.dto.TeamsTokenExchangeResponse;
 import io.cybersensei.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
  * Authentication Controller
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -27,12 +31,17 @@ public class AuthController {
         return ResponseEntity.ok(userService.authenticate(request));
     }
 
-    @PostMapping("/teams")
-    @Operation(summary = "Authenticate via Microsoft Teams SSO")
-    public ResponseEntity<AuthResponse> teamsLogin(@RequestParam String msTeamsToken) {
-        // In production, validate MS Teams token and extract user info
-        // For now, this is a placeholder
-        throw new UnsupportedOperationException("Teams SSO not yet implemented");
+    @PostMapping("/teams/exchange")
+    @Operation(
+        summary = "Exchange Teams SSO token for backend JWT",
+        description = "Creates or updates user from Teams info and returns a backend JWT token"
+    )
+    public ResponseEntity<TeamsTokenExchangeResponse> exchangeTeamsToken(
+            @Valid @RequestBody TeamsTokenExchangeRequest request) {
+        log.info("Teams token exchange requested for user: {}", request.getEmail());
+        TeamsTokenExchangeResponse response = userService.exchangeTeamsToken(request);
+        log.info("Teams token exchanged successfully for user: {}", response.getUserId());
+        return ResponseEntity.ok(response);
     }
 }
 

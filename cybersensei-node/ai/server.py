@@ -1,12 +1,14 @@
 """
 CyberSensei AI Service
-FastAPI wrapper around llama.cpp server for Mistral 7B
+FastAPI wrapper around llama.cpp server for Mistral 7B with RAG capabilities
 """
 
 import os
 import asyncio
 import httpx
-from typing import Optional, Dict, Any
+import json
+import numpy as np
+from typing import Optional, Dict, Any, List
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -14,6 +16,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from loguru import logger
+
+# Optional: FAISS for vector similarity search
+try:
+    import faiss
+    FAISS_AVAILABLE = True
+except ImportError:
+    FAISS_AVAILABLE = False
+    logger.warning("FAISS not available - RAG will use simple keyword matching")
 
 
 # Configuration
@@ -27,22 +37,30 @@ LLAMA_URL = f"http://{LLAMA_HOST}:{LLAMA_PORT}"
 
 
 # Pydantic models
+class ChatContext(BaseModel):
+    """Context information for chat"""
+    topic: Optional[str] = Field(None, description="Current topic (PHISHING, PASSWORDS, etc.)")
+    difficulty: Optional[str] = Field(None, description="Difficulty level (EASY, MEDIUM, HARD)")
+    lastResults: Optional[Dict[str, Any]] = Field(None, description="Recent exercise results")
+
+
 class ChatRequest(BaseModel):
-    """Request model for chat endpoint"""
-    prompt: str = Field(..., min_length=1, max_length=4000, description="User prompt")
-    context: Optional[str] = Field(None, max_length=2000, description="Additional context")
-    temperature: Optional[float] = Field(0.7, ge=0.0, le=2.0, description="Sampling temperature")
-    max_tokens: Optional[int] = Field(512, ge=1, le=2048, description="Maximum tokens to generate")
-    top_p: Optional[float] = Field(0.9, ge=0.0, le=1.0, description="Nucleus sampling")
-    top_k: Optional[int] = Field(40, ge=1, le=100, description="Top-k sampling")
+    """Request model for chat endpoint - CyberSensei specific"""
+    userId: Optional[str] = Field(None, description="User ID for personalization")
+    role: Optional[str] = Field("EMPLOYEE", description="User role (EMPLOYEE, MANAGER, ADMIN)")
+    message: str = Field(..., min_length=1, max_length=4000, description="User message/question")
+    context: Optional[ChatContext] = Field(None, description="Learning context")
+    
+    # Optional tuning parameters
+    temperature: Optional[float] = Field(0.7, ge=0.0, le=2.0)
+    max_tokens: Optional[int] = Field(512, ge=1, le=2048)
 
 
 class ChatResponse(BaseModel):
-    """Response model for chat endpoint"""
+    """Response model for chat endpoint - CyberSensei specific"""
     response: str = Field(..., description="AI generated response")
-    session_id: Optional[str] = Field(None, description="Session identifier")
-    model: str = Field("mistral-7b-instruct", description="Model used")
-    tokens_generated: Optional[int] = Field(None, description="Number of tokens generated")
+    suggestedNextExerciseTopic: Optional[str] = Field(None, description="Suggested next learning topic")
+    riskHints: Optional[list[str]] = Field(None, description="Identified risk areas or hints")
 
 
 class HealthResponse(BaseModel):
@@ -55,6 +73,47 @@ class HealthResponse(BaseModel):
 
 # Global HTTP client
 http_client: Optional[httpx.AsyncClient] = None
+
+# In-memory knowledge base for RAG
+# In production, this would be loaded from a database or vector store
+KNOWLEDGE_BASE = {
+    "PHISHING": [
+        "Le phishing est une technique d'escroquerie par email ou SMS visant à obtenir des informations personnelles.",
+        "Vérifiez toujours l'expéditeur avant de cliquer sur un lien dans un email.",
+        "Les emails de phishing contiennent souvent des fautes d'orthographe et un ton urgent.",
+        "Ne jamais fournir de mot de passe ou informations bancaires par email.",
+    ],
+    "PASSWORDS": [
+        "Un mot de passe fort contient au moins 12 caractères avec majuscules, minuscules, chiffres et symboles.",
+        "Utilisez un mot de passe unique pour chaque compte.",
+        "Activez l'authentification à deux facteurs (2FA) partout où c'est possible.",
+        "Utilisez un gestionnaire de mots de passe pour stocker vos mots de passe en sécurité.",
+    ],
+    "MALWARE": [
+        "Les malwares incluent les virus, trojans, ransomwares et spywares.",
+        "Ne téléchargez jamais de fichiers depuis des sources non fiables.",
+        "Maintenez votre antivirus à jour.",
+        "Soyez prudent avec les clés USB trouvées ou reçues.",
+    ],
+    "SOCIAL_ENGINEERING": [
+        "L'ingénierie sociale exploite la psychologie humaine plutôt que des failles techniques.",
+        "Vérifiez toujours l'identité des personnes demandant des informations sensibles.",
+        "Soyez sceptique face aux demandes urgentes ou inhabituelles.",
+    ],
+    "NETWORK_SECURITY": [
+        "Utilisez un VPN sur les réseaux WiFi publics.",
+        "Assurez-vous que votre routeur utilise WPA3 ou au minimum WPA2.",
+        "Changez les mots de passe par défaut de vos équipements réseau.",
+    ],
+    "DATA_PROTECTION": [
+        "Chiffrez les données sensibles au repos et en transit.",
+        "Effectuez des sauvegardes régulières suivant la règle 3-2-1.",
+        "Appliquez le principe du moindre privilège pour l'accès aux données.",
+    ],
+}
+
+# Simple vector store (if FAISS not available)
+vector_store: Optional[Any] = None
 
 
 @asynccontextmanager
@@ -119,54 +178,170 @@ async def wait_for_llama_server(max_attempts: int = 30, delay: int = 2):
     raise RuntimeError("llama.cpp server failed to start")
 
 
-def build_prompt(user_prompt: str, context: Optional[str] = None) -> str:
-    """Build a formatted prompt for Mistral with cybersecurity context"""
+def retrieve_relevant_content(message: str, topic: Optional[str] = None, top_k: int = 3) -> str:
+    """
+    Retrieve relevant content from knowledge base (simple RAG)
+    In production, this would use vector embeddings and FAISS
+    """
+    try:
+        # If topic is provided, prioritize that topic
+        if topic and topic in KNOWLEDGE_BASE:
+            relevant_items = KNOWLEDGE_BASE[topic][:top_k]
+            return "\n- " + "\n- ".join(relevant_items)
+        
+        # Otherwise, do simple keyword matching
+        message_lower = message.lower()
+        relevant_items = []
+        
+        for topic_name, items in KNOWLEDGE_BASE.items():
+            # Check if topic name appears in message
+            if topic_name.lower() in message_lower:
+                relevant_items.extend(items[:2])
+        
+        # Also check content matching
+        for topic_name, items in KNOWLEDGE_BASE.items():
+            for item in items:
+                if len(relevant_items) >= top_k:
+                    break
+                # Simple keyword matching
+                keywords = ["mot de passe", "phishing", "email", "malware", "sécurité", "données"]
+                if any(keyword in item.lower() and keyword in message_lower for keyword in keywords):
+                    if item not in relevant_items:
+                        relevant_items.append(item)
+        
+        if relevant_items:
+            return "\n- " + "\n- ".join(relevant_items[:top_k])
+        
+        return "Aucun contenu spécifique trouvé dans la base de connaissances."
+        
+    except Exception as e:
+        logger.error(f"Error retrieving content: {e}")
+        return ""
+
+
+def build_enriched_prompt(
+    message: str,
+    user_id: Optional[str] = None,
+    role: Optional[str] = None,
+    context: Optional[ChatContext] = None,
+    retrieved_content: Optional[str] = None
+) -> str:
+    """Build an enriched prompt with RAG context and user info"""
     
     system_prompt = """Tu es CyberSensei, un assistant expert en cybersécurité. 
 Tu fournis des réponses claires, précises et pédagogiques sur les sujets de sécurité informatique.
-Tu réponds en français de manière professionnelle et accessible."""
+Tu réponds TOUJOURS en français de manière professionnelle et accessible."""
 
+    # Add user context
+    if role:
+        system_prompt += f"\n\nL'utilisateur a le rôle: {role}"
+    
+    # Add learning context
     if context:
-        system_prompt += f"\n\nContexte additionnel: {context}"
+        if context.topic:
+            system_prompt += f"\nSujet actuel: {context.topic}"
+        if context.difficulty:
+            system_prompt += f"\nNiveau: {context.difficulty}"
+        if context.lastResults:
+            score = context.lastResults.get('score', 'N/A')
+            system_prompt += f"\nDerniers résultats: {score}"
+    
+    # Add RAG retrieved content
+    if retrieved_content:
+        system_prompt += f"\n\nContenu pertinent de la base de connaissances:\n{retrieved_content}"
+    
+    system_prompt += "\n\nRÉPONDS EN FORMAT JSON avec ces champs:"
+    system_prompt += "\n- response: ta réponse détaillée"
+    system_prompt += "\n- suggestedNextExerciseTopic: suggère un sujet pour le prochain exercice (ex: PHISHING, PASSWORDS, MALWARE, SOCIAL_ENGINEERING, NETWORK_SECURITY, DATA_PROTECTION)"
+    system_prompt += "\n- riskHints: liste de 1-3 conseils de sécurité pertinents"
     
     # Mistral Instruct format
     formatted_prompt = f"""[INST] {system_prompt}
 
-Question: {user_prompt} [/INST]"""
+Question: {message} [/INST]
+
+{{"""
     
     return formatted_prompt
+
+
+def parse_json_response(response_text: str) -> Dict[str, Any]:
+    """
+    Parse JSON response from AI, handling various formats
+    """
+    try:
+        # Try to extract JSON from response
+        response_text = response_text.strip()
+        
+        # If response starts with {, try direct parsing
+        if response_text.startswith('{'):
+            return json.loads(response_text)
+        
+        # Try to find JSON in the text
+        start_idx = response_text.find('{')
+        end_idx = response_text.rfind('}')
+        
+        if start_idx != -1 and end_idx != -1:
+            json_str = response_text[start_idx:end_idx+1]
+            return json.loads(json_str)
+        
+        # Fallback: return text as response
+        return {
+            "response": response_text,
+            "suggestedNextExerciseTopic": None,
+            "riskHints": []
+        }
+        
+    except json.JSONDecodeException as e:
+        logger.warning(f"Failed to parse JSON response: {e}")
+        return {
+            "response": response_text,
+            "suggestedNextExerciseTopic": None,
+            "riskHints": []
+        }
 
 
 @app.post("/api/ai/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest, req: Request) -> ChatResponse:
     """
-    Chat endpoint - forwards request to llama.cpp server
+    Chat endpoint - CyberSensei AI with RAG capabilities
     
     Args:
-        request: Chat request with prompt and parameters
+        request: Chat request with userId, role, message, and context
         req: FastAPI request object
     
     Returns:
-        ChatResponse with AI generated text
+        ChatResponse with AI response, suggested topic, and risk hints
     """
     try:
-        # Build formatted prompt
-        full_prompt = build_prompt(request.prompt, request.context)
+        logger.info(f"📨 Chat request from user {request.userId or 'anonymous'}: {request.message[:50]}...")
         
-        logger.info(f"📨 Chat request: {request.prompt[:50]}...")
+        # Step 1: Retrieve relevant content (RAG)
+        topic = request.context.topic if request.context else None
+        retrieved_content = retrieve_relevant_content(request.message, topic)
+        logger.info(f"📚 Retrieved content for topic: {topic}")
         
-        # Prepare llama.cpp request
+        # Step 2: Build enriched prompt
+        full_prompt = build_enriched_prompt(
+            message=request.message,
+            user_id=request.userId,
+            role=request.role,
+            context=request.context,
+            retrieved_content=retrieved_content
+        )
+        
+        # Step 3: Prepare llama.cpp request
         llama_request = {
             "prompt": full_prompt,
             "temperature": request.temperature,
             "n_predict": request.max_tokens,
-            "top_p": request.top_p,
-            "top_k": request.top_k,
-            "stop": ["[INST]", "</s>"],
+            "top_p": 0.9,
+            "top_k": 40,
+            "stop": ["[INST]", "</s>", "\n\n\n"],
             "stream": False
         }
         
-        # Call llama.cpp server
+        # Step 4: Call llama.cpp server
         if not http_client:
             raise HTTPException(status_code=503, detail="HTTP client not initialized")
         
@@ -185,15 +360,29 @@ async def chat(request: ChatRequest, req: Request) -> ChatResponse:
         
         result = response.json()
         ai_response = result.get("content", "").strip()
-        tokens_generated = result.get("tokens_predicted", 0)
         
-        logger.info(f"✅ Response generated ({tokens_generated} tokens)")
+        logger.info(f"✅ Raw AI response: {ai_response[:100]}...")
+        
+        # Step 5: Parse JSON response
+        parsed_response = parse_json_response(ai_response)
+        
+        # Step 6: Extract structured fields
+        response_text = parsed_response.get("response", ai_response)
+        suggested_topic = parsed_response.get("suggestedNextExerciseTopic")
+        risk_hints = parsed_response.get("riskHints", [])
+        
+        # Ensure risk_hints is a list
+        if isinstance(risk_hints, str):
+            risk_hints = [risk_hints]
+        elif not isinstance(risk_hints, list):
+            risk_hints = []
+        
+        logger.info(f"✅ Response generated with topic suggestion: {suggested_topic}")
         
         return ChatResponse(
-            response=ai_response,
-            session_id=None,  # Can be implemented for conversation history
-            model="mistral-7b-instruct",
-            tokens_generated=tokens_generated
+            response=response_text,
+            suggestedNextExerciseTopic=suggested_topic,
+            riskHints=risk_hints
         )
         
     except httpx.TimeoutException:
@@ -204,7 +393,12 @@ async def chat(request: ChatRequest, req: Request) -> ChatResponse:
         raise HTTPException(status_code=503, detail="AI model service unavailable")
     except Exception as e:
         logger.error(f"❌ Unexpected error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return a fallback response
+        return ChatResponse(
+            response="Je suis désolé, j'ai rencontré un problème en traitant votre demande. Pourriez-vous reformuler votre question ?",
+            suggestedNextExerciseTopic="PHISHING" if not request.context or not request.context.topic else request.context.topic,
+            riskHints=["Assurez-vous de toujours vérifier les sources avant de partager des informations sensibles."]
+        )
 
 
 @app.get("/health", response_model=HealthResponse)

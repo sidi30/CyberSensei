@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authentication, app } from '@microsoft/teams-js';
 import { Client } from '@microsoft/microsoft-graph-client';
+import axios from 'axios';
 import type { GraphUser } from '../types';
 import { config } from '../config';
 
 interface AuthContextType {
   token: string | null;
+  backendToken: string | null;
   user: GraphUser | null;
   userPhoto: string | null;
   loading: boolean;
@@ -17,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
+  const [backendToken, setBackendToken] = useState<string | null>(null);
   const [user, setUser] = useState<GraphUser | null>(null);
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Not running in Teams context');
       }
 
-      // Obtenir le token d'authentification
+      // Obtenir le token d'authentification Teams
       const authToken = await authentication.getAuthToken({
         resources: config.scopes,
       });
@@ -48,6 +51,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Récupérer les informations utilisateur via Graph
       const graphUser = await fetchGraphUser(authToken);
       setUser(graphUser);
+
+      // Échanger le token Teams contre un JWT backend
+      const backendJwt = await exchangeTeamsTokenForBackendJwt(graphUser, context);
+      setBackendToken(backendJwt);
 
       // Récupérer la photo
       const photo = await fetchUserPhoto(authToken);
@@ -60,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (import.meta.env.DEV) {
         console.warn('Using development mode - mock data');
         setToken('dev-token');
+        setBackendToken('dev-backend-token');
         setUser({
           id: 'dev-user-123',
           displayName: 'John Doe',
@@ -115,8 +123,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * Échange le token Teams contre un JWT backend
+   */
+  const exchangeTeamsTokenForBackendJwt = async (
+    graphUser: GraphUser,
+    context: any
+  ): Promise<string> => {
+    try {
+      const response = await axios.post(
+        `${config.backendBaseUrl}/api/auth/teams/exchange`,
+        {
+          teamsUserId: graphUser.id,
+          email: graphUser.mail || graphUser.userPrincipalName,
+          displayName: graphUser.displayName,
+          department: graphUser.department,
+          jobTitle: graphUser.jobTitle,
+          tenantId: context.user?.tenant?.id,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+        }
+      );
+
+      if (!response.data || !response.data.token) {
+        throw new Error('Invalid response from backend auth exchange');
+      }
+
+      return response.data.token;
+    } catch (error) {
+      console.error('Error exchanging Teams token for backend JWT:', error);
+      throw new Error('Impossible d\'obtenir un token backend. Vérifiez la connexion au backend.');
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ token, user, userPhoto, loading, error, refetch: initAuth }}>
+    <AuthContext.Provider value={{ token, backendToken, user, userPhoto, loading, error, refetch: initAuth }}>
       {children}
     </AuthContext.Provider>
   );

@@ -30,27 +30,23 @@ class ApiClient {
       },
     });
 
-    // Intercepteur de requête pour ajouter le token
+    // ⚠️ MODE BYPASS - Intercepteurs désactivés
+    // Intercepteur de requête pour ajouter le token - DÉSACTIVÉ
     this.client.interceptors.request.use(
       (config) => {
-        const token = this.getToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
+        // Ne plus ajouter de token JWT
+        console.warn('⚠️ MODE BYPASS - Pas de token JWT ajouté');
         return config;
       },
       (error) => Promise.reject(error)
     );
 
-    // Intercepteur de réponse pour gérer les erreurs
+    // Intercepteur de réponse pour gérer les erreurs - DÉSACTIVÉ
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError<ApiError>) => {
-        if (error.response?.status === 401) {
-          // Token expiré ou invalide
-          this.clearAuth();
-          window.location.href = '/login';
-        }
+        // Ne plus rediriger vers /login en cas d'erreur 401
+        console.warn('⚠️ MODE BYPASS - Erreur 401 ignorée, pas de redirection');
         return Promise.reject(error);
       }
     );

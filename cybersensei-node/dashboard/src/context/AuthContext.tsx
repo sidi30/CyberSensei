@@ -15,16 +15,35 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // ⚠️ MODE BYPASS ACTIVÉ - AUTHENTIFICATION DÉSACTIVÉE
+  const bypassAuth = true; // Activé pour accès direct au dashboard
 
   // Check if user is already logged in on mount
   useEffect(() => {
+    if (bypassAuth) {
+      // Mode bypass: créer un utilisateur fictif
+      console.warn('⚠️ MODE BYPASS ACTIVÉ - Authentification désactivée');
+      setUser({
+        id: 1,
+        name: 'Admin Bypass',
+        email: 'admin@cybersensei.io',
+        role: 'ADMIN',
+        department: 'IT',
+        active: true,
+        createdAt: new Date().toISOString()
+      });
+      setIsLoading(false);
+      return;
+    }
+    
     const token = localStorage.getItem('token');
     if (token) {
       loadCurrentUser();
     } else {
       setIsLoading(false);
     }
-  }, []);
+  }, [bypassAuth]);
 
   const loadCurrentUser = async () => {
     try {
@@ -39,6 +58,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const login = async (credentials: LoginRequest) => {
+    // MODE BYPASS TEMPORAIRE - À RETIRER EN PRODUCTION
+    if (bypassAuth) {
+      console.warn('⚠️ MODE BYPASS ACTIVÉ - Authentification désactivée');
+      setUser({
+        id: 1,
+        name: 'Admin Bypass',
+        email: credentials.email,
+        role: 'ADMIN',
+        department: 'IT',
+        active: true,
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem('token', 'bypass-token');
+      return;
+    }
+    
     const response = await authAPI.login(credentials);
     localStorage.setItem('token', response.token);
     setUser(response.user);

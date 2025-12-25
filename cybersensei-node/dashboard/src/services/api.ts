@@ -11,7 +11,6 @@ import type {
   LicenseInfo,
   LoginRequest,
   LoginResponse,
-  ApiResponse,
 } from '../types';
 
 // Create axios instance
@@ -23,27 +22,23 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor (add JWT token)
+// ⚠️ MODE BYPASS - Intercepteurs désactivés
+// Request interceptor (add JWT token) - DÉSACTIVÉ
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Ne plus ajouter de token JWT
+    console.warn('⚠️ MODE BYPASS - Pas de token JWT ajouté');
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor (handle errors)
+// Response interceptor (handle errors) - DÉSACTIVÉ
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
+    // Ne plus rediriger vers /login en cas d'erreur 401
+    console.warn('⚠️ MODE BYPASS - Erreur 401 ignorée, pas de redirection');
     return Promise.reject(error);
   }
 );

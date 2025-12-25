@@ -1,10 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardLayout } from './components/Layout/DashboardLayout';
 
 // Pages
-import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TenantsListPage from './pages/TenantsListPage';
 import TenantDetailsPage from './pages/TenantDetailsPage';
@@ -16,17 +14,10 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public route */}
-          <Route path="/login" element={<LoginPage />} />
-
-          {/* Protected routes */}
+          {/* Toutes les routes sans authentification */}
           <Route
             path="/"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
+            element={<DashboardLayout />}
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />

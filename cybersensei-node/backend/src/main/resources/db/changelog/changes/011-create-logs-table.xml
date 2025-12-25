@@ -26,7 +26,7 @@
             <column name="user_id" type="bigint"/>
             <column name="request_id" type="varchar(100)"/>
             <column name="ip_address" type="varchar(45)"/>
-            <column name="user_agent" type="varchar(500)/>
+            <column name="user_agent" type="varchar(500)"/>
             <column name="endpoint" type="varchar(255)"/>
             <column name="method" type="varchar(10)"/>
             <column name="status_code" type="integer"/>

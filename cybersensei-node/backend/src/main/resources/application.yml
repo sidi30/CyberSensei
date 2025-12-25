@@ -60,9 +60,17 @@ jwt:
 
 # ====== CYBERSENSEI CONFIGURATION ======
 cybersensei:
+  # Security configuration (JWT)
+  security:
+    jwt:
+      secret: ${JWT_SECRET:YourSuperSecretKeyForJWTTokenGenerationWithAtLeast256Bits}
+      expiration: 86400000 # 24 hours in milliseconds
+      refresh-expiration: 604800000 # 7 days
+  
   # AI Service configuration
   ai:
-    base-url: ${AI_SERVICE_URL:http://localhost:8001}
+    service-url: ${AI_SERVICE_URL:http://localhost:8001}
+    timeout: ${AI_TIMEOUT:30000}  # 30 seconds
   
   # Phishing mailer configuration
   phishing:
@@ -77,19 +85,12 @@ cybersensei:
     tenant-id: ${TENANT_ID:demo}
     version: ${APP_VERSION:1.0.0}
     nightly-cron: ${SYNC_CRON:0 0 3 * * *}  # 3:00 AM daily
+    telemetry-interval: ${TELEMETRY_INTERVAL:900000}  # 15 minutes
   
   # Metrics computation
   metrics:
     enabled: ${METRICS_ENABLED:true}
-    computation-cron: ${METRICS_CRON:0 0 1 * * *}  # 1:00 AM daily
-  
-  # Sync agent configuration
-  sync:
-    enabled: ${SYNC_ENABLED:false}
-    central-url: ${CENTRAL_URL:https://central.cybersensei.io}
-    tenant-id: ${TENANT_ID:demo}
-    nightly-cron: ${SYNC_CRON:0 0 3 * * *}  # 3:00 AM daily
-    telemetry-interval: ${TELEMETRY_INTERVAL:900000}  # 15 minutes
+    calculation-cron: ${METRICS_CRON:0 0 1 * * *}  # 1:00 AM daily
 
 # ====== SERVER CONFIGURATION ======
 server:
