@@ -16,11 +16,14 @@ public class UserExerciseResultDto {
     private Long id;
     private Long userId;
     private Long exerciseId;
+    private String title; // Exercise title/topic
     private Double score;
+    private Double maxScore; // Max possible score
     private Boolean success;
     private Integer duration;
     private Map<String, Object> detailsJSON;
     private LocalDateTime date;
+    private LocalDateTime completedAt; // Alias for date (Teams app compatibility)
 }
 
 

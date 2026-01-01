@@ -138,8 +138,24 @@ export class CyberSenseiBot extends ActivityHandler {
    * Message de bienvenue
    */
   private async sendWelcomeMessage(context: TurnContext): Promise<void> {
-    const welcomeCard = CardFactory.adaptiveCard(createHelpCard());
-    await context.sendActivity(MessageFactory.attachment(welcomeCard));
+    const userName = context.activity.from.name || 'Utilisateur';
+    const welcomeMessage = `👋 **Bonjour ${userName} !**
+
+Bienvenue sur **CyberSensei**, votre assistant personnel en cybersécurité ! 🛡️
+
+Je suis là pour vous aider à :
+✅ Vous entraîner avec des quiz interactifs
+✅ Suivre votre progression
+✅ Répondre à toutes vos questions sur la cybersécurité
+
+**🚀 Pour commencer :**
+• Tapez **"quiz"** pour un exercice
+• Tapez **"aide"** pour voir toutes les commandes
+• Ou posez-moi directement une question !
+
+Prêt à devenir un expert en cybersécurité ? 💪`;
+
+    await context.sendActivity(welcomeMessage);
   }
 
   /**
@@ -251,8 +267,26 @@ export class CyberSenseiBot extends ActivityHandler {
    * Gère l'intention "help"
    */
   private async handleHelpIntent(context: TurnContext): Promise<void> {
-    const helpCard = CardFactory.adaptiveCard(createHelpCard());
-    await context.sendActivity(MessageFactory.attachment(helpCard));
+    const helpMessage = `🛡️ **CyberSensei - Votre assistant en cybersécurité**
+
+Je suis là pour vous aider à renforcer vos compétences en cybersécurité de manière simple et interactive.
+
+**💬 Commandes disponibles :**
+
+• **"quiz"** ou **"exercice"** - Commencer un quiz du jour
+• **"score"** ou **"progression"** - Voir vos résultats
+• **"aide"** ou **"help"** - Afficher ce message
+
+**🤖 Posez-moi n'importe quelle question !**
+
+Exemples :
+• "Qu'est-ce que le phishing ?"
+• "Comment créer un mot de passe sécurisé ?"
+• "Explique-moi le ransomware"
+
+Tapez simplement votre question et je vous répondrai ! 😊`;
+
+    await context.sendActivity(helpMessage);
   }
 
   /**

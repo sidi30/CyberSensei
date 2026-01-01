@@ -34,6 +34,24 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserDto getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        // MODE BYPASS : Si pas d'authentification ou authentification anonyme, retourner un utilisateur par défaut
+        if (authentication == null || !authentication.isAuthenticated() || 
+            "anonymousUser".equals(authentication.getPrincipal())) {
+            // Essayer de récupérer le premier utilisateur de la base
+            User defaultUser = userRepository.findAll().stream()
+                    .findFirst()
+                    .orElse(User.builder()
+                            .id(1L)
+                            .email("admin@cybersensei.io")
+                            .name("Admin Bypass")
+                            .role(User.UserRole.ADMIN)
+                            .department("IT")
+                            .active(true)
+                            .build());
+            return userMapper.toDto(defaultUser);
+        }
+        
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));

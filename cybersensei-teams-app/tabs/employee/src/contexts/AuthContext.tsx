@@ -34,6 +34,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
+      // MODE STANDALONE : Si on n'est pas dans Teams, utiliser des données de test
+      // Vérifier si on est dans un navigateur normal (pas dans Teams)
+      const isStandalone = !window.parent || window.parent === window;
+      
+      if (isStandalone || import.meta.env.DEV) {
+        console.warn('⚠️ MODE STANDALONE - Pas dans Teams, utilisation de données de test');
+        setToken('dev-token');
+        setBackendToken('bypass-token');
+        setUser({
+          id: 'dev-user-123',
+          displayName: 'John Doe (Dev)',
+          mail: 'john.doe@company.com',
+          jobTitle: 'Développeur',
+          department: 'IT',
+          userPrincipalName: 'john.doe@company.com',
+        });
+        setLoading(false);
+        return;
+      }
+
       // Vérifier si on est dans Teams
       const context = await app.getContext();
       
@@ -61,21 +81,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserPhoto(photo);
     } catch (err) {
       console.error('Auth error:', err);
-      setError('Erreur d\'authentification. Veuillez vous reconnecter.');
       
       // En développement, on peut utiliser un token et utilisateur de test
       if (import.meta.env.DEV) {
         console.warn('Using development mode - mock data');
         setToken('dev-token');
-        setBackendToken('dev-backend-token');
+        setBackendToken('bypass-token');
         setUser({
           id: 'dev-user-123',
-          displayName: 'John Doe',
+          displayName: 'John Doe (Dev)',
           mail: 'john.doe@company.com',
           jobTitle: 'Développeur',
           department: 'IT',
           userPrincipalName: 'john.doe@company.com',
         });
+      } else {
+        setError('Erreur d\'authentification. Veuillez vous reconnecter.');
       }
     } finally {
       setLoading(false);

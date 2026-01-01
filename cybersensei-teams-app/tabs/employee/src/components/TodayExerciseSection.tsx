@@ -98,6 +98,8 @@ export function TodayExerciseSection() {
     );
   }
 
+  const questions = quiz.questions ?? [];
+
   return (
     <div className="card">
       <div className="flex items-start justify-between mb-6">
@@ -131,13 +133,13 @@ export function TodayExerciseSection() {
       {!result ? (
         <>
           <div className="space-y-6 mb-6">
-            {quiz.questions.map((question, index) => (
+            {questions.map((question, index) => (
               <div key={question.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h3 className="font-semibold text-gray-900 mb-3">
                   Question {index + 1}: {question.text}
                 </h3>
                 <div className="space-y-2">
-                  {question.options.map((option, optionIndex) => (
+                  {(question.options ?? []).map((option, optionIndex) => (
                     <label
                       key={optionIndex}
                       className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${

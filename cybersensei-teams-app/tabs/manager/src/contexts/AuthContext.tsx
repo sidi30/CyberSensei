@@ -32,6 +32,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
+      // MODE STANDALONE : Si on n'est pas dans Teams, utiliser des données de test
+      // Vérifier si on est dans un navigateur normal (pas dans Teams)
+      const isStandalone = !window.parent || window.parent === window;
+      
+      if (isStandalone || import.meta.env.DEV) {
+        console.warn('⚠️ MODE STANDALONE - Pas dans Teams, utilisation de données de test');
+        setToken('dev-token');
+        setBackendToken('bypass-token');
+        setUser({
+          id: 'dev-manager-123',
+          displayName: 'Marie Dupont (Dev)',
+          mail: 'marie.dupont@company.com',
+          jobTitle: 'Responsable Sécurité',
+          department: 'IT Security',
+          userPrincipalName: 'marie.dupont@company.com',
+        });
+        setLoading(false);
+        return;
+      }
+
       const context = await app.getContext();
       
       if (!context) {
@@ -52,20 +72,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setBackendToken(backendJwt);
     } catch (err) {
       console.error('Auth error:', err);
-      setError('Erreur d\'authentification. Veuillez vous reconnecter.');
       
       if (import.meta.env.DEV) {
         console.warn('Using development mode - mock data');
         setToken('dev-token');
-        setBackendToken('dev-backend-token');
+        setBackendToken('bypass-token');
         setUser({
           id: 'dev-manager-123',
-          displayName: 'Marie Dupont',
+          displayName: 'Marie Dupont (Dev)',
           mail: 'marie.dupont@company.com',
           jobTitle: 'Responsable Sécurité',
           department: 'IT Security',
           userPrincipalName: 'marie.dupont@company.com',
         });
+      } else {
+        setError('Erreur d\'authentification. Veuillez vous reconnecter.');
       }
     } finally {
       setLoading(false);

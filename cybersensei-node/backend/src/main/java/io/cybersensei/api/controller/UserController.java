@@ -2,7 +2,9 @@ package io.cybersensei.api.controller;
 
 import io.cybersensei.api.dto.UserDto;
 import io.cybersensei.domain.entity.User;
+import io.cybersensei.domain.entity.UserExerciseResult;
 import io.cybersensei.domain.repository.UserRepository;
+import io.cybersensei.domain.repository.UserExerciseResultRepository;
 import io.cybersensei.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User Management Controller
@@ -26,6 +30,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final UserExerciseResultRepository resultRepository;
 
     @GetMapping("/me")
     @Operation(summary = "Get current user information")

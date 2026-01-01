@@ -1,6 +1,17 @@
 # CyberSensei - Application Microsoft Teams
 
-Application Microsoft Teams complète pour la formation en cybersécurité, comprenant des onglets interactifs, un bot conversationnel et une intégration avec le backend CyberSensei.
+> **Version 2.0 - Interface Simplifiée** 🎉
+
+Application Microsoft Teams avec interface de conversation moderne pour la formation en cybersécurité.
+
+## 🆕 Nouveautés Version 2.0
+
+✨ **Interface complètement repensée** - Conversation simple et fluide  
+🎨 **Design professionnel** - Inspiré des meilleures applications Teams  
+🔗 **Connexion clarifiée** - Se connecte au backend **cybersensei-node**  
+📱 **Expérience unifiée** - Plus de catégories complexes  
+
+👉 **[Voir le guide complet : README_NOUVEAU.md](./README_NOUVEAU.md)**
 
 ## 📋 Table des matières
 

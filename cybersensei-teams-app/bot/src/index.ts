@@ -18,8 +18,9 @@ server.use(restify.plugins.bodyParser());
 
 server.listen(config.port, () => {
   console.log(`\n${server.name} listening on ${server.url}`);
-  console.log('\nBot is ready!');
-  console.log(`\nBackend URL: ${config.backendBaseUrl}`);
+  console.log('\n🤖 CyberSensei Bot is ready!');
+  console.log(`\n🔌 Backend URL: ${config.backendBaseUrl}`);
+  console.log('📱 Simple et efficace - Exercices quotidiens obligatoires');
 });
 
 // Créer l'adaptateur
@@ -36,10 +37,7 @@ adapter.onTurnError = async (context, error) => {
   console.error(`\n [onTurnError] unhandled error: ${error}`);
   console.error(error);
 
-  await context.sendActivity('Le bot a rencontré une erreur. Veuillez réessayer.');
-  await context.sendActivity(
-    'Pour continuer à exécuter ce bot, veuillez corriger le code source du bot.'
-  );
+  await context.sendActivity('Désolé, une erreur est survenue. Réessayez dans quelques instants.');
 };
 
 // Créer l'instance du bot

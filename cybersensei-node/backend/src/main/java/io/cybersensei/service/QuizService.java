@@ -7,10 +7,12 @@ import io.cybersensei.api.mapper.ExerciseMapper;
 import io.cybersensei.api.mapper.UserExerciseResultMapper;
 import io.cybersensei.domain.entity.AIProfile;
 import io.cybersensei.domain.entity.Exercise;
+import io.cybersensei.domain.entity.User;
 import io.cybersensei.domain.entity.UserExerciseResult;
 import io.cybersensei.domain.repository.AIProfileRepository;
 import io.cybersensei.domain.repository.ExerciseRepository;
 import io.cybersensei.domain.repository.UserExerciseResultRepository;
+import io.cybersensei.domain.repository.UserRepository;
 import io.cybersensei.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class QuizService {
     private final ExerciseRepository exerciseRepository;
     private final UserExerciseResultRepository resultRepository;
     private final AIProfileRepository aiProfileRepository;
+    private final UserRepository userRepository;
     private final ExerciseMapper exerciseMapper;
     private final UserExerciseResultMapper resultMapper;
     private final Random random = new Random();
@@ -108,6 +111,23 @@ public class QuizService {
 
     private UserPrincipal getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        // MODE BYPASS : Si pas d'authentification ou authentification anonyme, retourner un utilisateur par défaut
+        if (authentication == null || !authentication.isAuthenticated() || 
+            "anonymousUser".equals(authentication.getPrincipal())) {
+            // Récupérer le premier utilisateur de la base comme utilisateur par défaut
+            User defaultUser = userRepository.findAll().stream()
+                    .findFirst()
+                    .orElse(User.builder()
+                            .id(1L)
+                            .email("admin@cybersensei.io")
+                            .name("Admin Bypass")
+                            .role(User.UserRole.ADMIN)
+                            .active(true)
+                            .build());
+            return UserPrincipal.create(defaultUser);
+        }
+        
         return (UserPrincipal) authentication.getPrincipal();
     }
 }

@@ -1,14 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { app } from '@microsoft/teams-js';
 import { AuthProvider } from './contexts/AuthContext';
 import App from './App';
 import './index.css';
 
-// Initialiser le SDK Teams
-app.initialize().then(() => {
-  console.log('Teams SDK initialized');
-  
+// Mode standalone : si on n'est pas dans un iframe (donc pas dans Teams), on ne tente pas d'initialiser le SDK
+const isStandalone = !window.parent || window.parent === window;
+
+const renderApp = () => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <AuthProvider>
@@ -16,16 +15,23 @@ app.initialize().then(() => {
       </AuthProvider>
     </React.StrictMode>,
   );
-}).catch((error) => {
-  console.error('Failed to initialize Teams SDK:', error);
-  
-  // Fallback pour le développement hors Teams
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </React.StrictMode>,
-  );
-});
+};
+
+if (isStandalone) {
+  // En dehors de Teams (navigateur normal)
+  renderApp();
+} else {
+  // Dans Teams, on initialise le SDK
+  import('@microsoft/teams-js').then(({ app }) => {
+    app.initialize()
+      .then(() => {
+        console.log('Teams SDK initialized');
+        renderApp();
+      })
+      .catch((error) => {
+        console.error('Failed to initialize Teams SDK:', error);
+        renderApp(); // fallback
+      });
+  });
+}
 
