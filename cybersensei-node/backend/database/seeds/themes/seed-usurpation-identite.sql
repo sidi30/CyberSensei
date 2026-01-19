@@ -33,3 +33,5 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
   "courseIntro":"Compte Teams compromis.",
   "questions":[{"id":"ui_a_04","text":"Un collègue envoie massivement des liens, nie les avoir envoyés.","options":["Bug","Compte compromis, j''alerte IT","Je clique"],"correctAnswer":1,"feedbackCorrect":"Signale rapidement pour bloquer la propagation.","feedbackIncorrect":"Un compte compromis doit être bloqué.","keyTakeaway":"Signale immédiatement un compte suspect."}] }',true);
 
+
+

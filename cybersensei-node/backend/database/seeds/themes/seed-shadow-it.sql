@@ -33,3 +33,5 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
   "courseIntro":"Audits et logs.",
   "questions":[{"id":"sh_a_04","text":"Outil perso non loggé utilisé pour données pro.","options":["OK","Problème de traçabilité","Sans effet"],"correctAnswer":1,"feedbackCorrect":"Pas de logs = pas d''audit ni de détection.","feedbackIncorrect":"Utilise outils avec logging et audit.","keyTakeaway":"Outil sans logs = interdit pour données pro."}] }',true);
 
+
+

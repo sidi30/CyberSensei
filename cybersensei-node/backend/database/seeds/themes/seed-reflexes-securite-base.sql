@@ -33,3 +33,5 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
   "courseIntro":"Envoi par email.",
   "questions":[{"id":"rb_a_03","text":"Envoi de doc sensible sans chiffrement.","options":["OK","À éviter, utiliser canal sécurisé","Sans effet"],"correctAnswer":1,"feedbackCorrect":"Utilise partage sécurisé/chiffrement.","feedbackIncorrect":"Email clair = fuite potentielle.","keyTakeaway":"Données sensibles via canal sécurisé/chiffré."}] }',true);
 
+
+

@@ -33,3 +33,5 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
   "courseIntro":"Sauvegardes chiffrées.",
   "questions":[{"id":"pd_a_04","text":"Backups sensibles non chiffrés.","options":["OK","À chiffrer","Sans effet"],"correctAnswer":1,"feedbackCorrect":"Backups doivent être chiffrés et isolés.","feedbackIncorrect":"Backups non chiffrés = fuite potentielle.","keyTakeaway":"Chiffre et isole les sauvegardes sensibles."}] }',true);
 
+
+

@@ -33,3 +33,5 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
   "courseIntro":"Confidentialité orale.",
   "questions":[{"id":"tm_a_04","text":"Call client sensible dans un lieu public.","options":["OK","Chercher un endroit discret","Pas grave"],"correctAnswer":1,"feedbackCorrect":"Protège les conversations confidentielles.","feedbackIncorrect":"Évite les lieux publics pour les discussions sensibles.","keyTakeaway":"Conversations sensibles = lieu discret et casque."}] }',true);
 
+
+

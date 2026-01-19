@@ -33,3 +33,5 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
   "courseIntro":"Langage juridique agressif.",
   "questions":[{"id":"ff_a_04","text":"« Mise en demeure de payer » inattendue.","options":["Je paie","Je vérifie la légitimité","Je réponds"],"correctAnswer":1,"feedbackCorrect":"Vérifie avec juridique/finance.","feedbackIncorrect":"Ne paie pas sous menace sans vérifier.","keyTakeaway":"Lettre agressive inattendue = vérification juridique."}] }',true);
 
+
+

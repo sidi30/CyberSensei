@@ -138,3 +138,5 @@ Si vous voulez quand même essayer en ligne de commande :
 
 **C'est parti ! 🚀 Tu vas avoir plus de 160 exercices de cybersécurité conversationnels !**
 
+
+

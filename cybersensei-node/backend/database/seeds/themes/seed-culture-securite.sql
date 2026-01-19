@@ -33,3 +33,5 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
   "courseIntro":"Responsabilité partagée.",
   "questions":[{"id":"cs_a_04","text":"« La sécurité c''est le job de l''IT ».","options":["Vrai","Faux, c''est collectif","Je ne sais pas"],"correctAnswer":1,"feedbackCorrect":"Chaque employé est un maillon.","feedbackIncorrect":"La sécurité est l''affaire de tous.","keyTakeaway":"Sécurité = responsabilité collective."}] }',true);
 
+
+

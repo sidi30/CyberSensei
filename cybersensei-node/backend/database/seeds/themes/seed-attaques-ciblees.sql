@@ -33,3 +33,5 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
   "courseIntro":"Chaînes d''approbation falsifiées.",
   "questions":[{"id":"ac_a_04","text":"Mail inclut faux « approuvé par » d''un directeur.","options":["Je fais confiance","Je valide avec le directeur","Je clique"],"correctAnswer":1,"feedbackCorrect":"Valide l''approbation auprès de la personne réelle.","feedbackIncorrect":"Les mentions d''approbation peuvent être falsifiées.","keyTakeaway":"Approbation par écrit ≠ vérifiée, appelle la personne."}] }',true);
 
+
+

@@ -33,3 +33,5 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
   "courseIntro":"Envoi massif de PJ.",
   "questions":[{"id":"pj_a_04","text":"Plusieurs PJ étranges reçues en même temps.","options":["J''ouvre une","Je signale IT","Je télécharge tout"],"correctAnswer":1,"feedbackCorrect":"Signale pour bloquer la campagne.","feedbackIncorrect":"Ne teste pas, signale.","keyTakeaway":"Campagne suspecte = signaler immédiatement."}] }',true);
 
+
+
