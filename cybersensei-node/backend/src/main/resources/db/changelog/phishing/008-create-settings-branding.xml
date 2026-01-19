@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="phishing-008-create-settings-branding" author="cybersensei">
+        <comment>Create settings_branding table for company branding</comment>
+        
+        <createTable tableName="settings_branding">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="company_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="logo_url" type="VARCHAR(500)"/>
+            <column name="default_sender_name" type="VARCHAR(255)"/>
+            <column name="default_sender_email" type="VARCHAR(255)"/>
+            <column name="primary_color" type="VARCHAR(7)"/>
+            <column name="secondary_color" type="VARCHAR(7)"/>
+            <column name="footer_text" type="TEXT"/>
+            <column name="privacy_policy_url" type="VARCHAR(500)"/>
+            <column name="support_email" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
+

@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="phishing-010-seed-data" author="cybersensei" context="init">
+        <comment>Seed initial phishing templates and branding</comment>
+        
+        <!-- Template 1: IT Password Reset -->
+        <insert tableName="phishing_templates">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440001"/>
+            <column name="name" value="IT Password Reset Urgente"/>
+            <column name="theme" value="PASSWORD_RESET"/>
+            <column name="difficulty" value="1"/>
+            <column name="subject" value="[URGENT] Votre mot de passe expire dans 24h - Action requise"/>
+            <column name="html_body" value="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;meta charset='UTF-8'&gt;&lt;/head&gt;
+&lt;body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'&gt;
+&lt;div style='background: #0078D4; padding: 20px; text-align: center;'&gt;
+&lt;img src='{{logoUrl}}' alt='{{companyName}}' style='max-height: 50px;'&gt;
+&lt;/div&gt;
+&lt;div style='padding: 30px; background: #f5f5f5;'&gt;
+&lt;h2 style='color: #333;'&gt;Action urgente requise&lt;/h2&gt;
+&lt;p&gt;Bonjour {{firstName}},&lt;/p&gt;
+&lt;p&gt;Notre système a détecté que votre mot de passe expire dans &lt;strong&gt;24 heures&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Pour éviter toute interruption de service, veuillez réinitialiser votre mot de passe immédiatement.&lt;/p&gt;
+&lt;div style='text-align: center; margin: 30px 0;'&gt;
+&lt;a href='{{link:reset}}' style='background: #0078D4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;'&gt;Réinitialiser mon mot de passe&lt;/a&gt;
+&lt;/div&gt;
+&lt;p style='color: #666; font-size: 12px;'&gt;Ce lien expire dans 24 heures.&lt;/p&gt;
+&lt;p&gt;Cordialement,&lt;br&gt;L'équipe IT - {{companyName}}&lt;/p&gt;
+&lt;/div&gt;
+&lt;div style='padding: 15px; text-align: center; font-size: 11px; color: #999;'&gt;
+&lt;p&gt;Ce message a été envoyé automatiquement. Ne pas répondre.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;"/>
+            <column name="text_body" value="Bonjour {{firstName}},
+
+Notre système a détecté que votre mot de passe expire dans 24 heures.
+
+Pour éviter toute interruption de service, veuillez réinitialiser votre mot de passe en cliquant sur le lien suivant:
+{{link:reset}}
+
+Ce lien expire dans 24 heures.
+
+Cordialement,
+L'équipe IT - {{companyName}}"/>
+            <column name="link_definitions" value='[{"linkId": "reset", "label": "Réinitialiser mot de passe", "type": "primary"}]'/>
+            <column name="landing_page_html" value="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;meta charset='UTF-8'&gt;&lt;title&gt;Formation Sécurité&lt;/title&gt;
+&lt;style&gt;
+body { font-family: Arial, sans-serif; max-width: 700px; margin: 50px auto; padding: 20px; }
+.alert { background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+.success { background: #d4edda; border: 1px solid #28a745; padding: 20px; border-radius: 8px; }
+h1 { color: #0078D4; }
+.tips { background: #e7f3ff; padding: 20px; border-radius: 8px; margin-top: 20px; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class='alert'&gt;
+&lt;h1&gt;⚠️ Ceci était un exercice de sensibilisation&lt;/h1&gt;
+&lt;p&gt;Vous avez cliqué sur un lien dans un email de simulation de phishing.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class='success'&gt;
+&lt;h2&gt;✅ Bonne nouvelle: c'était un test!&lt;/h2&gt;
+&lt;p&gt;Aucune donnée n'a été compromise. Cet exercice fait partie de notre programme de sensibilisation à la cybersécurité.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class='tips'&gt;
+&lt;h3&gt;💡 Comment reconnaître un email de phishing:&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Urgence artificielle:&lt;/strong&gt; Les attaquants créent un sentiment d'urgence pour vous pousser à agir vite.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Vérifiez l'expéditeur:&lt;/strong&gt; L'adresse email correspond-elle vraiment à votre entreprise?&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Survolez les liens:&lt;/strong&gt; Avant de cliquer, vérifiez où le lien mène réellement.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;En cas de doute:&lt;/strong&gt; Contactez directement le service IT par téléphone.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;p style='margin-top: 30px; color: #666;'&gt;Merci de votre participation à notre programme de sécurité. Ensemble, renforçons notre vigilance!&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        
+        <!-- Template 2: Fake Invoice -->
+        <insert tableName="phishing_templates">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440002"/>
+            <column name="name" value="Facture Fournisseur Urgent"/>
+            <column name="theme" value="INVOICE_FRAUD"/>
+            <column name="difficulty" value="2"/>
+            <column name="subject" value="Facture #INV-2024-3847 - Paiement en retard"/>
+            <column name="html_body" value="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;meta charset='UTF-8'&gt;&lt;/head&gt;
+&lt;body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'&gt;
+&lt;div style='border-bottom: 3px solid #dc3545; padding: 20px;'&gt;
+&lt;h2 style='color: #dc3545; margin: 0;'&gt;⚠️ RAPPEL: Facture impayée&lt;/h2&gt;
+&lt;/div&gt;
+&lt;div style='padding: 30px;'&gt;
+&lt;p&gt;Bonjour {{firstName}},&lt;/p&gt;
+&lt;p&gt;Nous n'avons toujours pas reçu le paiement pour la facture suivante:&lt;/p&gt;
+&lt;table style='width: 100%; border-collapse: collapse; margin: 20px 0;'&gt;
+&lt;tr style='background: #f8f9fa;'&gt;&lt;td style='padding: 10px; border: 1px solid #ddd;'&gt;&lt;strong&gt;Numéro de facture:&lt;/strong&gt;&lt;/td&gt;&lt;td style='padding: 10px; border: 1px solid #ddd;'&gt;INV-2024-3847&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style='padding: 10px; border: 1px solid #ddd;'&gt;&lt;strong&gt;Montant:&lt;/strong&gt;&lt;/td&gt;&lt;td style='padding: 10px; border: 1px solid #ddd;'&gt;4 750,00 €&lt;/td&gt;&lt;/tr&gt;
+&lt;tr style='background: #f8f9fa;'&gt;&lt;td style='padding: 10px; border: 1px solid #ddd;'&gt;&lt;strong&gt;Date d'échéance:&lt;/strong&gt;&lt;/td&gt;&lt;td style='padding: 10px; border: 1px solid #ddd; color: #dc3545;'&gt;&lt;strong&gt;Dépassée de 15 jours&lt;/strong&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;p&gt;Pour éviter des frais de retard supplémentaires, veuillez télécharger et régler cette facture immédiatement.&lt;/p&gt;
+&lt;div style='text-align: center; margin: 30px 0;'&gt;
+&lt;a href='{{link:download}}' style='background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px;'&gt;📄 Télécharger la facture&lt;/a&gt;
+&lt;/div&gt;
+&lt;p style='font-size: 12px; color: #666;'&gt;En cas de question, contactez notre service comptabilité.&lt;/p&gt;
+&lt;p&gt;Cordialement,&lt;br&gt;Service Comptabilité Fournisseurs&lt;/p&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;"/>
+            <column name="text_body" value="RAPPEL: Facture impayée
+
+Bonjour {{firstName}},
+
+Nous n'avons toujours pas reçu le paiement pour la facture INV-2024-3847.
+Montant: 4 750,00 €
+Échéance: Dépassée de 15 jours
+
+Téléchargez la facture: {{link:download}}
+
+Cordialement,
+Service Comptabilité Fournisseurs"/>
+            <column name="link_definitions" value='[{"linkId": "download", "label": "Télécharger facture", "type": "danger"}]'/>
+            <column name="landing_page_html" value="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;meta charset='UTF-8'&gt;&lt;title&gt;Formation Sécurité&lt;/title&gt;
+&lt;style&gt;
+body { font-family: Arial, sans-serif; max-width: 700px; margin: 50px auto; padding: 20px; }
+.alert { background: #f8d7da; border: 1px solid #f5c6cb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+.info { background: #d1ecf1; border: 1px solid #bee5eb; padding: 20px; border-radius: 8px; }
+h1 { color: #721c24; }
+.warning-list { background: #fff3cd; padding: 20px; border-radius: 8px; margin-top: 20px; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class='alert'&gt;
+&lt;h1&gt;🚨 Attention: Simulation de fraude à la facture&lt;/h1&gt;
+&lt;p&gt;Vous venez de cliquer sur un lien de téléchargement dans un email frauduleux simulé.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class='info'&gt;
+&lt;h2&gt;📚 Ce que vous devez savoir&lt;/h2&gt;
+&lt;p&gt;La fraude à la facture est l'une des arnaques les plus courantes en entreprise. Les attaquants se font passer pour des fournisseurs légitimes.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class='warning-list'&gt;
+&lt;h3&gt;🛡️ Réflexes à adopter:&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Vérifiez toujours l'adresse email de l'expéditeur avec soin&lt;/li&gt;
+&lt;li&gt;Ne téléchargez jamais de pièce jointe inattendue&lt;/li&gt;
+&lt;li&gt;Contactez le fournisseur par un canal officiel (pas via l'email reçu)&lt;/li&gt;
+&lt;li&gt;Signalez tout email suspect au service IT&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        
+        <!-- Template 3: Bank/CEO Fraud -->
+        <insert tableName="phishing_templates">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440003"/>
+            <column name="name" value="Arnaque au Président - Virement Urgent"/>
+            <column name="theme" value="CEO_FRAUD"/>
+            <column name="difficulty" value="3"/>
+            <column name="subject" value="Re: Virement confidentiel - URGENT"/>
+            <column name="html_body" value="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;meta charset='UTF-8'&gt;&lt;/head&gt;
+&lt;body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'&gt;
+&lt;div style='padding: 20px;'&gt;
+&lt;p&gt;{{firstName}},&lt;/p&gt;
+&lt;p&gt;Je te contacte de manière confidentielle. J'ai besoin que tu effectues un virement urgent pour finaliser une acquisition stratégique.&lt;/p&gt;
+&lt;p&gt;C'est extrêmement sensible, ne parle de ça à personne d'autre dans l'entreprise pour l'instant.&lt;/p&gt;
+&lt;p&gt;Voici les informations:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Montant:&lt;/strong&gt; 125 000 €&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Bénéficiaire:&lt;/strong&gt; Strategic Partners Ltd&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Délai:&lt;/strong&gt; Aujourd'hui avant 17h&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Clique ici pour accéder aux coordonnées bancaires sécurisées: &lt;a href='{{link:payment}}'&gt;Accéder aux instructions&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Je suis en réunion toute la journée, réponds-moi uniquement par email.&lt;/p&gt;
+&lt;p&gt;Merci pour ta discrétion et ta réactivité.&lt;/p&gt;
+&lt;p&gt;{{senderName}}&lt;br&gt;Directeur Général&lt;/p&gt;
+&lt;p style='font-size: 11px; color: #666;'&gt;&lt;em&gt;Envoyé depuis mon iPhone&lt;/em&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;"/>
+            <column name="text_body" value="{{firstName}},
+
+Je te contacte de manière confidentielle. J'ai besoin que tu effectues un virement urgent pour finaliser une acquisition stratégique.
+
+C'est extrêmement sensible, ne parle de ça à personne d'autre.
+
+Montant: 125 000 €
+Bénéficiaire: Strategic Partners Ltd
+Délai: Aujourd'hui avant 17h
+
+Instructions: {{link:payment}}
+
+Je suis en réunion, réponds-moi uniquement par email.
+
+{{senderName}}
+Directeur Général"/>
+            <column name="link_definitions" value='[{"linkId": "payment", "label": "Instructions de paiement", "type": "primary"}]'/>
+            <column name="landing_page_html" value="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;meta charset='UTF-8'&gt;&lt;title&gt;Formation Sécurité - Arnaque au Président&lt;/title&gt;
+&lt;style&gt;
+body { font-family: Arial, sans-serif; max-width: 700px; margin: 50px auto; padding: 20px; background: #1a1a2e; color: #eee; }
+.critical { background: #721c24; padding: 25px; border-radius: 8px; margin-bottom: 20px; }
+.info { background: #155724; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+h1 { margin: 0 0 15px 0; }
+.techniques { background: #2d2d44; padding: 20px; border-radius: 8px; }
+ul { line-height: 2; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class='critical'&gt;
+&lt;h1&gt;🎭 ARNAQUE AU PRÉSIDENT DÉTECTÉE&lt;/h1&gt;
+&lt;p&gt;Vous venez de cliquer sur un lien d'une simulation d'arnaque au président (CEO Fraud).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Ce type de fraude cause des millions d'euros de pertes chaque année.&lt;/strong&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class='info'&gt;
+&lt;h2&gt;✅ Heureusement, c'était un exercice!&lt;/h2&gt;
+&lt;p&gt;Aucun virement n'a été effectué. Apprenons ensemble à détecter ces arnaques sophistiquées.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class='techniques'&gt;
+&lt;h3&gt;🔍 Techniques utilisées par les fraudeurs:&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Usurpation d'identité:&lt;/strong&gt; Se faire passer pour un dirigeant&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Urgence extrême:&lt;/strong&gt; Imposer un délai très court&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Confidentialité:&lt;/strong&gt; Demander le secret pour éviter les vérifications&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Indisponibilité:&lt;/strong&gt; Prétendre être injoignable par téléphone&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Flatterie:&lt;/strong&gt; Valoriser la cible pour gagner sa confiance&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;🛡️ Réflexes de protection:&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;TOUJOURS vérifier par téléphone avec un numéro connu&lt;/li&gt;
+&lt;li&gt;Respecter les procédures de validation des paiements&lt;/li&gt;
+&lt;li&gt;Ne jamais agir dans la précipitation&lt;/li&gt;
+&lt;li&gt;Signaler immédiatement au service fraude/IT&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        
+        <!-- Default Branding -->
+        <insert tableName="settings_branding">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="company_name" value="{{COMPANY_NAME}}"/>
+            <column name="logo_url" value="{{LOGO_URL}}"/>
+            <column name="default_sender_name" value="IT Security"/>
+            <column name="default_sender_email" value="noreply@company.com"/>
+            <column name="primary_color" value="#0078D4"/>
+            <column name="secondary_color" value="#28a745"/>
+            <column name="footer_text" value="Ce message fait partie du programme de sensibilisation à la cybersécurité de votre entreprise."/>
+        </insert>
+        
+        <!-- Example Campaign (DRAFT) -->
+        <insert tableName="phishing_campaigns">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440200"/>
+            <column name="name" value="Campagne Test - Réinitialisation Mot de Passe"/>
+            <column name="description" value="Campagne de test pour vérifier le bon fonctionnement du système de simulation de phishing."/>
+            <column name="theme" value="PASSWORD_RESET"/>
+            <column name="difficulty" value="1"/>
+            <column name="status" value="DRAFT"/>
+            <column name="template_id" value="550e8400-e29b-41d4-a716-446655440001"/>
+            <column name="schedule_frequency" value="ONCE"/>
+            <column name="schedule_window_start" value="09:00:00"/>
+            <column name="schedule_window_end" value="11:30:00"/>
+            <column name="timezone" value="Europe/Paris"/>
+            <column name="targeting_json" value='{"departments": [], "roles": [], "include_users": [], "exclude_users": []}'/>
+            <column name="sampling_percent" value="20"/>
+            <column name="template_strategy" value="FIXED"/>
+            <column name="privacy_mode" value="ANONYMIZED"/>
+            <column name="retention_days" value="90"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
+

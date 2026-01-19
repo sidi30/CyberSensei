@@ -14,7 +14,7 @@ export default defineConfig({
   },
   define: {
     'process.env.BACKEND_BASE_URL': JSON.stringify(
-      process.env.BACKEND_BASE_URL || 'http://localhost:8080'
+      process.env.BACKEND_BASE_URL || 'http://localhost:10000'
     ),
   },
 });

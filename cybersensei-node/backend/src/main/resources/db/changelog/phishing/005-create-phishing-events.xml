@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="phishing-005-create-phishing-events" author="cybersensei">
+        <comment>Create phishing_events table for tracking user interactions</comment>
+        
+        <createTable tableName="phishing_events">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="campaign_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_event_campaign" 
+                    references="phishing_campaigns(id)" deleteCascade="true"/>
+            </column>
+            <column name="campaign_run_id" type="UUID">
+                <constraints nullable="true" foreignKeyName="fk_event_run" 
+                    references="phishing_campaign_runs(id)" deleteCascade="true"/>
+            </column>
+            <column name="recipient_id" type="UUID">
+                <constraints nullable="true" foreignKeyName="fk_event_recipient" 
+                    references="phishing_recipients(id)" deleteCascade="true"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="token" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="link_id" type="VARCHAR(100)"/>
+            <column name="event_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="event_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ip_address" type="VARCHAR(45)"/>
+            <column name="user_agent" type="TEXT"/>
+            <column name="metadata" type="JSONB" defaultValue="{}"/>
+        </createTable>
+
+        <createIndex tableName="phishing_events" indexName="idx_events_token">
+            <column name="token"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_events" indexName="idx_events_campaign_event">
+            <column name="campaign_id"/>
+            <column name="event_at"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_events" indexName="idx_events_type">
+            <column name="event_type"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_events" indexName="idx_events_user">
+            <column name="user_id"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_events" indexName="idx_events_run">
+            <column name="campaign_run_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
+

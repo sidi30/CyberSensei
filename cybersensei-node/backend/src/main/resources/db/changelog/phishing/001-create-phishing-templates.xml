@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="phishing-001-create-phishing-templates" author="cybersensei">
+        <comment>Create phishing_templates table for email templates</comment>
+        
+        <createTable tableName="phishing_templates">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="theme" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="difficulty" type="INTEGER" defaultValue="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subject" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="html_body" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="text_body" type="TEXT"/>
+            <column name="link_definitions" type="JSONB" defaultValue="[]">
+                <constraints nullable="false"/>
+            </column>
+            <column name="landing_page_html" type="TEXT"/>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="phishing_templates" indexName="idx_phishing_templates_theme">
+            <column name="theme"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_templates" indexName="idx_phishing_templates_difficulty">
+            <column name="difficulty"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_templates" indexName="idx_phishing_templates_active">
+            <column name="is_active"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
+

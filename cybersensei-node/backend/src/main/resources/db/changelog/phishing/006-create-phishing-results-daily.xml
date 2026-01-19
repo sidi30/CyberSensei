@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="phishing-006-create-phishing-results-daily" author="cybersensei">
+        <comment>Create phishing_results_daily table for aggregated reporting</comment>
+        
+        <createTable tableName="phishing_results_daily">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="campaign_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_results_campaign" 
+                    references="phishing_campaigns(id)" deleteCascade="true"/>
+            </column>
+            <column name="day" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="department" type="VARCHAR(100)"/>
+            <column name="sent_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="delivered_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="opened_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="clicked_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reported_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_submitted_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="click_rate" type="FLOAT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="report_rate" type="FLOAT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="risk_score" type="FLOAT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="avg_time_to_click_seconds" type="INTEGER"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="phishing_results_daily" indexName="idx_results_campaign_day">
+            <column name="campaign_id"/>
+            <column name="day"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_results_daily" indexName="idx_results_day">
+            <column name="day"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_results_daily" indexName="idx_results_department">
+            <column name="department"/>
+        </createIndex>
+        
+        <addUniqueConstraint tableName="phishing_results_daily" 
+            columnNames="campaign_id, day, department" 
+            constraintName="uk_results_campaign_day_dept"/>
+    </changeSet>
+
+</databaseChangeLog>
+

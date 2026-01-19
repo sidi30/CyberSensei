@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Phishing & Social Engineering Simulation Module -->
+    <!-- CyberSensei Node - Enterprise Security Awareness Training -->
+    
+    <include file="db/changelog/phishing/001-create-phishing-templates.xml"/>
+    <include file="db/changelog/phishing/002-create-phishing-campaigns.xml"/>
+    <include file="db/changelog/phishing/003-create-phishing-campaign-runs.xml"/>
+    <include file="db/changelog/phishing/004-create-phishing-recipients.xml"/>
+    <include file="db/changelog/phishing/005-create-phishing-events.xml"/>
+    <include file="db/changelog/phishing/006-create-phishing-results-daily.xml"/>
+    <include file="db/changelog/phishing/007-create-settings-smtp.xml"/>
+    <include file="db/changelog/phishing/008-create-settings-branding.xml"/>
+    <include file="db/changelog/phishing/009-create-audit-logs.xml"/>
+    <include file="db/changelog/phishing/010-seed-phishing-data.xml"/>
+
+</databaseChangeLog>
+

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="phishing-002-create-phishing-campaigns" author="cybersensei">
+        <comment>Create phishing_campaigns table for campaign management</comment>
+        
+        <createTable tableName="phishing_campaigns">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="theme" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="difficulty" type="INTEGER" defaultValue="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(50)" defaultValue="DRAFT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="template_id" type="UUID">
+                <constraints nullable="true" foreignKeyName="fk_campaign_template" 
+                    references="phishing_templates(id)"/>
+            </column>
+            <column name="schedule_frequency" type="VARCHAR(50)" defaultValue="ONCE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="schedule_start_date" type="DATE"/>
+            <column name="schedule_end_date" type="DATE"/>
+            <column name="schedule_window_start" type="TIME"/>
+            <column name="schedule_window_end" type="TIME"/>
+            <column name="timezone" type="VARCHAR(100)" defaultValue="Europe/Paris">
+                <constraints nullable="false"/>
+            </column>
+            <column name="targeting_json" type="JSONB" defaultValue="{}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sampling_percent" type="INTEGER" defaultValue="100">
+                <constraints nullable="false"/>
+            </column>
+            <column name="template_strategy" type="VARCHAR(50)" defaultValue="FIXED">
+                <constraints nullable="false"/>
+            </column>
+            <column name="privacy_mode" type="VARCHAR(50)" defaultValue="ANONYMIZED">
+                <constraints nullable="false"/>
+            </column>
+            <column name="retention_days" type="INTEGER" defaultValue="90">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="UUID"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="phishing_campaigns" indexName="idx_phishing_campaigns_status">
+            <column name="status"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_campaigns" indexName="idx_phishing_campaigns_theme">
+            <column name="theme"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_campaigns" indexName="idx_phishing_campaigns_frequency">
+            <column name="schedule_frequency"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
+

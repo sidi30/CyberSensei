@@ -1,0 +1,48 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CyberSensei Local Infrastructure - Terraform Variables
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Copy to terraform.tfvars and adjust as needed
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Linux/Mac
+docker_host = "unix:///var/run/docker.sock"
+
+# Windows (uncomment if needed)
+# docker_host = "npipe:////.//pipe//docker_engine"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature Toggles
+# ─────────────────────────────────────────────────────────────────────────────
+
+deploy_central    = true
+deploy_node       = true
+enable_monitoring = true
+enable_mailhog    = true
+use_remote_images = false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Network Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+http_port     = 8088
+https_port    = 8443
+domain_suffix = "local"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Image Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+# registry  = "ghcr.io/cybersensei"
+# image_tag = "latest"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Credentials (override defaults if needed)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# central_postgres_password = "your_secure_password"
+# node_postgres_password    = "your_secure_password"
+# grafana_admin_password    = "your_secure_password"
+

@@ -1,0 +1,34 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+!local.example.env
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Generated configs
+modules/reverse-proxy/traefik.yml
+modules/monitoring/prometheus.yml
+modules/monitoring/alertmanager.yml
+modules/monitoring/grafana/
+
+# Local env
+env/local.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+

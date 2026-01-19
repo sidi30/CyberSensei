@@ -67,3 +67,5 @@ INSERT INTO exercise_images (filename, display_name, description, category, imag
 -- Vérification
 SELECT category, COUNT(*) as nb_images FROM exercise_images GROUP BY category ORDER BY category;
 
+
+

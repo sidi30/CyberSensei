@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="phishing-003-create-phishing-campaign-runs" author="cybersensei">
+        <comment>Create phishing_campaign_runs table for execution tracking</comment>
+        
+        <createTable tableName="phishing_campaign_runs">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="campaign_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_run_campaign" 
+                    references="phishing_campaigns(id)" deleteCascade="true"/>
+            </column>
+            <column name="run_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="completed_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="status" type="VARCHAR(50)" defaultValue="STARTED">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sent_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="error_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="error_details" type="JSONB"/>
+        </createTable>
+
+        <createIndex tableName="phishing_campaign_runs" indexName="idx_campaign_runs_campaign">
+            <column name="campaign_id"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_campaign_runs" indexName="idx_campaign_runs_status">
+            <column name="status"/>
+        </createIndex>
+        
+        <createIndex tableName="phishing_campaign_runs" indexName="idx_campaign_runs_run_at">
+            <column name="run_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
+

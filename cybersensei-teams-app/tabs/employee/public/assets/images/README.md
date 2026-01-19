@@ -80,3 +80,5 @@ Ces images seront remplacées progressivement par des exemples réels.
 
 **Besoin d'aide pour créer des images ?** Contactez l'équipe de design ou consultez le guide de création d'images.
 
+
+

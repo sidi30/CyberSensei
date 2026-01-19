@@ -17,5 +17,8 @@
     <include file="db/changelog/changes/010-insert-sample-data.xml"/>
     <include file="db/changelog/changes/011-create-logs-table.xml"/>
 
+    <!-- Phishing Simulation Module (Enterprise) -->
+    <include file="db/changelog/phishing/db.changelog-phishing-master.xml"/>
+
 </databaseChangeLog>
 
