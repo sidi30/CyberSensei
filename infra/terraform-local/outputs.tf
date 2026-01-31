@@ -28,6 +28,12 @@ output "urls" {
     } : null
     
     mailhog = var.enable_mailhog ? "http://${local.mailhog_host}:${var.http_port}" : null
+    
+    teams = var.deploy_teams_app ? {
+      bot_api      = "http://${local.teams_bot_host}:${var.teams_bot_port}"
+      employee_tab = "http://${local.teams_tabs_host}:${var.teams_tabs_port}/tabs/employee/"
+      manager_tab  = "http://${local.teams_tabs_host}:${var.teams_tabs_port}/tabs/manager/"
+    } : null
   }
 }
 
@@ -47,6 +53,8 @@ output "hosts_entries" {
     127.0.0.1 ${local.prometheus_host}
     127.0.0.1 ${local.alertmanager_host}
     127.0.0.1 ${local.mailhog_host}
+    127.0.0.1 ${local.teams_bot_host}
+    127.0.0.1 ${local.teams_tabs_host}
   EOT
 }
 
@@ -71,8 +79,12 @@ output "quick_access" {
     ║    API:       http://api.node.local:${var.http_port}                                 ║
     ║                                                                          ║
     ║  MONITORING:                                                             ║
-    ║    Grafana:   http://grafana.local:${var.http_port}  (admin/${var.grafana_admin_password})           ║
+    ║    Grafana:   http://grafana.local:${var.http_port}  (admin/[see terraform.tfvars])     ║
     ║    Prometheus: http://prometheus.local:${var.http_port}                              ║
+    ║                                                                          ║
+    ║  TEAMS APP:                                                              ║
+    ║    Bot:       http://bot.local:${var.teams_bot_port}                                       ║
+    ║    Tabs:      http://tabs.local:${var.teams_tabs_port}                                      ║
     ║                                                                          ║
     ║  UTILITIES:                                                              ║
     ║    Mailhog:   http://mailhog.local:${var.http_port}                                  ║

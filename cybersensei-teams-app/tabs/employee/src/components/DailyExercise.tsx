@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApi } from '../hooks/useApi';
-import { Loader2, User, ShieldCheck, Send, Lightbulb, AlertTriangle, CheckCircle2, XCircle, BookOpen, ExternalLink, Play } from 'lucide-react';
+import { Loader2, User, ShieldCheck, Send, Lightbulb, CheckCircle2, BookOpen, Play } from 'lucide-react';
 import { 
   PedagogicalMedia, 
   AdviceBlock, 
@@ -188,10 +188,7 @@ export function DailyExercise() {
       const re = new RegExp(`\\b(${escapeRegExp(term)})\\b`, 'gi');
       return acc.replace(
         re,
-        `<span class="inline-block" title="${desc}">
-          <span class="underline decoration-dotted decoration-indigo-400">${term}</span>
-          <sup class="text-[10px] bg-indigo-100 text-indigo-700 font-semibold px-1 py-0.5 rounded-full border border-indigo-200 ml-0.5">?</sup>
-        </span>`
+        `<span class="inline-block cursor-help group relative" title="${desc}"><span class="underline decoration-dotted decoration-indigo-400">${term}</span><sup class="text-[10px] bg-indigo-100 text-indigo-700 font-semibold px-1 py-0.5 rounded-full border border-indigo-200 ml-0.5">?</sup></span>`
       );
     }, html);
   };

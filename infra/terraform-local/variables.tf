@@ -48,6 +48,12 @@ variable "enable_mailhog" {
   default     = true
 }
 
+variable "deploy_teams_app" {
+  description = "Deploy CyberSensei Teams App (Bot + Tabs)"
+  type        = bool
+  default     = true
+}
+
 variable "use_remote_images" {
   description = "Use remote images from registry (false = build locally)"
   type        = bool
@@ -193,3 +199,56 @@ variable "grafana_admin_password" {
   sensitive   = true
 }
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Teams App Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+variable "teams_bot_port" {
+  description = "Host port for Teams Bot"
+  type        = number
+  default     = 3978
+}
+
+variable "teams_tabs_port" {
+  description = "Host port for Teams Tabs"
+  type        = number
+  default     = 5175
+}
+
+variable "teams_bot_id" {
+  description = "Microsoft Bot ID"
+  type        = string
+  default     = ""
+}
+
+variable "teams_bot_password" {
+  description = "Microsoft Bot Password"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "teams_microsoft_app_id" {
+  description = "Microsoft App ID (Azure AD)"
+  type        = string
+  default     = ""
+}
+
+variable "teams_microsoft_app_password" {
+  description = "Microsoft App Password (Azure AD)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "teams_microsoft_app_tenant_id" {
+  description = "Microsoft Tenant ID (Azure AD)"
+  type        = string
+  default     = ""
+}
+
+variable "teams_backend_url" {
+  description = "Backend URL for Teams App (used when deploy_node is false)"
+  type        = string
+  default     = "http://localhost:8080"
+}

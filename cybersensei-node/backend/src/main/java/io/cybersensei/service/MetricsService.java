@@ -23,7 +23,6 @@ public class MetricsService {
 
     private final CompanyMetricsRepository metricsRepository;
     private final UserExerciseResultRepository resultRepository;
-    private final PhishingTrackerRepository trackerRepository;
     private final UserRepository userRepository;
     private final CompanyMetricsMapper metricsMapper;
 
@@ -38,12 +37,9 @@ public class MetricsService {
         Double avgQuizScore = resultRepository.findAverageScoreSince(lastWeek);
         if (avgQuizScore == null) avgQuizScore = 0.0;
 
-        // Calculate phishing click rate
-        Long totalTrackers = trackerRepository.count();
-        Long clickedTrackers = trackerRepository.findAll().stream()
-                .filter(t -> t.getClicked())
-                .count();
-        Double phishingClickRate = totalTrackers > 0 ? (clickedTrackers * 100.0 / totalTrackers) : 0.0;
+        // Phishing metrics are now handled by the dedicated Phishing module
+        // Using default placeholder until phishing module integration
+        Double phishingClickRate = 0.0;
 
         // Count active users
         Long activeUsers = userRepository.findAll().stream()
@@ -108,5 +104,3 @@ public class MetricsService {
         }
     }
 }
-
-

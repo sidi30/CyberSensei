@@ -1,0 +1,42 @@
+{
+  "$schema": "./deployment-config.schema.json",
+  "_comment": "Configuration de déploiement CyberSensei Teams - À personnaliser pour chaque client",
+  
+  "client": {
+    "name": "Nom du Client",
+    "environment": "production"
+  },
+  
+  "azure": {
+    "tenantId": "00000000-0000-0000-0000-000000000000",
+    "subscriptionId": "00000000-0000-0000-0000-000000000000",
+    "resourceGroup": "cybersensei-rg",
+    "location": "westeurope"
+  },
+  
+  "teamsApp": {
+    "microsoftAppId": "00000000-0000-0000-0000-000000000000",
+    "microsoftAppPassword": "your-app-password",
+    "botId": "00000000-0000-0000-0000-000000000000",
+    "botPassword": "your-bot-password",
+    "hostname": "myapp.azurewebsites.net"
+  },
+  
+  "backend": {
+    "url": "https://api.client.com",
+    "apiKey": ""
+  },
+  
+  "deployment": {
+    "type": "azure",
+    "_typeOptions": ["azure", "onprem", "hybrid"],
+    "skipBuild": false,
+    "skipIconCheck": false
+  },
+  
+  "features": {
+    "sso": true,
+    "aiService": true,
+    "monitoring": true
+  }
+}

@@ -1,0 +1,404 @@
+# =============================================================================
+# CyberSensei - Docker Compose Unifié
+# =============================================================================
+# Version unifiée et corrigée avec ports cohérents
+#
+# MODES D'UTILISATION :
+#   make start-minimal    # Database + Node Dashboard seulement
+#   make start-node       # Database + Node (Backend + Dashboard)
+#   make start-central    # Database + Central (Backend + Dashboard)
+#   make start-full       # Tout (Node + Central + Teams + AI + Monitoring)
+#   make stop            # Arrêter tous les services
+#
+# PORTS FIXES (plus de conflits) :
+#   5432  - PostgreSQL
+#   5050  - PgAdmin
+#   8080  - Node Backend
+#   3000  - Node Dashboard  
+#   3001  - Central Backend
+#   5173  - Central Dashboard
+#   8000  - Node AI
+#   5175  - Teams Bot
+#   5176  - Teams Tabs
+#   3002  - Website
+#   3300  - Grafana
+#   9090  - Prometheus
+# =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SERVICES
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ===========================================================================
+  # DATABASE - Base pour tout
+  # ===========================================================================
+  
+  postgres:
+    image: postgres:15-alpine
+    container_name: cybersensei-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cybersensei_db}
+      POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Europe/Paris
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybersensei} -d ${POSTGRES_DB:-cybersensei_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cybersensei-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cybersensei-pgadmin
+    restart: unless-stopped
+    profiles:
+      - tools
+      - node
+      - central
+      - full
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@cybersensei.io}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cybersensei-network
+
+  # ===========================================================================
+  # NODE - On-Premise Stack
+  # ===========================================================================
+  
+  node-backend:
+    build:
+      context: ./cybersensei-node/backend
+      dockerfile: Dockerfile
+    container_name: cybersensei-node-backend
+    restart: unless-stopped
+    profiles:
+      - node
+      - full
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-cybersensei_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-cybersensei}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      AI_SERVICE_URL: http://node-ai:${NODE_AI_PORT:-8000}
+      SERVER_PORT: 8080
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    ports:
+      - "${NODE_BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  node-dashboard:
+    build:
+      context: ./cybersensei-node/dashboard
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:${NODE_BACKEND_PORT:-8080}/api
+        VITE_BYPASS_AUTH: "true"
+    container_name: cybersensei-node-dashboard
+    restart: unless-stopped
+    profiles:
+      - minimal
+      - node
+      - full
+    ports:
+      - "${NODE_DASHBOARD_PORT:-3000}:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cybersensei-network
+
+  node-ai:
+    build:
+      context: ./cybersensei-node/ai
+      dockerfile: Dockerfile
+    container_name: cybersensei-node-ai
+    restart: unless-stopped
+    profiles:
+      - ai
+      - full
+    environment:
+      MODEL_PATH: /app/models/mistral-7b-instruct.Q4_K_M.gguf
+      LLAMA_HOST: 0.0.0.0
+      LLAMA_PORT: 8001
+      API_PORT: ${NODE_AI_PORT:-8000}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "${NODE_AI_PORT:-8000}:${NODE_AI_PORT:-8000}"
+    volumes:
+      - ai-models:/app/models
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${NODE_AI_PORT:-8000}/health || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+    networks:
+      - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+  # ===========================================================================
+  # CENTRAL - SaaS Stack  
+  # ===========================================================================
+
+  mongo:
+    image: mongo:6-jammy
+    container_name: cybersensei-mongo
+    restart: unless-stopped
+    profiles:
+      - central
+      - full
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-cybersensei}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-cybersensei123}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-cybersensei_central}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - cybersensei-network
+
+  central-backend:
+    build:
+      context: ./cybersensei-central/backend
+      dockerfile: Dockerfile
+    container_name: cybersensei-central-backend
+    restart: unless-stopped
+    profiles:
+      - central
+      - full
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cybersensei}:${POSTGRES_PASSWORD:-cybersensei123}@postgres:5432/${POSTGRES_DB:-cybersensei_db}
+      MONGODB_URL: mongodb://${MONGO_USER:-cybersensei}:${MONGO_PASSWORD:-cybersensei123}@mongo:27017/${MONGO_DATABASE:-cybersensei_central}
+      JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
+    ports:
+      - "${CENTRAL_BACKEND_PORT:-3001}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  central-dashboard:
+    build:
+      context: ./cybersensei-central/dashboard
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:${CENTRAL_BACKEND_PORT:-3001}/api
+    container_name: cybersensei-central-dashboard
+    restart: unless-stopped
+    profiles:
+      - central
+      - full
+    ports:
+      - "${CENTRAL_DASHBOARD_PORT:-5173}:80"
+    depends_on:
+      - central-backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cybersensei-network
+
+  # ===========================================================================
+  # TEAMS - Microsoft Teams Integration
+  # ===========================================================================
+  
+  teams-bot:
+    build:
+      context: ./cybersensei-teams-app/bot
+      dockerfile: Dockerfile
+    container_name: cybersensei-teams-bot
+    restart: unless-stopped
+    profiles:
+      - teams
+      - full
+    environment:
+      BOT_ID: ${TEAMS_BOT_ID}
+      BOT_PASSWORD: ${TEAMS_BOT_PASSWORD}
+      MICROSOFT_APP_ID: ${TEAMS_APP_ID}
+      MICROSOFT_APP_PASSWORD: ${TEAMS_APP_PASSWORD}
+      MICROSOFT_APP_TENANT_ID: ${TEAMS_APP_TENANT_ID}
+      BACKEND_URL: http://node-backend:8080
+      PORT: 5175
+    ports:
+      - "${TEAMS_BOT_PORT:-5175}:5175"
+    depends_on:
+      - node-backend
+    networks:
+      - cybersensei-network
+
+  teams-tabs:
+    build:
+      context: ./cybersensei-teams-app/tabs
+      dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_URL: http://localhost:${NODE_BACKEND_PORT:-8080}
+    container_name: cybersensei-teams-tabs
+    restart: unless-stopped
+    profiles:
+      - teams
+      - full
+    ports:
+      - "${TEAMS_TABS_PORT:-5176}:80"
+    depends_on:
+      - node-backend
+    networks:
+      - cybersensei-network
+
+  # ===========================================================================
+  # WEBSITE - Marketing Site
+  # ===========================================================================
+  
+  website:
+    build:
+      context: ./cybersensei-website
+      dockerfile: Dockerfile
+    container_name: cybersensei-website
+    restart: unless-stopped
+    profiles:
+      - website
+      - full
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "${WEBSITE_PORT:-3002}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - cybersensei-network
+
+  # ===========================================================================
+  # MONITORING - Observabilité
+  # ===========================================================================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cybersensei-prometheus
+    restart: unless-stopped
+    profiles:
+      - monitoring
+      - full
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - prometheus-data:/prometheus
+    networks:
+      - cybersensei-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cybersensei-grafana
+    restart: unless-stopped
+    profiles:
+      - monitoring
+      - full
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+    ports:
+      - "${GRAFANA_PORT:-3300}:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - cybersensei-network
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NETWORKS
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  cybersensei-network:
+    driver: bridge
+    name: cybersensei-network
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VOLUMES
+# ─────────────────────────────────────────────────────────────────────────────
+
+volumes:
+  postgres-data:
+    name: cybersensei-postgres-data
+  mongo-data:
+    name: cybersensei-mongo-data
+  pgadmin-data:
+    name: cybersensei-pgadmin-data
+  ai-models:
+    name: cybersensei-ai-models
+  prometheus-data:
+    name: cybersensei-prometheus-data
+  grafana-data:
+    name: cybersensei-grafana-data

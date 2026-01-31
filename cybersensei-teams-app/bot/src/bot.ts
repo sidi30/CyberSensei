@@ -17,6 +17,19 @@ import { createResultCard } from './cards/resultCard';
 import { createHelpCard } from './cards/helpCard';
 import { createStatusCard } from './cards/statusCard';
 
+/**
+ * Traduit les niveaux de difficulté en français
+ */
+function translateLevel(level: string): string {
+  const translations: Record<string, string> = {
+    'BEGINNER': '🌱 Débutant',
+    'INTERMEDIATE': '📚 Intermédiaire',
+    'ADVANCED': '🚀 Avancé',
+    'EXPERT': '🏆 Expert',
+  };
+  return translations[level] || level;
+}
+
 export class CyberSenseiBot extends ActivityHandler {
   constructor() {
     super();
@@ -206,31 +219,76 @@ Prêt à devenir un expert en cybersécurité ? 💪`;
       for (const key in data) {
         if (key.startsWith('question_')) {
           const questionId = key.replace('question_', '');
-          answers.push({
-            questionId,
-            answer: parseInt(data[key]),
-          });
+          const answerValue = data[key];
+          // Gérer le cas où la réponse est une chaîne ou un nombre
+          const answer = typeof answerValue === 'string' ? parseInt(answerValue, 10) : answerValue;
+          if (!isNaN(answer)) {
+            answers.push({ questionId, answer });
+          }
         }
       }
 
       if (answers.length === 0) {
-        await context.sendActivity('❌ Aucune réponse détectée. Veuillez réessayer.');
+        await context.sendActivity('❌ Aucune réponse détectée. Veuillez sélectionner une réponse pour chaque question.');
         return;
       }
 
-      // Soumettre au backend
-      const result = await backendService.submitExercise(quizId, { answers });
+      console.log(`[Bot] Submitting ${answers.length} answers for quiz ${quizId}`);
+
+      // Soumettre au backend (le scoring est fait côté serveur)
+      const result = await backendService.submitExercise(quizId, answers);
+
+      // Calculer les stats pour l'affichage
+      const score = result.score || 0;
+      const maxScore = result.maxScore || answers.length;
+      const correct = result.correct || Math.round(score);
+      const total = result.total || answers.length;
 
       // Créer la carte de résultat
       const resultCard = CardFactory.adaptiveCard(
-        createResultCard(result, state.lastQuizTitle || 'Quiz')
+        createResultCard(
+          {
+            score,
+            maxScore,
+            correct,
+            total,
+            feedback: result.feedback || 'Exercice terminé !',
+          },
+          state.lastQuizTitle || 'Quiz CyberSensei'
+        )
       );
       await context.sendActivity(MessageFactory.attachment(resultCard));
 
       // Sauvegarder le contexte pour les explications
       conversationState.set(conversationId, {
-        lastQuestionContext: `Quiz: ${state.lastQuizTitle}. Score: ${result.score}/${result.maxScore}. ${result.feedback}`,
+        lastQuestionContext: `Quiz: ${state.lastQuizTitle}. Score: ${score}/${maxScore}. ${result.feedback || ''}`,
+        lastExerciseId: quizId,
       });
+
+      // Enregistrer l'exercice dans l'historique de session
+      conversationState.addCompletedExercise(conversationId, {
+        exerciseId: quizId,
+        title: state.lastQuizTitle || 'Quiz',
+        score,
+        maxScore,
+        completedAt: new Date(),
+      });
+
+      // Afficher les stats de session
+      const sessionStats = conversationState.getSessionStats(conversationId);
+      if (sessionStats.count > 1) {
+        await context.sendActivity(
+          `📊 **Session en cours:** ${sessionStats.count} exercices | Score moyen: ${sessionStats.avgScore}%`
+        );
+      }
+
+      // Message d'encouragement personnalisé
+      const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+      if (percentage === 100) {
+        await context.sendActivity('🎯 Score parfait ! Tu peux taper "quiz" pour un nouvel exercice.');
+      } else if (percentage >= 70) {
+        await context.sendActivity('👏 Bien joué ! Continue avec un autre "quiz" pour t\'améliorer.');
+      }
     } catch (error) {
       console.error('[Bot] Error submitting quiz:', error);
       await context.sendActivity(
@@ -298,9 +356,32 @@ Tapez simplement votre question et je vous répondrai ! 😊`;
   ): Promise<void> {
     await context.sendActivity({ type: 'typing' });
 
+    const conversationId = context.activity.conversation.id;
+
     try {
-      const user = await backendService.getUser(userId);
-      
+      // Récupérer les infos utilisateur
+      let user;
+      try {
+        user = await backendService.getUser(userId);
+      } catch {
+        user = {
+          id: userId,
+          displayName: context.activity.from.name || 'Utilisateur',
+          role: 'USER' as const,
+        };
+      }
+
+      // Récupérer la progression depuis le backend
+      let progress;
+      try {
+        progress = await backendService.getUserProgress();
+      } catch (err) {
+        console.warn('[Bot] Could not load user progress:', err);
+      }
+
+      // Stats de session locale
+      const sessionStats = conversationState.getSessionStats(conversationId);
+
       let metrics;
       if (user.role === 'MANAGER' || user.role === 'ADMIN') {
         try {
@@ -310,8 +391,32 @@ Tapez simplement votre question et je vous répondrai ! 😊`;
         }
       }
 
-      const statusCard = CardFactory.adaptiveCard(createStatusCard(user, metrics));
-      await context.sendActivity(MessageFactory.attachment(statusCard));
+      // Construire un message de statut enrichi
+      let statusMessage = `📊 **Ton statut CyberSensei**\n\n`;
+
+      if (progress) {
+        statusMessage += `🎯 **Progression globale:**\n`;
+        statusMessage += `• Exercices complétés: ${progress.completedExercises}/${progress.totalExercises}\n`;
+        statusMessage += `• Progression: ${Math.round(progress.progressPercentage)}%\n`;
+        statusMessage += `• Score moyen: ${Math.round(progress.averageScore)}%\n`;
+        statusMessage += `• Niveau actuel: ${translateLevel(progress.currentLevel)}\n\n`;
+      }
+
+      if (sessionStats.count > 0) {
+        statusMessage += `📈 **Session actuelle:**\n`;
+        statusMessage += `• Exercices faits: ${sessionStats.count}\n`;
+        statusMessage += `• Score moyen session: ${sessionStats.avgScore}%\n\n`;
+      }
+
+      statusMessage += `💡 Tape "**quiz**" pour continuer ta formation !`;
+
+      await context.sendActivity(statusMessage);
+
+      // Afficher la carte de statut si disponible
+      if (user && (progress || metrics)) {
+        const statusCard = CardFactory.adaptiveCard(createStatusCard(user, metrics));
+        await context.sendActivity(MessageFactory.attachment(statusCard));
+      }
     } catch (error) {
       console.error('[Bot] Error loading status:', error);
       await context.sendActivity(

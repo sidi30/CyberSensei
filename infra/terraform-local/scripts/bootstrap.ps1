@@ -75,7 +75,7 @@ function Build-NodeDashboard {
 }
 
 function Build-NodeAI {
-    Write-Host "`n[5/5] Building Node AI Service..." -ForegroundColor Yellow
+    Write-Host "`n[5/7] Building Node AI Service..." -ForegroundColor Yellow
     
     $Path = "$ProjectRoot\cybersensei-node\ai"
     
@@ -117,6 +117,32 @@ CMD ["python", "/app.py"]
     }
 }
 
+function Build-TeamsBot {
+    Write-Host "`n[6/7] Building Teams Bot..." -ForegroundColor Yellow
+    
+    $Path = "$ProjectRoot\cybersensei-teams-app\bot"
+    
+    if (Test-Path $Path) {
+        docker build -t "${ImagePrefix}-teams-bot:${Tag}" -f "$Path\Dockerfile" $Path
+        Write-Host "✓ Teams Bot built successfully" -ForegroundColor Green
+    } else {
+        Write-Host "✗ Teams Bot not found at $Path" -ForegroundColor Red
+    }
+}
+
+function Build-TeamsTabs {
+    Write-Host "`n[7/7] Building Teams Tabs..." -ForegroundColor Yellow
+    
+    $Path = "$ProjectRoot\cybersensei-teams-app\tabs"
+    
+    if (Test-Path $Path) {
+        docker build -t "${ImagePrefix}-teams-tabs:${Tag}" -f "$Path\Dockerfile" $Path
+        Write-Host "✓ Teams Tabs built successfully" -ForegroundColor Green
+    } else {
+        Write-Host "✗ Teams Tabs not found at $Path" -ForegroundColor Red
+    }
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Pre-flight checks
 # ─────────────────────────────────────────────────────────────────────────────
@@ -146,6 +172,9 @@ if ($args.Count -gt 0) {
             "--node-backend"      { Build-NodeBackend }
             "--node-dashboard"    { Build-NodeDashboard }
             "--node-ai"           { Build-NodeAI }
+            "--teams-bot"         { Build-TeamsBot }
+            "--teams-tabs"        { Build-TeamsTabs }
+            "--teams"             { Build-TeamsBot; Build-TeamsTabs }
             "--help" {
                 Write-Host @"
 Usage: .\bootstrap.ps1 [OPTIONS]
@@ -156,6 +185,9 @@ Options:
   --node-backend       Build Node Backend only
   --node-dashboard     Build Node Dashboard only
   --node-ai            Build Node AI only
+  --teams-bot          Build Teams Bot only
+  --teams-tabs         Build Teams Tabs only
+  --teams              Build Teams Bot and Tabs
   --help               Show this help
 
 Without options, builds all images.
@@ -176,6 +208,8 @@ if ($BuildAll) {
     Build-NodeBackend
     Build-NodeDashboard
     Build-NodeAI
+    Build-TeamsBot
+    Build-TeamsTabs
 }
 
 Write-Host ""

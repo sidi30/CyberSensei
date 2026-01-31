@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="012-update-exercises-french" author="cybersensei">
+        
+        <!-- Supprimer les anciens exercices en anglais -->
+        <delete tableName="exercises">
+            <where>topic IN ('Phishing Recognition', 'Password Security')</where>
+        </delete>
+        
+        <!-- Exercice 1: Phishing - Format complet -->
+        <insert tableName="exercises">
+            <column name="topic" value="Reconnaissance du phishing"/>
+            <column name="type" value="QUIZ"/>
+            <column name="difficulty" value="BEGINNER"/>
+            <column name="payload_json"><![CDATA[{"courseIntro":"Le phishing est une technique de fraude visant a voler vos informations personnelles. Apprenez a reperer les signes suspects dans les emails.","questions":[{"id":"q1","text":"Quel est un signe courant de phishing ?","options":["Fautes de grammaire","Langage urgent","Liens suspects","Toutes ces reponses"],"correctAnswer":3},{"id":"q2","text":"Que devez-vous faire face a un email suspect ?","options":["Cliquer pour verifier","Le supprimer immediatement","Le signaler au service IT","Repondre pour demander des precisions"],"correctAnswer":2}]}]]></column>
+            <column name="active" valueBoolean="true"/>
+        </insert>
+
+        <!-- Exercice 2: Mots de passe -->
+        <insert tableName="exercises">
+            <column name="topic" value="Securite des mots de passe"/>
+            <column name="type" value="QUIZ"/>
+            <column name="difficulty" value="INTERMEDIATE"/>
+            <column name="payload_json"><![CDATA[{"courseIntro":"Un mot de passe fort est votre premiere ligne de defense contre les pirates. Decouvrez les bonnes pratiques pour proteger vos comptes.","questions":[{"id":"q1","text":"Quelle est la longueur minimale recommandee pour un mot de passe securise ?","options":["6 caracteres","8 caracteres","12 caracteres","16 caracteres"],"correctAnswer":2},{"id":"q2","text":"Quelle pratique est la plus securisee ?","options":["Utiliser le meme mot de passe partout","Noter ses mots de passe sur papier","Utiliser un gestionnaire de mots de passe","Changer de mot de passe tous les mois"],"correctAnswer":2}]}]]></column>
+            <column name="active" valueBoolean="true"/>
+        </insert>
+
+        <!-- Exercice 3: Ingenierie sociale -->
+        <insert tableName="exercises">
+            <column name="topic" value="Ingenierie sociale"/>
+            <column name="type" value="QUIZ"/>
+            <column name="difficulty" value="INTERMEDIATE"/>
+            <column name="payload_json"><![CDATA[{"courseIntro":"Les pirates utilisent des techniques psychologiques pour vous manipuler. Apprenez a reconnaitre ces attaques.","questions":[{"id":"q1","text":"Un collegue vous appelle pour demander votre mot de passe. Que faites-vous ?","options":["Je lui donne car je le connais","Je refuse et signale au service IT","Je demande de rappeler plus tard","Je lui envoie par email"],"correctAnswer":1},{"id":"q2","text":"Quel est un exemple classique d ingenierie sociale ?","options":["Un virus informatique","Un faux technicien au telephone","Une mise a jour Windows","Un antivirus"],"correctAnswer":1}]}]]></column>
+            <column name="active" valueBoolean="true"/>
+        </insert>
+
+        <!-- Exercice 4: Liens et telechargements -->
+        <insert tableName="exercises">
+            <column name="topic" value="Liens et telechargements suspects"/>
+            <column name="type" value="QUIZ"/>
+            <column name="difficulty" value="BEGINNER"/>
+            <column name="payload_json"><![CDATA[{"courseIntro":"Les liens malveillants sont partout. Apprenez a les identifier avant de cliquer.","questions":[{"id":"q1","text":"Comment verifier un lien avant de cliquer ?","options":["Cliquer pour voir","Survoler avec la souris","Demander a un ami","Ignorer le lien"],"correctAnswer":1},{"id":"q2","text":"Quel type de fichier est potentiellement dangereux ?","options":["Document PDF","Image PNG","Fichier .exe","Fichier texte"],"correctAnswer":2}]}]]></column>
+            <column name="active" valueBoolean="true"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

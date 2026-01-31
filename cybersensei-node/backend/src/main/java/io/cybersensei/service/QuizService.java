@@ -21,11 +21,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
- * Quiz and Exercise Service
+ * Quiz and Exercise Service - Version améliorée
+ * - Exclut les exercices déjà complétés
+ * - Supprime les réponses correctes du JSON envoyé au client
+ * - Difficulté adaptative basée sur les performances
  */
 @Service
 @RequiredArgsConstructor
@@ -45,23 +47,51 @@ public class QuizService {
         UserPrincipal principal = getCurrentUser();
         Long userId = principal.getId();
 
+        log.info("Getting today's quiz for user ID: {}", userId);
+
         // Get user's AI profile to personalize quiz
         AIProfile profile = aiProfileRepository.findByUserId(userId).orElse(null);
-        
+
         Exercise.Difficulty difficulty = determineDifficulty(userId, profile);
-        
-        // Find suitable quiz
-        List<Exercise> exercises = exerciseRepository.findByDifficultyAndActiveTrue(difficulty);
-        
+        log.info("Determined difficulty for user {}: {}", userId, difficulty);
+
+        // Find exercises NOT yet completed by this user at the appropriate difficulty
+        List<Exercise> exercises = exerciseRepository.findUncompletedByDifficultyAndUserId(difficulty, userId);
+
+        Exercise exercise;
+
         if (exercises.isEmpty()) {
-            // Fallback to random active exercise
-            Exercise exercise = exerciseRepository.findRandomActiveExercise();
-            return exerciseMapper.toDto(exercise);
+            log.info("No uncompleted exercises at {} level for user {}, trying other difficulties", difficulty, userId);
+
+            // Try adjacent difficulties
+            exercise = findExerciseAtAdjacentDifficulty(userId, difficulty);
+
+            if (exercise == null) {
+                // Last resort: find ANY uncompleted exercise
+                exercise = exerciseRepository.findRandomUncompletedByUserId(userId);
+
+                if (exercise == null) {
+                    log.info("User {} has completed ALL exercises! Resetting to allow replay", userId);
+                    // User has done everything - give a random one (they can redo)
+                    exercise = exerciseRepository.findRandomActiveExercise();
+
+                    if (exercise == null) {
+                        throw new RuntimeException("No exercises available in the system");
+                    }
+                }
+            }
+        } else {
+            // Select random exercise from the uncompleted list
+            exercise = exercises.get(random.nextInt(exercises.size()));
         }
-        
-        // Select random exercise from the filtered list
-        Exercise exercise = exercises.get(random.nextInt(exercises.size()));
-        return exerciseMapper.toDto(exercise);
+
+        log.info("Selected exercise ID {} (topic: {}) for user {}", exercise.getId(), exercise.getTopic(), userId);
+
+        // Convert to DTO and remove correct answers before sending to client
+        ExerciseDto dto = exerciseMapper.toDto(exercise);
+        dto.setPayloadJSON(sanitizePayloadForClient(dto.getPayloadJSON()));
+
+        return dto;
     }
 
     @Transactional
@@ -69,51 +99,207 @@ public class QuizService {
         UserPrincipal principal = getCurrentUser();
         Long userId = principal.getId();
 
-        // Verify exercise exists
-        exerciseRepository.findById(exerciseId)
+        // Verify exercise exists and get it for scoring
+        Exercise exercise = exerciseRepository.findById(exerciseId)
                 .orElseThrow(() -> new RuntimeException("Exercise not found: " + exerciseId));
+
+        // Calculate score based on correct answers
+        int score = calculateScore(exercise, request);
+        int maxScore = getMaxScore(exercise);
+        boolean success = score >= (maxScore * 0.5); // 50% threshold for success
 
         UserExerciseResult result = UserExerciseResult.builder()
                 .userId(userId)
                 .exerciseId(exerciseId)
-                .score(request.getScore())
-                .success(request.getSuccess())
+                .score((double) score)
+                .success(success)
                 .duration(request.getDuration())
                 .detailsJSON(request.getDetailsJSON())
                 .build();
 
         result = resultRepository.save(result);
-        
-        log.info("User {} submitted exercise {} with score {}", userId, exerciseId, request.getScore());
-        
-        return resultMapper.toDto(result);
+
+        log.info("User {} submitted exercise {} with score {}/{} (success: {})",
+                userId, exerciseId, score, maxScore, success);
+
+        // Build response with feedback
+        UserExerciseResultDto dto = resultMapper.toDto(result);
+        dto.setMaxScore((double) maxScore);
+        dto.setFeedback(generateFeedback(score, maxScore, exercise.getTopic()));
+
+        return dto;
+    }
+
+    /**
+     * Get user's exercise history with statistics
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getUserProgress() {
+        UserPrincipal principal = getCurrentUser();
+        Long userId = principal.getId();
+
+        Long completed = exerciseRepository.countCompletedByUserId(userId);
+        Long total = exerciseRepository.countActiveExercises();
+        Double avgScore = resultRepository.findAverageScoreByUserId(userId);
+
+        Map<String, Object> progress = new HashMap<>();
+        progress.put("userId", userId);
+        progress.put("completedExercises", completed);
+        progress.put("totalExercises", total);
+        progress.put("progressPercentage", total > 0 ? (completed * 100.0 / total) : 0);
+        progress.put("averageScore", avgScore != null ? avgScore : 0.0);
+        progress.put("currentLevel", determineDifficulty(userId, null).name());
+
+        return progress;
+    }
+
+    /**
+     * Remove correct answers from payload before sending to client
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> sanitizePayloadForClient(Map<String, Object> payload) {
+        if (payload == null) return null;
+
+        Map<String, Object> sanitized = new HashMap<>(payload);
+
+        // Remove correctAnswer from questions array
+        if (sanitized.containsKey("questions")) {
+            List<Map<String, Object>> questions = (List<Map<String, Object>>) sanitized.get("questions");
+            List<Map<String, Object>> sanitizedQuestions = new ArrayList<>();
+
+            for (Map<String, Object> question : questions) {
+                Map<String, Object> sanitizedQuestion = new HashMap<>(question);
+                // Remove the correct answer - client should not see this
+                sanitizedQuestion.remove("correctAnswer");
+                // Also remove detailed feedback that might hint at the answer
+                sanitizedQuestion.remove("feedbackCorrect");
+                sanitizedQuestion.remove("feedbackIncorrect");
+                sanitizedQuestions.add(sanitizedQuestion);
+            }
+
+            sanitized.put("questions", sanitizedQuestions);
+        }
+
+        return sanitized;
+    }
+
+    /**
+     * Calculate score by comparing user answers with correct answers
+     */
+    @SuppressWarnings("unchecked")
+    private int calculateScore(Exercise exercise, SubmitExerciseRequest request) {
+        Map<String, Object> payload = exercise.getPayloadJSON();
+        if (payload == null || !payload.containsKey("questions")) {
+            return 0;
+        }
+
+        List<Map<String, Object>> questions = (List<Map<String, Object>>) payload.get("questions");
+        Map<String, Integer> userAnswers = new HashMap<>();
+
+        // Parse user answers from request
+        if (request.getDetailsJSON() != null && request.getDetailsJSON().containsKey("answers")) {
+            List<Map<String, Object>> answers = (List<Map<String, Object>>) request.getDetailsJSON().get("answers");
+            for (Map<String, Object> answer : answers) {
+                String questionId = (String) answer.get("questionId");
+                Integer answerIndex = ((Number) answer.get("answer")).intValue();
+                userAnswers.put(questionId, answerIndex);
+            }
+        }
+
+        int correct = 0;
+        for (Map<String, Object> question : questions) {
+            String questionId = (String) question.get("id");
+            Integer correctAnswer = ((Number) question.get("correctAnswer")).intValue();
+            Integer userAnswer = userAnswers.get(questionId);
+
+            if (userAnswer != null && userAnswer.equals(correctAnswer)) {
+                correct++;
+            }
+        }
+
+        return correct;
+    }
+
+    /**
+     * Get maximum score (number of questions)
+     */
+    @SuppressWarnings("unchecked")
+    private int getMaxScore(Exercise exercise) {
+        Map<String, Object> payload = exercise.getPayloadJSON();
+        if (payload == null || !payload.containsKey("questions")) {
+            return 1;
+        }
+        List<?> questions = (List<?>) payload.get("questions");
+        return questions.size();
+    }
+
+    /**
+     * Find exercise at adjacent difficulty levels
+     */
+    private Exercise findExerciseAtAdjacentDifficulty(Long userId, Exercise.Difficulty current) {
+        Exercise.Difficulty[] allDifficulties = Exercise.Difficulty.values();
+        int currentIndex = current.ordinal();
+
+        // Try one level easier first, then harder
+        int[] offsets = {-1, 1, -2, 2};
+
+        for (int offset : offsets) {
+            int newIndex = currentIndex + offset;
+            if (newIndex >= 0 && newIndex < allDifficulties.length) {
+                Exercise.Difficulty adjacent = allDifficulties[newIndex];
+                List<Exercise> exercises = exerciseRepository.findUncompletedByDifficultyAndUserId(adjacent, userId);
+                if (!exercises.isEmpty()) {
+                    log.info("Found uncompleted exercise at {} level for user {}", adjacent, userId);
+                    return exercises.get(random.nextInt(exercises.size()));
+                }
+            }
+        }
+
+        return null;
     }
 
     private Exercise.Difficulty determineDifficulty(Long userId, AIProfile profile) {
         // Calculate average score
         Double avgScore = resultRepository.findAverageScoreByUserId(userId);
-        
+
         if (avgScore == null) {
             return Exercise.Difficulty.BEGINNER;
         }
-        
+
+        // Convert score to percentage (assuming max score is typically question count)
+        double percentage = avgScore;
+
         // Adaptive difficulty based on performance
-        if (avgScore >= 85.0) {
+        if (percentage >= 85.0) {
             return Exercise.Difficulty.EXPERT;
-        } else if (avgScore >= 70.0) {
+        } else if (percentage >= 70.0) {
             return Exercise.Difficulty.ADVANCED;
-        } else if (avgScore >= 50.0) {
+        } else if (percentage >= 50.0) {
             return Exercise.Difficulty.INTERMEDIATE;
         } else {
             return Exercise.Difficulty.BEGINNER;
         }
     }
 
+    private String generateFeedback(int score, int maxScore, String topic) {
+        double percentage = maxScore > 0 ? (score * 100.0 / maxScore) : 0;
+
+        if (percentage >= 90) {
+            return String.format("Excellent ! Tu maîtrises parfaitement le sujet '%s'. Continue comme ça ! 🏆", topic);
+        } else if (percentage >= 70) {
+            return String.format("Très bien ! Tu as de bonnes bases sur '%s'. Quelques points à revoir. 🎉", topic);
+        } else if (percentage >= 50) {
+            return String.format("Pas mal ! Tu progresses sur '%s'. Continue à t'entraîner ! 💪", topic);
+        } else {
+            return String.format("Courage ! Le sujet '%s' demande de la pratique. Relis les conseils et réessaie ! 📚", topic);
+        }
+    }
+
     private UserPrincipal getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         // MODE BYPASS : Si pas d'authentification ou authentification anonyme, retourner un utilisateur par défaut
-        if (authentication == null || !authentication.isAuthenticated() || 
+        if (authentication == null || !authentication.isAuthenticated() ||
             "anonymousUser".equals(authentication.getPrincipal())) {
             // Récupérer le premier utilisateur de la base comme utilisateur par défaut
             User defaultUser = userRepository.findAll().stream()
@@ -127,7 +313,7 @@ public class QuizService {
                             .build());
             return UserPrincipal.create(defaultUser);
         }
-        
+
         return (UserPrincipal) authentication.getPrincipal();
     }
 }

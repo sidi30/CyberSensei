@@ -24,6 +24,17 @@ export interface Quiz {
   topic: string;
   difficulty: string;
   dueDate?: string;
+  payloadJSON?: {
+    questions?: Question[];
+    courseIntro?: string;
+    introMedia?: {
+      type: 'image' | 'gif' | 'video' | 'lottie';
+      url: string;
+      alt: string;
+      caption?: string;
+      thumbnail?: string;
+    };
+  };
 }
 
 export interface Question {

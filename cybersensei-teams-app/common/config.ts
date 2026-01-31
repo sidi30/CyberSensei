@@ -13,7 +13,7 @@ export interface AppConfig {
  * Charge la configuration depuis les variables d'environnement
  */
 export function loadConfig(): AppConfig {
-  const backendBaseUrl = process.env.BACKEND_BASE_URL || 'http://localhost:10000';
+  const backendBaseUrl = process.env.BACKEND_BASE_URL || 'http://localhost:8080';
   const environment = (process.env.NODE_ENV as 'development' | 'production') || 'development';
   
   return {

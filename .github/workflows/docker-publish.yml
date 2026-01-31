@@ -159,3 +159,4 @@ jobs:
           echo "| central-dashboard | ${{ needs.build-images.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| node-ai | ${{ needs.build-node-ai.result == 'success' && '✅' || needs.build-node-ai.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
 
+

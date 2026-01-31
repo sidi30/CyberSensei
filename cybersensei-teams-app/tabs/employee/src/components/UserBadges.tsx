@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { config } from '../config';
 
 interface Badge {
   badgeId: number;
@@ -56,8 +57,8 @@ export function UserBadges({ userId, showOnlyEarned = false }: Props) {
     try {
       setLoading(true);
       const endpoint = showOnlyEarned 
-        ? `http://localhost:10000/api/badges/user/${userId}`
-        : `http://localhost:10000/api/badges/all/${userId}`;
+        ? `${config.backendBaseUrl}/api/badges/user/${userId}`
+        : `${config.backendBaseUrl}/api/badges/all/${userId}`;
       
       const response = await fetch(endpoint, {
         headers: {

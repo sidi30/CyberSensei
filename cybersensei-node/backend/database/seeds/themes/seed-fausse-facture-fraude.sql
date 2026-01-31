@@ -35,3 +35,4 @@ INSERT INTO exercises (topic,type,difficulty,payload_json,active) VALUES
 
 
 
+

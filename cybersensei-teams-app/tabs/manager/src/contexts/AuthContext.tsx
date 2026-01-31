@@ -1,9 +1,19 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authentication, app } from '@microsoft/teams-js';
+/**
+ * CyberSensei Teams - Manager Authentication Context
+ * Handles Microsoft Teams SSO with Azure AD and backend JWT exchange
+ * Production-ready with fallback for development/standalone mode
+ */
+
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { authentication, app, HostClientType } from '@microsoft/teams-js';
 import { Client } from '@microsoft/microsoft-graph-client';
 import axios from 'axios';
 import type { GraphUser } from '../types';
 import { config } from '../config';
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Types
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 interface AuthContextType {
   token: string | null;
@@ -11,10 +21,42 @@ interface AuthContextType {
   user: GraphUser | null;
   loading: boolean;
   error: string | null;
+  isTeamsContext: boolean;
+  tenantId: string | null;
   refetch: () => Promise<void>;
+  logout: () => void;
 }
 
+interface TeamsContext {
+  user?: {
+    tenant?: {
+      id: string;
+    };
+    id?: string;
+  };
+  app?: {
+    host?: {
+      clientType?: HostClientType;
+    };
+  };
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Context
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Storage keys for token persistence
+const STORAGE_KEYS = {
+  BACKEND_TOKEN: 'cybersensei_manager_backend_token',
+  USER_DATA: 'cybersensei_manager_user_data',
+  TOKEN_EXPIRY: 'cybersensei_manager_token_expiry',
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Provider
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
@@ -22,77 +64,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<GraphUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isTeamsContext, setIsTeamsContext] = useState(false);
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
-  useEffect(() => {
-    initAuth();
-  }, []);
-
-  const initAuth = async () => {
+  // Check if running in Teams
+  const checkTeamsContext = useCallback(async (): Promise<boolean> => {
     try {
-      setLoading(true);
-      setError(null);
-
-      // MODE STANDALONE : Si on n'est pas dans Teams, utiliser des données de test
-      // Vérifier si on est dans un navigateur normal (pas dans Teams)
-      const isStandalone = !window.parent || window.parent === window;
+      const inIframe = window.self !== window.top;
       
-      if (isStandalone || import.meta.env.DEV) {
-        console.warn('⚠️ MODE STANDALONE - Pas dans Teams, utilisation de données de test');
-        setToken('dev-token');
-        setBackendToken('bypass-token');
-        setUser({
-          id: 'dev-manager-123',
-          displayName: 'Marie Dupont (Dev)',
-          mail: 'marie.dupont@company.com',
-          jobTitle: 'Responsable Sécurité',
-          department: 'IT Security',
-          userPrincipalName: 'marie.dupont@company.com',
-        });
-        setLoading(false);
-        return;
+      if (!inIframe && !import.meta.env.DEV) {
+        return false;
       }
 
+      await app.initialize();
       const context = await app.getContext();
       
-      if (!context) {
-        throw new Error('Not running in Teams context');
+      return !!context;
+    } catch {
+      return false;
+      }
+  }, []);
+
+  // Get cached credentials if valid
+  const getCachedCredentials = useCallback((): { token: string; user: GraphUser } | null => {
+    try {
+      const expiry = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
+      if (!expiry || Date.now() > parseInt(expiry, 10)) {
+        return null;
       }
 
-      const authToken = await authentication.getAuthToken({
-        resources: config.scopes,
-      });
+      const cachedToken = localStorage.getItem(STORAGE_KEYS.BACKEND_TOKEN);
+      const cachedUser = localStorage.getItem(STORAGE_KEYS.USER_DATA);
 
-      setToken(authToken);
-
-      const graphUser = await fetchGraphUser(authToken);
-      setUser(graphUser);
-
-      // Échanger le token Teams contre un JWT backend
-      const backendJwt = await exchangeTeamsTokenForBackendJwt(graphUser, context);
-      setBackendToken(backendJwt);
+      if (cachedToken && cachedUser) {
+        return {
+          token: cachedToken,
+          user: JSON.parse(cachedUser),
+        };
+      }
     } catch (err) {
-      console.error('Auth error:', err);
-      
-      if (import.meta.env.DEV) {
-        console.warn('Using development mode - mock data');
-        setToken('dev-token');
-        setBackendToken('bypass-token');
-        setUser({
-          id: 'dev-manager-123',
-          displayName: 'Marie Dupont (Dev)',
-          mail: 'marie.dupont@company.com',
-          jobTitle: 'Responsable Sécurité',
-          department: 'IT Security',
-          userPrincipalName: 'marie.dupont@company.com',
-        });
-      } else {
-        setError('Erreur d\'authentification. Veuillez vous reconnecter.');
-      }
-    } finally {
-      setLoading(false);
+      console.warn('Error reading cached credentials:', err);
     }
-  };
+    return null;
+  }, []);
 
+  // Save credentials to cache
+  const cacheCredentials = useCallback((backendJwt: string, userData: GraphUser) => {
+    try {
+      const expiry = Date.now() + 23 * 60 * 60 * 1000;
+      localStorage.setItem(STORAGE_KEYS.BACKEND_TOKEN, backendJwt);
+      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
+      localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRY, expiry.toString());
+    } catch (err) {
+      console.warn('Error caching credentials:', err);
+    }
+  }, []);
+
+  // Clear cached credentials
+  const clearCache = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.BACKEND_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+    localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
+  }, []);
+
+  // Fetch user from Microsoft Graph
   const fetchGraphUser = async (accessToken: string): Promise<GraphUser> => {
     const client = Client.init({
       authProvider: (done) => {
@@ -100,29 +135,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
 
-    const user = await client
+    const userData = await client
       .api('/me')
       .select('id,displayName,mail,jobTitle,department,userPrincipalName')
       .get();
 
     return {
-      id: user.id,
-      displayName: user.displayName,
-      mail: user.mail || user.userPrincipalName,
-      jobTitle: user.jobTitle,
-      department: user.department,
-      userPrincipalName: user.userPrincipalName,
+      id: userData.id,
+      displayName: userData.displayName,
+      mail: userData.mail || userData.userPrincipalName,
+      jobTitle: userData.jobTitle,
+      department: userData.department,
+      userPrincipalName: userData.userPrincipalName,
     };
   };
 
-  /**
-   * Échange le token Teams contre un JWT backend
-   */
+  // Exchange Teams token for backend JWT
   const exchangeTeamsTokenForBackendJwt = async (
     graphUser: GraphUser,
-    context: any
+    context: TeamsContext
   ): Promise<string> => {
-    try {
       const response = await axios.post(
         `${config.backendBaseUrl}/api/auth/teams/exchange`,
         {
@@ -131,33 +163,148 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           displayName: graphUser.displayName,
           department: graphUser.department,
           jobTitle: graphUser.jobTitle,
-          tenantId: context.user?.tenant?.id,
+        tenantHint: context.user?.tenant?.id,
         },
         {
           headers: {
             'Content-Type': 'application/json',
           },
-          timeout: 10000,
+        timeout: 15000,
         }
       );
 
-      if (!response.data || !response.data.token) {
+    if (!response.data?.token) {
         throw new Error('Invalid response from backend auth exchange');
       }
 
       return response.data.token;
-    } catch (error) {
-      console.error('Error exchanging Teams token for backend JWT:', error);
-      throw new Error('Impossible d\'obtenir un token backend. Vérifiez la connexion au backend.');
-    }
   };
 
+  // Main authentication flow
+  const initAuth = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const inTeams = await checkTeamsContext();
+      setIsTeamsContext(inTeams);
+
+      // Development/Standalone mode
+      if (!inTeams) {
+        console.warn('⚠️ MODE STANDALONE - Pas dans Teams, utilisation de données de test');
+        
+        const cached = getCachedCredentials();
+        if (cached) {
+          setBackendToken(cached.token);
+          setUser(cached.user);
+          setToken('cached-token');
+          setLoading(false);
+          return;
+        }
+
+        const devUser: GraphUser = {
+          id: 'dev-manager-' + Math.random().toString(36).substring(7),
+          displayName: 'Marie Dupont (Manager)',
+          mail: 'marie.dupont@entreprise.fr',
+          jobTitle: 'Responsable Sécurité',
+          department: 'IT Security',
+          userPrincipalName: 'marie.dupont@entreprise.fr',
+        };
+
+        setToken('dev-token');
+        setBackendToken('bypass-token');
+        setUser(devUser);
+        setLoading(false);
+        return;
+      }
+
+      // Production Teams SSO flow
+      console.log('🔐 Initializing Teams SSO authentication (Manager)...');
+
+      const context = await app.getContext() as TeamsContext;
+      setTenantId(context.user?.tenant?.id || null);
+
+      const authToken = await authentication.getAuthToken({
+        resources: config.scopes,
+        silent: true,
+      });
+
+      setToken(authToken);
+
+      const graphUser = await fetchGraphUser(authToken);
+      setUser(graphUser);
+
+      const backendJwt = await exchangeTeamsTokenForBackendJwt(graphUser, context);
+      setBackendToken(backendJwt);
+
+      cacheCredentials(backendJwt, graphUser);
+
+      console.log('✅ Authentication successful for:', graphUser.displayName);
+    } catch (err) {
+      console.error('Authentication error:', err);
+
+      const cached = getCachedCredentials();
+      if (cached) {
+        console.log('Using cached credentials as fallback');
+        setBackendToken(cached.token);
+        setUser(cached.user);
+        setToken('cached-token');
+      } else if (import.meta.env.DEV) {
+        console.warn('Using development fallback');
+        setToken('dev-token');
+        setBackendToken('bypass-token');
+        setUser({
+          id: 'dev-manager-fallback',
+          displayName: 'Marie Dupont (Manager Fallback)',
+          mail: 'marie.dupont@entreprise.fr',
+          jobTitle: 'Responsable Sécurité',
+          department: 'IT Security',
+          userPrincipalName: 'marie.dupont@entreprise.fr',
+        });
+      } else {
+        setError('Erreur d\'authentification. Veuillez actualiser la page ou contacter le support.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [checkTeamsContext, getCachedCredentials, cacheCredentials]);
+
+  // Logout function
+  const logout = useCallback(() => {
+    clearCache();
+    setToken(null);
+    setBackendToken(null);
+    setUser(null);
+    setError(null);
+  }, [clearCache]);
+
+  // Initialize on mount
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
+
   return (
-    <AuthContext.Provider value={{ token, backendToken, user, loading, error, refetch: initAuth }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        backendToken,
+        user,
+        loading,
+        error,
+        isTeamsContext,
+        tenantId,
+        refetch: initAuth,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Hook
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export function useAuth() {
   const context = useContext(AuthContext);
@@ -166,4 +313,3 @@ export function useAuth() {
   }
   return context;
 }
-

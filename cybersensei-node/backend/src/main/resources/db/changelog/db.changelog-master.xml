@@ -10,12 +10,14 @@
     <include file="db/changelog/changes/003-create-user-exercise-results-table.xml"/>
     <include file="db/changelog/changes/004-create-ai-profiles-table.xml"/>
     <include file="db/changelog/changes/005-create-company-metrics-table.xml"/>
-    <include file="db/changelog/changes/006-create-phishing-templates-table.xml"/>
-    <include file="db/changelog/changes/007-create-phishing-campaigns-table.xml"/>
-    <include file="db/changelog/changes/008-create-phishing-trackers-table.xml"/>
+    <!-- Note: Phishing tables moved to phishing module below -->
+    <!-- <include file="db/changelog/changes/006-create-phishing-templates-table.xml"/> -->
+    <!-- <include file="db/changelog/changes/007-create-phishing-campaigns-table.xml"/> -->
+    <!-- <include file="db/changelog/changes/008-create-phishing-trackers-table.xml"/> -->
     <include file="db/changelog/changes/009-create-configs-table.xml"/>
     <include file="db/changelog/changes/010-insert-sample-data.xml"/>
     <include file="db/changelog/changes/011-create-logs-table.xml"/>
+    <include file="db/changelog/changes/012-update-exercises-french.xml"/>
 
     <!-- Phishing Simulation Module (Enterprise) -->
     <include file="db/changelog/phishing/db.changelog-phishing-master.xml"/>

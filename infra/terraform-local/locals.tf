@@ -15,6 +15,8 @@ locals {
   prometheus_host        = "prometheus.${var.domain_suffix}"
   alertmanager_host      = "alertmanager.${var.domain_suffix}"
   mailhog_host           = "mailhog.${var.domain_suffix}"
+  teams_bot_host         = "bot.${var.domain_suffix}"
+  teams_tabs_host        = "tabs.${var.domain_suffix}"
 
   # Networks
   network_name = "${local.prefix}-network"
@@ -34,6 +36,8 @@ locals {
     grafana              = "${local.prefix}-grafana"
     alertmanager         = "${local.prefix}-alertmanager"
     mailhog              = "${local.prefix}-mailhog"
+    teams_bot            = "${local.prefix}-teams-bot"
+    teams_tabs           = "${local.prefix}-teams-tabs"
   }
 
   # Image references
@@ -55,6 +59,8 @@ locals {
     node_backend      = "${var.registry}/node-backend:${var.image_tag}"
     node_dashboard    = "${var.registry}/node-dashboard:${var.image_tag}"
     node_ai           = "${var.registry}/node-ai:${var.image_tag}"
+    teams_bot         = "${var.registry}/teams-bot:${var.image_tag}"
+    teams_tabs        = "${var.registry}/teams-tabs:${var.image_tag}"
   }
 
   # Local images (built from source)
@@ -64,6 +70,8 @@ locals {
     node_backend      = "${local.prefix}-node-backend:local"
     node_dashboard    = "${local.prefix}-node-dashboard:local"
     node_ai           = "${local.prefix}-node-ai:local"
+    teams_bot         = "${local.prefix}-teams-bot:local"
+    teams_tabs        = "${local.prefix}-teams-tabs:local"
   }
 
   # Common labels

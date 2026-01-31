@@ -3,8 +3,6 @@
  * Version commerciale avec conseils structurés et encouragements
  */
 
-import { SubmitAnswersResponse } from '../services/backendService';
-
 interface AdviceBlock {
   concept: string;
   example: string;
@@ -21,12 +19,26 @@ interface QuestionDetail {
   keyTakeaway?: string;
 }
 
+interface ResultCardData {
+  score: number;
+  maxScore: number;
+  correct: number;
+  total: number;
+  feedback: string;
+}
+
 export function createResultCard(
-  result: SubmitAnswersResponse,
+  result: ResultCardData,
   quizTitle: string,
   additionalData?: { details?: QuestionDetail[]; topic?: string }
 ): any {
-  const percentage = Math.round((result.score / result.maxScore) * 100);
+  const score = result.score ?? 0;
+  const maxScore = result.maxScore ?? 1;
+  const correct = result.correct ?? score;
+  const total = result.total ?? maxScore;
+  const feedback = result.feedback ?? '';
+
+  const percentage = Math.round((score / maxScore) * 100);
   const isExcellent = percentage >= 90;
   const isGood = percentage >= 70;
   const isPassing = percentage >= 50;
@@ -141,7 +153,7 @@ export function createResultCard(
                 items: [
                   {
                     type: 'TextBlock',
-                    text: `${result.score}/${result.maxScore}`,
+                    text: `${score}/${maxScore}`,
                     size: 'ExtraLarge',
                     weight: 'Bolder',
                     color: getScoreColor(),
@@ -177,7 +189,7 @@ export function createResultCard(
               },
               {
                 type: 'TextBlock',
-                text: result.correct.toString(),
+                text: correct.toString(),
                 weight: 'Bolder',
                 size: 'Large',
                 color: 'Good',
@@ -197,10 +209,10 @@ export function createResultCard(
               },
               {
                 type: 'TextBlock',
-                text: (result.total - result.correct).toString(),
+                text: (total - correct).toString(),
                 weight: 'Bolder',
                 size: 'Large',
-                color: result.total - result.correct > 0 ? 'Attention' : 'Good',
+                color: (total - correct) > 0 ? 'Attention' : 'Good',
               },
             ],
             horizontalAlignment: 'Center',
@@ -217,7 +229,7 @@ export function createResultCard(
               },
               {
                 type: 'TextBlock',
-                text: result.total.toString(),
+                text: total.toString(),
                 weight: 'Bolder',
                 size: 'Large',
               },
@@ -242,7 +254,7 @@ export function createResultCard(
           },
           {
             type: 'TextBlock',
-            text: result.feedback || getFallbackFeedback(percentage),
+            text: feedback || getFallbackFeedback(percentage),
             wrap: true,
             spacing: 'Small',
           },
@@ -309,7 +321,7 @@ export function createResultCard(
         title: '💡 Explique-moi mes erreurs',
         data: {
           action: 'explain',
-          context: `Quiz: ${quizTitle}. Score: ${result.score}/${result.maxScore}. Je veux comprendre mes erreurs.`,
+          context: `Quiz: ${quizTitle}. Score: ${score}/${maxScore}. Je veux comprendre mes erreurs.`,
         },
       },
       {

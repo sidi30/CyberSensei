@@ -24,6 +24,9 @@ public class UserExerciseResultDto {
     private Map<String, Object> detailsJSON;
     private LocalDateTime date;
     private LocalDateTime completedAt; // Alias for date (Teams app compatibility)
+    private String feedback; // Personalized feedback message
+    private Integer correct; // Number of correct answers
+    private Integer total; // Total number of questions
 }
 
 

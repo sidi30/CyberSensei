@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Quiz Controller
@@ -31,17 +32,23 @@ public class QuizController {
     private final UserExerciseResultRepository resultRepository;
 
     @GetMapping("/quiz/today")
-    @Operation(summary = "Get today's personalized quiz")
+    @Operation(summary = "Get today's personalized quiz (excludes already completed exercises)")
     public ResponseEntity<ExerciseDto> getTodayQuiz() {
         return ResponseEntity.ok(quizService.getTodayQuiz());
     }
 
     @PostMapping("/exercise/{id}/submit")
-    @Operation(summary = "Submit exercise results")
+    @Operation(summary = "Submit exercise results and get score with feedback")
     public ResponseEntity<UserExerciseResultDto> submitExercise(
             @PathVariable Long id,
             @Valid @RequestBody SubmitExerciseRequest request) {
         return ResponseEntity.ok(quizService.submitExercise(id, request));
+    }
+
+    @GetMapping("/user/progress")
+    @Operation(summary = "Get current user's progress statistics")
+    public ResponseEntity<Map<String, Object>> getUserProgress() {
+        return ResponseEntity.ok(quizService.getUserProgress());
     }
 
     @GetMapping("/exercises/history")
@@ -49,10 +56,10 @@ public class QuizController {
     public ResponseEntity<List<UserExerciseResultDto>> getExerciseHistory() {
         // Get current user
         var currentUser = userService.getCurrentUser();
-        
+
         // Get all results for this user, ordered by date desc
         var results = resultRepository.findRecentByUserId(currentUser.getId());
-        
+
         // Convert to DTOs
         var dtos = results.stream()
                 .map(result -> UserExerciseResultDto.builder()
@@ -69,7 +76,7 @@ public class QuizController {
                         .detailsJSON(result.getDetailsJSON())
                         .build())
                 .toList();
-        
+
         return ResponseEntity.ok(dtos);
     }
 }

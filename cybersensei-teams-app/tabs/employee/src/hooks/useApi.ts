@@ -41,9 +41,10 @@ export function useApi(authToken: string | null) {
       },
 
       submitExercise: async (exerciseId: string, answers: { questionId: string; answer: number }[]) => {
+        // Format attendu par le backend: { detailsJSON: { answers: [...] } }
         const response = await client.post<SubmitAnswersResponse>(
           `/api/exercise/${exerciseId}/submit`,
-          { answers }
+          { detailsJSON: { answers } }
         );
         return response.data;
       },

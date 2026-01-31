@@ -69,3 +69,4 @@ SELECT category, COUNT(*) as nb_images FROM exercise_images GROUP BY category OR
 
 
 
+
