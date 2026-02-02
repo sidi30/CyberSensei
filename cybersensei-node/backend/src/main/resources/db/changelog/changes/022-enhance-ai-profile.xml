@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="022-1" author="cybersensei">
+        <comment>Add preferences and analytics columns to ai_profiles</comment>
+
+        <addColumn tableName="ai_profiles">
+            <column name="preferences_json" type="jsonb">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="ai_profiles">
+            <column name="analytics_json" type="jsonb">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="ai_profiles">
+            <column name="streak_days" type="integer" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="ai_profiles">
+            <column name="total_xp" type="integer" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="ai_profiles">
+            <column name="current_level" type="integer" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="ai_profiles">
+            <column name="last_activity_date" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="022-2" author="cybersensei">
+        <comment>Initialize AI profiles for existing users</comment>
+
+        <sql>
+            INSERT INTO ai_profiles (user_id, style, streak_days, total_xp, current_level, created_at, updated_at)
+            SELECT u.id, 'practical', 0, 0, 1, NOW(), NOW()
+            FROM users u
+            WHERE NOT EXISTS (SELECT 1 FROM ai_profiles ap WHERE ap.user_id = u.id);
+        </sql>
+    </changeSet>
+
+    <changeSet id="022-3" author="cybersensei">
+        <comment>Set default preferences for all profiles</comment>
+
+        <sql>
+            UPDATE ai_profiles
+            SET preferences_json = '{"preferredDifficulty": "BEGINNER", "uiTheme": "light", "notificationsEnabled": true, "dailyGoal": 1, "preferredTopics": []}'::jsonb
+            WHERE preferences_json IS NULL;
+        </sql>
+
+        <sql>
+            UPDATE ai_profiles
+            SET analytics_json = '{"avgResponseTime": 0, "topicProgress": {}, "completionRate": 0}'::jsonb
+            WHERE analytics_json IS NULL;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
