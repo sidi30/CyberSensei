@@ -216,8 +216,15 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cybersensei}:${POSTGRES_PASSWORD:-cybersensei123}@postgres:5432/${POSTGRES_DB:-cybersensei_db}
-      MONGODB_URL: mongodb://${MONGO_USER:-cybersensei}:${MONGO_PASSWORD:-cybersensei123}@mongo:27017/${MONGO_DATABASE:-cybersensei_central}
+      # PostgreSQL connection - separate database for central
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      POSTGRES_DB: ${CENTRAL_POSTGRES_DB:-cybersensei_central}
+      # MongoDB connection
+      MONGODB_URI: mongodb://${MONGO_USER:-cybersensei}:${MONGO_PASSWORD:-cybersensei123}@mongo:27017/${MONGO_DATABASE:-cybersensei_central}?authSource=admin
+      # JWT
       JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
     ports:

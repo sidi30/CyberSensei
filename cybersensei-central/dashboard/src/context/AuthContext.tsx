@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../lib/api';
 import type { User, LoginCredentials, AdminRole } from '../types';
 
@@ -21,15 +21,15 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   // MODE BYPASS - Utilisateur par défaut toujours connecté
   const [user, setUser] = useState<User | null>({
-    id: 1,
+    id: '1',
     name: 'Admin',
     email: 'admin@cybersensei.io',
     role: 'SUPERADMIN' as AdminRole,
     active: true,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
   });
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   useEffect(() => {
     // Authentification désactivée - utilisateur toujours connecté

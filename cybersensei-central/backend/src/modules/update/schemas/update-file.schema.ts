@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export type UpdateFileDocument = UpdateFile & Document;
 
@@ -17,8 +17,8 @@ export class UpdateFile {
   @Prop({ required: true })
   uploadDate: Date;
 
-  @Prop()
-  metadata: Record<string, any>;
+  @Prop({ type: MongooseSchema.Types.Mixed })
+  metadata: Record<string, unknown>;
 }
 
 export const UpdateFileSchema = SchemaFactory.createForClass(UpdateFile);

@@ -42,7 +42,7 @@ export class Exercise {
   })
   difficulty: ExerciseDifficulty;
 
-  @Column({ type: 'jsonb' })
+  @Column({ type: 'jsonb', nullable: true })
   payloadJSON: Record<string, any>;
 
   @Column({ default: '1.0.0' })

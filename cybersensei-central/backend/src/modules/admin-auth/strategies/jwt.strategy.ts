@@ -1,10 +1,17 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
+import { Injectable, UnauthorizedException, ExecutionContext } from '@nestjs/common';
+import { PassportStrategy, AuthGuard } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AdminUser } from '../../../entities/admin-user.entity';
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  canActivate(context: ExecutionContext) {
+    return super.canActivate(context);
+  }
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

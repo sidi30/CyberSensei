@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
+import { GridFSBucket, ObjectId } from 'mongodb';
 import { UpdateMetadata } from '../../entities/update-metadata.entity';
 import { Tenant } from '../../entities/tenant.entity';
 import { License, LicenseStatus } from '../../entities/license.entity';
@@ -37,13 +38,11 @@ export class UpdateService {
     private exerciseService: ExerciseService,
   ) {}
 
-  private getGridFSBucket() {
-    return new this.mongoConnection.mongo.GridFSBucket(
-      this.mongoConnection.db,
-      {
-        bucketName: 'update_packages',
-      },
-    );
+  private getGridFSBucket(): GridFSBucket {
+    const db = this.mongoConnection.getClient().db();
+    return new GridFSBucket(db, {
+      bucketName: 'update_packages',
+    });
   }
 
   /**
@@ -370,7 +369,7 @@ export class UpdateService {
 
     try {
       const downloadStream = bucket.openDownloadStream(
-        new this.mongoConnection.mongo.ObjectId(metadata.mongoFileId),
+        new ObjectId(metadata.mongoFileId),
       );
 
       this.logger.log(`Streaming du fichier: ${metadata.filename}`);
@@ -439,7 +438,7 @@ export class UpdateService {
     const bucket = this.getGridFSBucket();
     try {
       await bucket.delete(
-        new this.mongoConnection.mongo.ObjectId(update.mongoFileId),
+        new ObjectId(update.mongoFileId),
       );
       this.logger.log(
         `Fichier GridFS supprimé (ID: ${update.mongoFileId})`,

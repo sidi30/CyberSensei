@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Users, Shield, UserCheck, AlertCircle } from 'lucide-react';
+import { Plus, Shield, UserCheck, AlertCircle } from 'lucide-react';
 import { api } from '../lib/api';
 import type { User, CreateAdminData, AdminRole } from '../types';
 import { getRoleLabel, formatRelativeTime } from '../lib/utils';

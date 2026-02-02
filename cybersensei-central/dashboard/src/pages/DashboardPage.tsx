@@ -6,7 +6,6 @@ import {
   Activity,
   AlertTriangle,
   TrendingUp,
-  CheckCircle,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import type { GlobalSummary } from '../types';

@@ -30,7 +30,7 @@ import { ExerciseModule } from './modules/exercise/exercise.module';
         password: configService.get('POSTGRES_PASSWORD'),
         database: configService.get('POSTGRES_DB'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Set to false in production, use migrations
+        synchronize: true, // Central has its own database
         logging: false,
       }),
     }),
