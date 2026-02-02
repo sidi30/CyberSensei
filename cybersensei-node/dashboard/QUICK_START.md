@@ -22,7 +22,7 @@ echo "VITE_API_URL=http://localhost:8080/api" > .env
 # Development
 npm run dev
 
-# Accès: http://localhost:3000
+# Accès: http://localhost:3005
 ```
 
 ### 4. Login

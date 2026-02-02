@@ -4,6 +4,8 @@ import {
   BadRequestException,
   ConflictException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -16,6 +18,7 @@ import { Readable } from 'stream';
 import * as crypto from 'crypto';
 import * as AdmZip from 'adm-zip';
 import { VersionMetadata } from './interfaces/version-metadata.interface';
+import { ExerciseService } from '../exercise/exercise.service';
 
 @Injectable()
 export class UpdateService {
@@ -30,6 +33,8 @@ export class UpdateService {
     private licenseRepository: Repository<License>,
     @InjectConnection()
     private mongoConnection: Connection,
+    @Inject(forwardRef(() => ExerciseService))
+    private exerciseService: ExerciseService,
   ) {}
 
   private getGridFSBucket() {
@@ -463,16 +468,115 @@ export class UpdateService {
    */
   async getDownloadStats(updateId: string) {
     const update = await this.getUpdateById(updateId);
-    
+
     // TODO: Implémenter un système de tracking des téléchargements
     // Pour l'instant, retourne les informations de base
-    
+
     return {
       updateId: update.id,
       version: update.version,
       totalDownloads: 0, // À implémenter
       activeInstallations: 0, // À implémenter
       createdAt: update.createdAt,
+    };
+  }
+
+  /**
+   * Generate an update package with exercises.json included
+   * This creates a ZIP file with:
+   * - version.json (metadata)
+   * - exercises.json (exercise data for sync)
+   */
+  async generateUpdatePackage(
+    version: string,
+    changelog: string,
+    requiredNodeVersion: string = '1.0.0',
+  ): Promise<{
+    buffer: Buffer;
+    filename: string;
+    checksum: string;
+    exerciseCount: number;
+  }> {
+    this.logger.log(`Generating update package for version ${version}`);
+
+    // Create a new ZIP file
+    const zip = new AdmZip();
+
+    // Generate version.json
+    const versionMetadata: VersionMetadata = {
+      version,
+      changelog,
+      requiredNodeVersion,
+      createdAt: new Date().toISOString(),
+    };
+    zip.addFile(
+      'version.json',
+      Buffer.from(JSON.stringify(versionMetadata, null, 2)),
+    );
+
+    // Generate exercises.json from current exercises
+    const exercisePayload = await this.exerciseService.exportForSync();
+    zip.addFile(
+      'exercises.json',
+      Buffer.from(JSON.stringify(exercisePayload, null, 2)),
+    );
+
+    // Get the buffer
+    const buffer = zip.toBuffer();
+
+    // Calculate checksum
+    const checksum =
+      'sha256:' + crypto.createHash('sha256').update(buffer).digest('hex');
+
+    const filename = `cybersensei-update-${version}.zip`;
+
+    this.logger.log(
+      `Generated update package: ${filename} (${buffer.length} bytes, ${exercisePayload.exercises.length} exercises)`,
+    );
+
+    return {
+      buffer,
+      filename,
+      checksum,
+      exerciseCount: exercisePayload.exercises.length,
+    };
+  }
+
+  /**
+   * Generate and upload an update package with current exercises
+   */
+  async generateAndUploadPackage(
+    version: string,
+    changelog: string,
+    requiredNodeVersion: string = '1.0.0',
+  ) {
+    // Generate the package
+    const pkg = await this.generateUpdatePackage(
+      version,
+      changelog,
+      requiredNodeVersion,
+    );
+
+    // Create a mock file object for upload
+    const file: Express.Multer.File = {
+      fieldname: 'file',
+      originalname: pkg.filename,
+      encoding: '7bit',
+      mimetype: 'application/zip',
+      buffer: pkg.buffer,
+      size: pkg.buffer.length,
+      destination: '',
+      filename: pkg.filename,
+      path: '',
+      stream: null as any,
+    };
+
+    // Upload using existing method
+    const result = await this.upload(file, pkg.checksum);
+
+    return {
+      ...result,
+      exerciseCount: pkg.exerciseCount,
     };
   }
 }

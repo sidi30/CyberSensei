@@ -182,6 +182,64 @@ export class UpdateController {
     return this.updateService.getDownloadStats(id);
   }
 
+  @Post('admin/update/generate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Générer un package de mise à jour avec les exercices actuels (SUPERADMIN only)',
+    description: `
+      Génère automatiquement un fichier ZIP contenant:
+      - version.json (métadonnées de version)
+      - exercises.json (tous les exercices actifs)
+
+      Le package est ensuite uploadé et disponible pour les nodes.
+    `,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        version: { type: 'string', example: '1.3.0' },
+        changelog: { type: 'string', example: '- Nouveaux exercices\\n- Corrections' },
+        requiredNodeVersion: { type: 'string', example: '1.0.0' },
+      },
+      required: ['version', 'changelog'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Package généré et uploadé',
+    schema: {
+      example: {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        version: '1.3.0',
+        changelog: '- Nouveaux exercices\\n- Corrections',
+        filename: 'cybersensei-update-1.3.0.zip',
+        exerciseCount: 54,
+        createdAt: '2025-11-24T10:30:00.000Z',
+      },
+    },
+  })
+  async generatePackage(
+    @Body()
+    body: {
+      version: string;
+      changelog: string;
+      requiredNodeVersion?: string;
+    },
+  ) {
+    if (!body.version || !body.changelog) {
+      throw new BadRequestException('version et changelog sont requis');
+    }
+
+    return this.updateService.generateAndUploadPackage(
+      body.version,
+      body.changelog,
+      body.requiredNodeVersion || '1.0.0',
+    );
+  }
+
   // ============================================
   // PUBLIC ENDPOINTS (For Nodes)
   // ============================================

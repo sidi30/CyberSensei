@@ -60,7 +60,7 @@ nano .env
 # Démarrer le serveur de développement
 npm run dev
 
-# L'application est accessible sur http://localhost:3000
+# L'application est accessible sur http://localhost:3005
 ```
 
 ### 3. Build Production
@@ -260,7 +260,7 @@ npx tsc --noEmit
 ### Erreur: CORS
 
 **Solution:**
-- Vérifier que le backend autorise `http://localhost:3000` dans CORS
+- Vérifier que le backend autorise `http://localhost:3005` dans CORS
 - Ou utiliser le proxy Vite (déjà configuré)
 
 ### Erreur: API non accessible

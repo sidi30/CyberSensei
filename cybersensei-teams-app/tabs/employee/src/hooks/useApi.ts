@@ -8,12 +8,60 @@ import type {
   SubmitAnswersResponse,
 } from '../types';
 
+export interface AIProfile {
+  id: number;
+  userId: number;
+  style: string;
+  streakDays: number;
+  totalXP: number;
+  currentLevel: number;
+  preferences: {
+    preferredDifficulty?: string;
+    uiTheme?: string;
+    notificationsEnabled?: boolean;
+    dailyGoal?: number;
+    preferredTopics?: string[];
+  };
+  analytics: {
+    avgResponseTime?: number;
+    topicProgress?: Record<string, { attempts: number; avgScore: number }>;
+    completionRate?: number;
+  };
+  weaknesses: Record<string, { score: number; lastAttempt: string }>;
+  lastActivityDate?: string;
+}
+
+export interface PersonalizedGreeting {
+  timeGreeting: string;
+  emoji: string;
+  streakDays: number;
+  totalXP: number;
+  currentLevel: number;
+  streakMessage?: string;
+  xpForNextLevel: number;
+  xpInCurrentLevel: number;
+  levelProgress: number;
+}
+
+export interface Recommendations {
+  topicsToImprove: string[];
+  suggestedDifficulty: string;
+  newTopicsToExplore: string[];
+  dailyGoal: number;
+  exercisesToday: number;
+  dailyGoalReached: boolean;
+}
+
 export interface ApiClient {
   getCurrentUser: () => Promise<User>;
   getTodayQuiz: () => Promise<Quiz>;
   submitExercise: (exerciseId: string, answers: { questionId: string; answer: number }[]) => Promise<SubmitAnswersResponse>;
   getHistory: () => Promise<ExerciseHistory[]>;
   chatWithAI: (message: string, context?: string) => Promise<{ response: string; context?: string }>;
+  getAIProfile: () => Promise<AIProfile>;
+  getPersonalizedGreeting: () => Promise<PersonalizedGreeting>;
+  getRecommendations: () => Promise<Recommendations>;
+  updatePreferences: (preferences: Record<string, unknown>) => Promise<AIProfile>;
 }
 
 export function useApi(authToken: string | null) {
@@ -59,6 +107,26 @@ export function useApi(authToken: string | null) {
           '/api/ai/chat',
           { message, context }
         );
+        return response.data;
+      },
+
+      getAIProfile: async () => {
+        const response = await client.get<AIProfile>('/api/profile');
+        return response.data;
+      },
+
+      getPersonalizedGreeting: async () => {
+        const response = await client.get<PersonalizedGreeting>('/api/profile/greeting');
+        return response.data;
+      },
+
+      getRecommendations: async () => {
+        const response = await client.get<Recommendations>('/api/profile/recommendations');
+        return response.data;
+      },
+
+      updatePreferences: async (preferences: Record<string, unknown>) => {
+        const response = await client.put<AIProfile>('/api/profile/preferences', preferences);
         return response.data;
       },
     } as ApiClient;

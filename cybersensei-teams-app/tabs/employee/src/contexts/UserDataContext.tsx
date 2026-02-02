@@ -73,22 +73,8 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       });
     } catch (err) {
       console.error('Error loading user data:', err);
-      setError('Erreur lors du chargement des données utilisateur');
-      
-      // Mock data pour le développement
-      if (import.meta.env.DEV) {
-        setUserStatus({
-          lastQuizDone: {
-            title: 'Quiz Phishing - Niveau 1',
-            score: 8,
-            maxScore: 10,
-            date: new Date().toISOString(),
-          },
-          globalScore: 75,
-          totalExercises: 12,
-          riskLevel: 'MEDIUM',
-        });
-      }
+      setError('Erreur lors du chargement des donnees. Verifiez que le backend est demarre.');
+      setUserStatus(null);
     } finally {
       setLoading(false);
     }

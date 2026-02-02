@@ -57,8 +57,8 @@ docker compose -f docker-compose.unified.yml --profile full up -d
 | **PostgreSQL** | 5432 | Base de donnees principale |
 | **PgAdmin** | 5050 | Interface admin PostgreSQL |
 | **Node Backend** | 8080 | API Spring Boot |
-| **Node Dashboard** | 3000 | Interface utilisateur Node |
-| **Central Backend** | 3001 | API NestJS |
+| **Node Dashboard** | 3005 | Interface utilisateur Node |
+| **Central Backend** | 3006 | API NestJS |
 | **Central Dashboard** | 5173 | Interface admin Central |
 | **Node AI** | 8000 | Service IA Mistral |
 | **Teams Bot** | 5175 | Bot conversationnel Teams |
@@ -81,7 +81,7 @@ docker compose -f docker-compose.unified.yml --profile full up -d
 .\cybersensei.ps1 start minimal
 ```
 **URLs** :
-- Node Dashboard : http://localhost:3000
+- Node Dashboard : http://localhost:3005
 
 ---
 
@@ -95,7 +95,7 @@ docker compose -f docker-compose.unified.yml --profile full up -d
 .\cybersensei.ps1 start node
 ```
 **URLs** :
-- Node Dashboard : http://localhost:3000
+- Node Dashboard : http://localhost:3005
 - Node API : http://localhost:8080
 - Swagger : http://localhost:8080/swagger-ui.html
 - PgAdmin : http://localhost:5050
@@ -112,7 +112,7 @@ docker compose -f docker-compose.unified.yml --profile full up -d
 .\cybersensei.ps1 start teams
 ```
 **URLs** :
-- Node Dashboard : http://localhost:3000
+- Node Dashboard : http://localhost:3005
 - Node API : http://localhost:8080
 - Teams Bot : http://localhost:5175
 - Teams Tabs : http://localhost:5176
@@ -140,7 +140,7 @@ TEAMS_APP_TENANT_ID=<votre-tenant-id>
 ```
 **URLs** :
 - Central Dashboard : http://localhost:5173
-- Central API : http://localhost:3001
+- Central API : http://localhost:3006
 - PgAdmin : http://localhost:5050
 
 ---
@@ -155,10 +155,10 @@ TEAMS_APP_TENANT_ID=<votre-tenant-id>
 .\cybersensei.ps1 start full
 ```
 **URLs** :
-- Node Dashboard : http://localhost:3000
+- Node Dashboard : http://localhost:3005
 - Node API : http://localhost:8080
 - Central Dashboard : http://localhost:5173
-- Central API : http://localhost:3001
+- Central API : http://localhost:3006
 - Teams Bot : http://localhost:5175
 - Teams Tabs : http://localhost:5176
 - Website : http://localhost:3002

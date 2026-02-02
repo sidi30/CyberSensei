@@ -27,13 +27,7 @@ export interface Quiz {
   payloadJSON?: {
     questions?: Question[];
     courseIntro?: string;
-    introMedia?: {
-      type: 'image' | 'gif' | 'video' | 'lottie';
-      url: string;
-      alt: string;
-      caption?: string;
-      thumbnail?: string;
-    };
+    introMedia?: MediaContent;
   };
 }
 
@@ -42,6 +36,28 @@ export interface Question {
   text: string;
   options: string[];
   correctAnswer?: number;
+  // Champs pédagogiques enrichis
+  context?: string;
+  contextMedia?: MediaContent;
+  feedbackCorrect?: string;
+  feedbackIncorrect?: string;
+  keyTakeaway?: string;
+  advice?: AdviceBlock;
+}
+
+export interface MediaContent {
+  type: 'image' | 'gif' | 'video' | 'lottie';
+  url: string;
+  alt: string;
+  caption?: string;
+  thumbnail?: string;
+}
+
+export interface AdviceBlock {
+  concept: string;
+  example: string;
+  advice: string[];
+  media?: MediaContent;
 }
 
 export interface ExerciseHistory {

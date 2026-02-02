@@ -14,6 +14,7 @@ import io.cybersensei.domain.repository.ExerciseRepository;
 import io.cybersensei.domain.repository.UserExerciseResultRepository;
 import io.cybersensei.domain.repository.UserRepository;
 import io.cybersensei.security.UserPrincipal;
+import io.cybersensei.websocket.ProgressWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -28,6 +29,7 @@ import java.util.*;
  * - Exclut les exercices déjà complétés
  * - Supprime les réponses correctes du JSON envoyé au client
  * - Difficulté adaptative basée sur les performances
+ * - Notifications WebSocket temps réel
  */
 @Service
 @RequiredArgsConstructor
@@ -40,6 +42,8 @@ public class QuizService {
     private final UserRepository userRepository;
     private final ExerciseMapper exerciseMapper;
     private final UserExerciseResultMapper resultMapper;
+    private final ProgressWebSocketHandler webSocketHandler;
+    private final AIProfileService aiProfileService;
     private final Random random = new Random();
 
     @Transactional(readOnly = true)
@@ -125,7 +129,28 @@ public class QuizService {
         // Build response with feedback
         UserExerciseResultDto dto = resultMapper.toDto(result);
         dto.setMaxScore((double) maxScore);
-        dto.setFeedback(generateFeedback(score, maxScore, exercise.getTopic()));
+        String feedback = generateFeedback(score, maxScore, exercise.getTopic());
+        dto.setFeedback(feedback);
+
+        // Broadcast progress to managers via WebSocket
+        try {
+            String userName = principal.getEmail() != null ? principal.getEmail() : "Utilisateur " + userId;
+            webSocketHandler.broadcastUserProgress(userId, userName, score, maxScore, exercise.getTopic());
+            webSocketHandler.notifyExerciseComplete(userId, score, maxScore, feedback);
+            log.debug("WebSocket notifications sent for user {} exercise completion", userId);
+        } catch (Exception e) {
+            log.warn("Failed to send WebSocket notification: {}", e.getMessage());
+        }
+
+        // Update AI Profile with activity, XP and topic progress
+        try {
+            int xpEarned = calculateXP(score, maxScore, exercise.getDifficulty());
+            aiProfileService.recordActivity(xpEarned);
+            aiProfileService.updateTopicProgress(exercise.getTopic(), score, maxScore);
+            log.debug("AI Profile updated for user {} with {} XP", userId, xpEarned);
+        } catch (Exception e) {
+            log.warn("Failed to update AI Profile: {}", e.getMessage());
+        }
 
         return dto;
     }
@@ -154,33 +179,24 @@ public class QuizService {
     }
 
     /**
-     * Remove correct answers from payload before sending to client
+     * Prepare payload for client.
+     * 
+     * Note: For a learning/training application, we keep ALL data including:
+     * - correctAnswer: needed by client to show instant feedback
+     * - feedbackCorrect/feedbackIncorrect: shown after user answers
+     * - keyTakeaway: educational summary shown after each question
+     * - advice: structured learning content
+     * 
+     * Security note: In a high-stakes exam context, you would remove correctAnswer
+     * and have the client submit to server for validation. But for daily training,
+     * instant feedback is more valuable than preventing users from inspecting
+     * network requests (which a determined user could do anyway).
      */
     @SuppressWarnings("unchecked")
     private Map<String, Object> sanitizePayloadForClient(Map<String, Object> payload) {
-        if (payload == null) return null;
-
-        Map<String, Object> sanitized = new HashMap<>(payload);
-
-        // Remove correctAnswer from questions array
-        if (sanitized.containsKey("questions")) {
-            List<Map<String, Object>> questions = (List<Map<String, Object>>) sanitized.get("questions");
-            List<Map<String, Object>> sanitizedQuestions = new ArrayList<>();
-
-            for (Map<String, Object> question : questions) {
-                Map<String, Object> sanitizedQuestion = new HashMap<>(question);
-                // Remove the correct answer - client should not see this
-                sanitizedQuestion.remove("correctAnswer");
-                // Also remove detailed feedback that might hint at the answer
-                sanitizedQuestion.remove("feedbackCorrect");
-                sanitizedQuestion.remove("feedbackIncorrect");
-                sanitizedQuestions.add(sanitizedQuestion);
-            }
-
-            sanitized.put("questions", sanitizedQuestions);
-        }
-
-        return sanitized;
+        // Return payload as-is for learning experience
+        // Client needs all fields for interactive feedback
+        return payload;
     }
 
     /**
@@ -293,6 +309,29 @@ public class QuizService {
         } else {
             return String.format("Courage ! Le sujet '%s' demande de la pratique. Relis les conseils et réessaie ! 📚", topic);
         }
+    }
+
+    /**
+     * Calculate XP earned based on score and difficulty
+     */
+    private int calculateXP(int score, int maxScore, Exercise.Difficulty difficulty) {
+        // Base XP per correct answer
+        int baseXP = switch (difficulty) {
+            case BEGINNER -> 10;
+            case INTERMEDIATE -> 15;
+            case ADVANCED -> 25;
+            case EXPERT -> 40;
+        };
+
+        // XP = base * correct answers + bonus for perfect score
+        int xp = baseXP * score;
+
+        if (score == maxScore && maxScore > 0) {
+            // Perfect score bonus: 50%
+            xp = (int) (xp * 1.5);
+        }
+
+        return xp;
     }
 
     private UserPrincipal getCurrentUser() {

@@ -7,17 +7,49 @@
 
     <changeSet id="012-update-exercises-french" author="cybersensei">
         
-        <!-- Supprimer les anciens exercices en anglais -->
+        <!-- Supprimer les anciens exercices -->
         <delete tableName="exercises">
-            <where>topic IN ('Phishing Recognition', 'Password Security')</where>
+            <where>topic IN ('Phishing Recognition', 'Password Security', 'Reconnaissance du phishing', 'Securite des mots de passe', 'Ingenierie sociale', 'Liens et telechargements suspects')</where>
         </delete>
         
-        <!-- Exercice 1: Phishing - Format complet -->
+        <!-- Exercice 1: Phishing - Format complet avec feedbacks et keyTakeaway -->
         <insert tableName="exercises">
             <column name="topic" value="Reconnaissance du phishing"/>
             <column name="type" value="QUIZ"/>
             <column name="difficulty" value="BEGINNER"/>
-            <column name="payload_json"><![CDATA[{"courseIntro":"Le phishing est une technique de fraude visant a voler vos informations personnelles. Apprenez a reperer les signes suspects dans les emails.","questions":[{"id":"q1","text":"Quel est un signe courant de phishing ?","options":["Fautes de grammaire","Langage urgent","Liens suspects","Toutes ces reponses"],"correctAnswer":3},{"id":"q2","text":"Que devez-vous faire face a un email suspect ?","options":["Cliquer pour verifier","Le supprimer immediatement","Le signaler au service IT","Repondre pour demander des precisions"],"correctAnswer":2}]}]]></column>
+            <column name="payload_json"><![CDATA[{
+  "courseIntro": "Le phishing est la technique d'attaque la plus repandue. Chaque jour, des milliers d'emails frauduleux tentent de voler vos identifiants. Apprenons ensemble a les reperer !",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "Vous recevez un email de votre banque vous demandant de verifier vos informations en cliquant sur un lien. Que faites-vous ?",
+      "options": [
+        "Je clique sur le lien car c'est ma banque",
+        "Je survole le lien pour verifier l'URL",
+        "Je supprime l'email sans rien faire",
+        "Je contacte ma banque par telephone"
+      ],
+      "correctAnswer": 3,
+      "feedbackCorrect": "Excellent reflexe ! Contacter directement votre banque par un canal officiel est la meilleure facon de verifier une demande suspecte.",
+      "feedbackIncorrect": "Attention ! Les banques ne demandent jamais vos informations par email. En cas de doute, contactez toujours votre banque par telephone ou via leur site officiel.",
+      "keyTakeaway": "Ne jamais cliquer sur les liens dans les emails bancaires - contactez votre banque directement."
+    },
+    {
+      "id": "q2",
+      "text": "Quel element est un signe revelateur de phishing ?",
+      "options": [
+        "Un logo de haute qualite",
+        "Une adresse expediteur avec des fautes",
+        "Un email recu a 14h",
+        "Un message poli et courtois"
+      ],
+      "correctAnswer": 1,
+      "feedbackCorrect": "Bien vu ! Les adresses d'expediteur suspectes (fautes, domaines bizarres comme banque-fr.xyz) sont un indicateur cle de phishing.",
+      "feedbackIncorrect": "L'adresse de l'expediteur est souvent maquillée dans les emails de phishing. Verifiez toujours le domaine complet (ex: @mabanque.fr vs @ma-banque.xyz).",
+      "keyTakeaway": "Toujours verifier l'adresse email de l'expediteur, pas seulement le nom affiche."
+    }
+  ]
+}]]></column>
             <column name="active" valueBoolean="true"/>
         </insert>
 
@@ -26,7 +58,39 @@
             <column name="topic" value="Securite des mots de passe"/>
             <column name="type" value="QUIZ"/>
             <column name="difficulty" value="INTERMEDIATE"/>
-            <column name="payload_json"><![CDATA[{"courseIntro":"Un mot de passe fort est votre premiere ligne de defense contre les pirates. Decouvrez les bonnes pratiques pour proteger vos comptes.","questions":[{"id":"q1","text":"Quelle est la longueur minimale recommandee pour un mot de passe securise ?","options":["6 caracteres","8 caracteres","12 caracteres","16 caracteres"],"correctAnswer":2},{"id":"q2","text":"Quelle pratique est la plus securisee ?","options":["Utiliser le meme mot de passe partout","Noter ses mots de passe sur papier","Utiliser un gestionnaire de mots de passe","Changer de mot de passe tous les mois"],"correctAnswer":2}]}]]></column>
+            <column name="payload_json"><![CDATA[{
+  "courseIntro": "Votre mot de passe est la cle de votre vie numerique. Un mot de passe faible, c'est une porte ouverte aux pirates. Voyons comment les securiser !",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "Quelle est la longueur minimale recommandee pour un mot de passe vraiment securise ?",
+      "options": [
+        "6 caracteres",
+        "8 caracteres",
+        "12 caracteres",
+        "4 caracteres suffisent"
+      ],
+      "correctAnswer": 2,
+      "feedbackCorrect": "Parfait ! 12 caracteres minimum est la recommandation actuelle de l'ANSSI. Plus c'est long, plus c'est resistant aux attaques par force brute.",
+      "feedbackIncorrect": "Un mot de passe de 8 caracteres peut etre cracke en quelques heures aujourd'hui. L'ANSSI recommande au minimum 12 caracteres melangeant lettres, chiffres et symboles.",
+      "keyTakeaway": "Minimum 12 caracteres avec majuscules, minuscules, chiffres et symboles."
+    },
+    {
+      "id": "q2",
+      "text": "Quelle est la pratique la plus securisee pour gerer ses mots de passe ?",
+      "options": [
+        "Utiliser le meme mot de passe partout",
+        "Les noter sur un post-it",
+        "Utiliser un gestionnaire de mots de passe",
+        "Les memoriser tous"
+      ],
+      "correctAnswer": 2,
+      "feedbackCorrect": "Exactement ! Un gestionnaire de mots de passe (KeePass, Bitwarden, 1Password) genere et stocke des mots de passe uniques et complexes en toute securite.",
+      "feedbackIncorrect": "Reutiliser un mot de passe est tres dangereux : si un site est pirate, tous vos comptes sont compromis. Utilisez un gestionnaire de mots de passe !",
+      "keyTakeaway": "Utilisez un gestionnaire de mots de passe pour avoir des mots de passe uniques et forts partout."
+    }
+  ]
+}]]></column>
             <column name="active" valueBoolean="true"/>
         </insert>
 
@@ -35,7 +99,39 @@
             <column name="topic" value="Ingenierie sociale"/>
             <column name="type" value="QUIZ"/>
             <column name="difficulty" value="INTERMEDIATE"/>
-            <column name="payload_json"><![CDATA[{"courseIntro":"Les pirates utilisent des techniques psychologiques pour vous manipuler. Apprenez a reconnaitre ces attaques.","questions":[{"id":"q1","text":"Un collegue vous appelle pour demander votre mot de passe. Que faites-vous ?","options":["Je lui donne car je le connais","Je refuse et signale au service IT","Je demande de rappeler plus tard","Je lui envoie par email"],"correctAnswer":1},{"id":"q2","text":"Quel est un exemple classique d ingenierie sociale ?","options":["Un virus informatique","Un faux technicien au telephone","Une mise a jour Windows","Un antivirus"],"correctAnswer":1}]}]]></column>
+            <column name="payload_json"><![CDATA[{
+  "courseIntro": "L'ingenierie sociale exploite la confiance humaine plutot que les failles techniques. Les pirates manipulent les emotions pour vous faire baisser la garde.",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "Un collegue vous appelle et demande votre mot de passe car il doit acceder a un fichier urgent. Que faites-vous ?",
+      "options": [
+        "Je lui donne car je le connais bien",
+        "Je refuse poliment et le redirige vers le service IT",
+        "Je lui envoie par email securise",
+        "Je verifie d'abord avec mon manager"
+      ],
+      "correctAnswer": 1,
+      "feedbackCorrect": "Excellent ! Un collegue legitime n'a jamais besoin de VOTRE mot de passe. Le service IT peut lui donner les acces necessaires via les canaux officiels.",
+      "feedbackIncorrect": "Attention ! Meme un collegue ne doit jamais connaitre votre mot de passe. Un pirate peut usurper une identite. Redirigez toujours vers le service IT.",
+      "keyTakeaway": "Ne jamais partager son mot de passe, meme avec un collegue. Rediriger vers le service IT."
+    },
+    {
+      "id": "q2",
+      "text": "Vous recevez un appel d'un technicien Microsoft qui detecte un virus sur votre PC. Il demande un acces a distance. Que faites-vous ?",
+      "options": [
+        "Je lui donne l'acces car c'est Microsoft",
+        "Je raccroche et signale au service IT",
+        "Je lui demande de rappeler plus tard",
+        "Je verifie son identite avec un email"
+      ],
+      "correctAnswer": 1,
+      "feedbackCorrect": "Bravo ! Microsoft n'appelle JAMAIS les utilisateurs de maniere proactive. C'est une arnaque classique. Raccrochez et signalez !",
+      "feedbackIncorrect": "Microsoft ne vous appellera jamais pour signaler un virus. C'est une arnaque tres repandue. Raccrochez immediatement et signalez au service IT.",
+      "keyTakeaway": "Microsoft et autres grandes entreprises ne vous appellent jamais sans que vous ayez initie le contact."
+    }
+  ]
+}]]></column>
             <column name="active" valueBoolean="true"/>
         </insert>
 
@@ -44,7 +140,80 @@
             <column name="topic" value="Liens et telechargements suspects"/>
             <column name="type" value="QUIZ"/>
             <column name="difficulty" value="BEGINNER"/>
-            <column name="payload_json"><![CDATA[{"courseIntro":"Les liens malveillants sont partout. Apprenez a les identifier avant de cliquer.","questions":[{"id":"q1","text":"Comment verifier un lien avant de cliquer ?","options":["Cliquer pour voir","Survoler avec la souris","Demander a un ami","Ignorer le lien"],"correctAnswer":1},{"id":"q2","text":"Quel type de fichier est potentiellement dangereux ?","options":["Document PDF","Image PNG","Fichier .exe","Fichier texte"],"correctAnswer":2}]}]]></column>
+            <column name="payload_json"><![CDATA[{
+  "courseIntro": "Un simple clic peut infecter votre ordinateur. Apprenez a identifier les liens et fichiers dangereux avant qu'il ne soit trop tard !",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "Comment verifier un lien avant de cliquer dessus ?",
+      "options": [
+        "Cliquer rapidement pour voir",
+        "Survoler avec la souris pour voir l'URL reelle",
+        "Faire confiance si le texte semble officiel",
+        "Demander a un collegue de cliquer d'abord"
+      ],
+      "correctAnswer": 1,
+      "feedbackCorrect": "Parfait ! En survolant un lien, vous voyez l'URL reelle en bas du navigateur. Un lien affichant 'www.mabanque.fr' peut en realite pointer vers 'www.arnaque.xyz'.",
+      "feedbackIncorrect": "Survoler le lien avec votre souris revele la vraie destination en bas de l'ecran. Ne vous fiez jamais au texte affiche du lien !",
+      "keyTakeaway": "Toujours survoler un lien pour voir sa vraie destination avant de cliquer."
+    },
+    {
+      "id": "q2",
+      "text": "Quel type de fichier est potentiellement le plus dangereux ?",
+      "options": [
+        "Document .pdf",
+        "Image .png",
+        "Fichier .exe",
+        "Fichier .txt"
+      ],
+      "correctAnswer": 2,
+      "feedbackCorrect": "Exact ! Les fichiers .exe sont des programmes executables qui peuvent contenir des virus. Ne les ouvrez jamais sauf si vous etes 100% sur de la source.",
+      "feedbackIncorrect": "Les fichiers .exe sont des programmes qui s'executent sur votre ordinateur. Un .exe malveillant peut installer un ransomware ou voler vos donnees.",
+      "keyTakeaway": "Ne jamais ouvrir un fichier .exe (ou .bat, .cmd, .scr) provenant d'une source inconnue."
+    }
+  ]
+}]]></column>
+            <column name="active" valueBoolean="true"/>
+        </insert>
+
+        <!-- Exercice 5: Wi-Fi et connexions -->
+        <insert tableName="exercises">
+            <column name="topic" value="Securite du Wi-Fi"/>
+            <column name="type" value="QUIZ"/>
+            <column name="difficulty" value="BEGINNER"/>
+            <column name="payload_json"><![CDATA[{
+  "courseIntro": "Le Wi-Fi public est pratique mais dangereux. Vos donnees peuvent etre interceptees par des pirates sur le meme reseau. Voyons comment vous proteger !",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "Vous etes dans un cafe et devez consulter votre compte bancaire. Que faites-vous ?",
+      "options": [
+        "J'utilise le Wi-Fi gratuit du cafe",
+        "J'utilise le Wi-Fi avec un VPN active",
+        "J'attends d'etre chez moi ou j'utilise ma 4G",
+        "Je demande le mot de passe du Wi-Fi prive"
+      ],
+      "correctAnswer": 2,
+      "feedbackCorrect": "Excellent choix ! Pour des operations sensibles comme la banque, privilegiez votre connexion 4G ou attendez d'etre sur un reseau de confiance.",
+      "feedbackIncorrect": "Les Wi-Fi publics sont risques car un pirate peut intercepter vos donnees. Pour la banque, utilisez votre 4G ou un VPN de confiance.",
+      "keyTakeaway": "Eviter les operations sensibles sur Wi-Fi public. Utiliser la 4G ou un VPN."
+    },
+    {
+      "id": "q2",
+      "text": "A quoi sert un VPN ?",
+      "options": [
+        "Accelerer votre connexion internet",
+        "Chiffrer vos donnees et masquer votre activite",
+        "Bloquer les publicites",
+        "Ameliorer le signal Wi-Fi"
+      ],
+      "correctAnswer": 1,
+      "feedbackCorrect": "Parfait ! Un VPN cree un tunnel chiffre entre vous et internet. Meme sur un Wi-Fi public, vos donnees restent protegees des regards indiscrets.",
+      "feedbackIncorrect": "Un VPN (Virtual Private Network) chiffre toutes vos communications. C'est comme un tunnel securise qui protege vos donnees sur les reseaux non securises.",
+      "keyTakeaway": "Un VPN chiffre vos donnees et vous protege sur les reseaux publics."
+    }
+  ]
+}]]></column>
             <column name="active" valueBoolean="true"/>
         </insert>
 

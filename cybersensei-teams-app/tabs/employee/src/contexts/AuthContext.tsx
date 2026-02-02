@@ -215,8 +215,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Development/Standalone mode
       if (!inTeams) {
-        console.warn('⚠️ MODE STANDALONE - Pas dans Teams, utilisation de données de test');
-        
+        console.warn('⚠️ MODE STANDALONE - Pas dans Teams, connexion au backend en mode dev');
+
         // Check for cached credentials first
         const cached = getCachedCredentials();
         if (cached) {
@@ -227,21 +227,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Use dev user
-        const devUser: GraphUser = {
-          id: 'dev-user-' + Math.random().toString(36).substring(7),
-          displayName: 'Utilisateur Test',
-          mail: 'test@entreprise.fr',
-          jobTitle: 'Employé',
-          department: 'IT',
-          userPrincipalName: 'test@entreprise.fr',
-        };
+        // Try to authenticate with backend dev-login endpoint
+        try {
+          const response = await axios.post(
+            `${config.backendBaseUrl}/api/auth/dev-login?role=EMPLOYEE`,
+            {},
+            { timeout: 10000 }
+          );
 
-        setToken('dev-token');
-        setBackendToken('bypass-token');
-        setUser(devUser);
-        setLoading(false);
-        return;
+          if (response.data?.token) {
+            const devUser: GraphUser = {
+              id: response.data.userId?.toString() || 'dev-user',
+              displayName: response.data.displayName || 'Employe Test',
+              mail: response.data.email || 'test@entreprise.fr',
+              jobTitle: 'Employe',
+              department: 'IT',
+              userPrincipalName: response.data.email || 'test@entreprise.fr',
+            };
+
+            setToken('dev-token');
+            setBackendToken(response.data.token);
+            setUser(devUser);
+            cacheCredentials(response.data.token, devUser);
+            console.log('✅ Dev login successful:', devUser.displayName);
+            setLoading(false);
+            return;
+          }
+        } catch (devErr) {
+          console.error('Dev login failed:', devErr);
+          setError('Backend non disponible. Demarrez le backend avec: docker compose --profile node up -d');
+          setLoading(false);
+          return;
+        }
       }
 
       // Production Teams SSO flow
@@ -284,19 +301,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setBackendToken(cached.token);
         setUser(cached.user);
         setToken('cached-token');
-      } else if (import.meta.env.DEV) {
-        // Dev fallback
-        console.warn('Using development fallback');
-        setToken('dev-token');
-        setBackendToken('bypass-token');
-        setUser({
-          id: 'dev-user-fallback',
-          displayName: 'Utilisateur Test (Fallback)',
-          mail: 'test@entreprise.fr',
-          jobTitle: 'Employé',
-          department: 'IT',
-          userPrincipalName: 'test@entreprise.fr',
-        });
       } else {
         setError('Erreur d\'authentification. Veuillez actualiser la page ou contacter le support.');
       }

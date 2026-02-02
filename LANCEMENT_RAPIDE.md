@@ -51,13 +51,13 @@ Quand c'est pret : Le script affiche les URLs
 ### Profil `minimal`
 ```
 URLs disponibles :
-  - Node Dashboard        http://localhost:3000
+  - Node Dashboard        http://localhost:3005
 ```
 
 ### Profil `node`
 ```
 URLs disponibles :
-  - Node Dashboard        http://localhost:3000
+  - Node Dashboard        http://localhost:3005
   - Node API              http://localhost:8080
   - Node Swagger          http://localhost:8080/swagger-ui.html
   - PgAdmin               http://localhost:5050
@@ -66,7 +66,7 @@ URLs disponibles :
 ### Profil `teams` (Node + Microsoft Teams)
 ```
 URLs disponibles :
-  - Node Dashboard        http://localhost:3000
+  - Node Dashboard        http://localhost:3005
   - Node API              http://localhost:8080
   - Teams Bot             http://localhost:5175
   - Teams Tabs            http://localhost:5176
@@ -77,17 +77,17 @@ URLs disponibles :
 ```
 URLs disponibles :
   - Central Dashboard     http://localhost:5173
-  - Central API           http://localhost:3001
+  - Central API           http://localhost:3006
   - PgAdmin               http://localhost:5050
 ```
 
 ### Profil `full` (tout)
 ```
 URLs disponibles :
-  - Node Dashboard        http://localhost:3000
+  - Node Dashboard        http://localhost:3005
   - Node API              http://localhost:8080
   - Central Dashboard     http://localhost:5173
-  - Central API           http://localhost:3001
+  - Central API           http://localhost:3006
   - Teams Bot             http://localhost:5175
   - Teams Tabs            http://localhost:5176
   - Website               http://localhost:3002
@@ -164,7 +164,7 @@ Solution : Forcez le demarrage
 | 1. Installer Docker Desktop | https://docker.com |
 | 2. Lancer | `.\cybersensei.ps1 start node` |
 | 3. Attendre | ~5 minutes |
-| 4. Tester | http://localhost:3000 |
+| 4. Tester | http://localhost:3005 |
 | 5. Arreter | `.\cybersensei.ps1 stop` |
 
 ---

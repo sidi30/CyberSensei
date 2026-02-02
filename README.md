@@ -77,10 +77,10 @@ cybersensei/
 
 | Service | Port | URL | Description |
 |---------|------|-----|-------------|
-| **Node Dashboard** | 3000 | http://localhost:3000 | Interface utilisateur |
+| **Node Dashboard** | 3005 | http://localhost:3005 | Interface utilisateur |
 | **Node API** | 8080 | http://localhost:8080 | API Spring Boot |
 | **Central Dashboard** | 5173 | http://localhost:5173 | Admin SaaS |
-| **Central API** | 3001 | http://localhost:3001 | API NestJS |
+| **Central API** | 3006 | http://localhost:3006 | API NestJS |
 | **Teams Bot** | 5175 | http://localhost:5175 | Bot conversationnel |
 | **Node AI** | 8000 | http://localhost:8000 | Service IA Mistral |
 | **Website** | 3002 | http://localhost:3002 | Site marketing |
@@ -278,7 +278,7 @@ MIT License - Voir [LICENSE](LICENSE)
 .\cybersensei.ps1 start node
 ```
 
-**Accès immédiat :** http://localhost:3000
+**Accès immédiat :** http://localhost:3005
 
 ---
 

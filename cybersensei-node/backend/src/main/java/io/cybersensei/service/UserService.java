@@ -141,7 +141,7 @@ public class UserService {
         if (request.getDepartment() != null) {
             user.setDepartment(request.getDepartment());
         }
-        
+
         user = userRepository.save(user);
 
         // Generate JWT token for the user
@@ -151,6 +151,61 @@ public class UserService {
                 .token(token)
                 .userId(user.getId())
                 .role(user.getRole().name())
+                .build();
+    }
+
+    /**
+     * Development login - creates or retrieves a test user and returns a JWT token.
+     * Only to be used in development mode.
+     */
+    @Transactional
+    public TeamsTokenExchangeResponse devLogin(String requestedRole) {
+        User.UserRole parsedRole;
+        try {
+            parsedRole = User.UserRole.valueOf(requestedRole.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            parsedRole = User.UserRole.EMPLOYEE;
+        }
+        final User.UserRole role = parsedRole;
+
+        // Try to find an existing user with the requested role
+        User user = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == role && u.getActive())
+                .findFirst()
+                .orElseGet(() -> {
+                    // Create a dev user if none exists
+                    String email = role == User.UserRole.MANAGER
+                            ? "dev-manager@cybersensei.local"
+                            : role == User.UserRole.ADMIN
+                                    ? "dev-admin@cybersensei.local"
+                                    : "dev-employee@cybersensei.local";
+
+                    String name = role == User.UserRole.MANAGER
+                            ? "Manager Test"
+                            : role == User.UserRole.ADMIN
+                                    ? "Admin Test"
+                                    : "Employe Test";
+
+                    User newUser = User.builder()
+                            .email(email)
+                            .name(name)
+                            .role(role)
+                            .department("IT")
+                            .active(true)
+                            .build();
+
+                    return userRepository.save(newUser);
+                });
+
+        // Generate JWT token
+        String token = tokenProvider.generateToken(user.getId(), user.getEmail());
+
+        return TeamsTokenExchangeResponse.builder()
+                .token(token)
+                .userId(user.getId())
+                .role(user.getRole().name())
+                .displayName(user.getName())
+                .email(user.getEmail())
                 .build();
     }
 }

@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +25,9 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserService userService;
+
+    @Value("${cybersensei.dev-mode:true}")
+    private boolean devModeEnabled;
 
     @PostMapping("/login")
     @Operation(summary = "Authenticate user and get JWT token")
@@ -41,6 +45,24 @@ public class AuthController {
         log.info("Teams token exchange requested for user: {}", request.getEmail());
         TeamsTokenExchangeResponse response = userService.exchangeTeamsToken(request);
         log.info("Teams token exchanged successfully for user: {}", response.getUserId());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/dev-login")
+    @Operation(
+        summary = "Development mode authentication",
+        description = "Returns a JWT token for development/testing purposes. Only available when dev-mode is enabled."
+    )
+    public ResponseEntity<TeamsTokenExchangeResponse> devLogin(
+            @RequestParam(required = false, defaultValue = "EMPLOYEE") String role) {
+        if (!devModeEnabled) {
+            log.warn("Dev login attempted but dev-mode is disabled");
+            return ResponseEntity.status(403).build();
+        }
+
+        log.info("Dev login requested for role: {}", role);
+        TeamsTokenExchangeResponse response = userService.devLogin(role);
+        log.info("Dev login successful for user: {}", response.getUserId());
         return ResponseEntity.ok(response);
     }
 }

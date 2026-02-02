@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "users", indexes = {
     @Index(name = "idx_user_email", columnList = "email"),
-    @Index(name = "idx_user_ms_teams_id", columnList = "msTeamsId")
+    @Index(name = "idx_user_ms_teams_id", columnList = "ms_teams_id")
 })
 @Getter
 @Setter
@@ -25,7 +25,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(name = "ms_teams_id", unique = true)
     private String msTeamsId;
 
     @Column(nullable = false)
@@ -41,13 +41,13 @@ public class User {
     private String department;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private Boolean active = true;
 
-    @Column(length = 1000)
+    @Column(name = "password_hash", length = 1000)
     private String passwordHash; // For non-SSO users
 
     public enum UserRole {

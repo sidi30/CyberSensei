@@ -53,6 +53,26 @@ public interface ExerciseRepository extends JpaRepository<Exercise, Long> {
      */
     @Query("SELECT COUNT(e) FROM Exercise e WHERE e.active = true")
     Long countActiveExercises();
+
+    /**
+     * Find exercise by Central ID (for sync)
+     */
+    java.util.Optional<Exercise> findByCentralId(String centralId);
+
+    /**
+     * Find all exercises with a Central ID (synced from Central)
+     */
+    List<Exercise> findByCentralIdIsNotNull();
+
+    /**
+     * Delete exercise by Central ID
+     */
+    void deleteByCentralId(String centralId);
+
+    /**
+     * Check if exercise with Central ID exists
+     */
+    boolean existsByCentralId(String centralId);
 }
 
 

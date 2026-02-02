@@ -8,6 +8,7 @@ import { UpdateModule } from './modules/update/update.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { AdminAuthModule } from './modules/admin-auth/admin-auth.module';
 import { GlobalMetricsModule } from './modules/global-metrics/global-metrics.module';
+import { ExerciseModule } from './modules/exercise/exercise.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { GlobalMetricsModule } from './modules/global-metrics/global-metrics.mod
     TelemetryModule,
     AdminAuthModule,
     GlobalMetricsModule,
+    ExerciseModule,
   ],
 })
 export class AppModule {}

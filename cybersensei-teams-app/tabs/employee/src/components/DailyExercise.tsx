@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { Loader2, User, ShieldCheck, Send, Lightbulb, CheckCircle2, BookOpen, Play } from 'lucide-react';
-import { 
-  PedagogicalMedia, 
-  AdviceBlock, 
-  ENCOURAGEMENT_MESSAGES, 
-  TOPIC_EMOJIS 
+import {
+  PedagogicalMedia,
+  AdviceBlock,
+  ENCOURAGEMENT_MESSAGES,
+  TOPIC_EMOJIS
 } from '../types/pedagogy';
+import { StatsBar } from './StatsBar';
 
 interface ChatMessage {
   id: string;
@@ -350,20 +351,23 @@ export function DailyExercise() {
         
         setTimeout(() => {
           // Feedback contextuel
-          const feedbackText = isCorrect ? q.feedbackCorrect : q.feedbackIncorrect;
+          const feedbackText = isCorrect 
+            ? (q.feedbackCorrect || "Bravo, c'est la bonne réponse !")
+            : (q.feedbackIncorrect || "Ce n'est pas la bonne réponse. Voyons pourquoi ensemble.");
           addBotMessage(feedbackText, 'feedback');
           
           // Afficher le bloc de conseil structuré si disponible
           setTimeout(() => {
             if (q.advice) {
               addBotMessage('', 'advice', undefined, undefined, undefined, q.advice);
-            } else {
-              // Fallback : afficher le keyTakeaway
+            } else if (q.keyTakeaway) {
+              // Afficher le keyTakeaway s'il existe
               addBotMessage(
                 `💡 **À retenir :** ${q.keyTakeaway}`, 
                 'important'
               );
             }
+            // Si ni advice ni keyTakeaway, on passe directement à la suite (pas de message "undefined")
             
             // Prochaine question ou fin
             setTimeout(() => {
@@ -473,6 +477,9 @@ export function DailyExercise() {
 
   return (
     <div className="flex flex-col h-[85vh] bg-white rounded-2xl shadow-2xl overflow-hidden max-w-2xl mx-auto border border-slate-200">
+      {/* Stats Bar - Gamification */}
+      <StatsBar />
+
       {/* Header Pro */}
       <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-purple-600 p-5 text-white flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-3">

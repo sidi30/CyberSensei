@@ -33,4 +33,10 @@ public interface UserExerciseResultRepository extends JpaRepository<UserExercise
     
     @Query("SELECT COUNT(r) FROM UserExerciseResult r WHERE r.date >= :since")
     Long countResultsSince(@Param("since") LocalDateTime since);
+
+    @Query("SELECT COUNT(r) FROM UserExerciseResult r WHERE r.userId = :userId AND r.date >= CURRENT_DATE")
+    Long countTodayByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT r.exerciseId FROM UserExerciseResult r WHERE r.userId = :userId")
+    List<Long> findCompletedExerciseIdsByUserId(@Param("userId") Long userId);
 }

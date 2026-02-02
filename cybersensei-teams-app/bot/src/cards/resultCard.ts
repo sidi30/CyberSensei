@@ -274,19 +274,22 @@ export function createResultCard(
               weight: 'Bolder',
               size: 'Medium',
             },
-            ...incorrectDetails.slice(0, 3).map((detail) => ({
-              type: 'Container',
-              style: 'warning',
-              spacing: 'Small',
-              items: [
-                {
-                  type: 'TextBlock',
-                  text: detail.keyTakeaway || '💡 Relis bien la leçon sur ce point',
-                  wrap: true,
-                  size: 'Small',
-                },
-              ],
-            })),
+            ...incorrectDetails
+              .filter((detail) => detail.keyTakeaway) // Ne montrer que si keyTakeaway existe
+              .slice(0, 3)
+              .map((detail) => ({
+                type: 'Container',
+                style: 'warning',
+                spacing: 'Small',
+                items: [
+                  {
+                    type: 'TextBlock',
+                    text: `💡 ${detail.keyTakeaway}`,
+                    wrap: true,
+                    size: 'Small',
+                  },
+                ],
+              })),
           ],
         },
       ] : []),

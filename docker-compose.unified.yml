@@ -14,8 +14,8 @@
 #   5432  - PostgreSQL
 #   5050  - PgAdmin
 #   8080  - Node Backend
-#   3000  - Node Dashboard  
-#   3001  - Central Backend
+#   3005  - Node Dashboard  
+#   3006  - Central Backend
 #   5173  - Central Dashboard
 #   8000  - Node AI
 #   5175  - Teams Bot
@@ -135,7 +135,7 @@ services:
       - node
       - full
     ports:
-      - "${NODE_DASHBOARD_PORT:-3000}:80"
+      - "${NODE_DASHBOARD_PORT:-3005}:80"
     depends_on:
       postgres:
         condition: service_healthy
@@ -221,7 +221,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
     ports:
-      - "${CENTRAL_BACKEND_PORT:-3001}:3000"
+      - "${CENTRAL_BACKEND_PORT:-3006}:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -243,7 +243,7 @@ services:
       context: ./cybersensei-central/dashboard
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:${CENTRAL_BACKEND_PORT:-3001}/api
+        VITE_API_URL: http://localhost:${CENTRAL_BACKEND_PORT:-3006}/api
     container_name: cybersensei-central-dashboard
     restart: unless-stopped
     profiles:

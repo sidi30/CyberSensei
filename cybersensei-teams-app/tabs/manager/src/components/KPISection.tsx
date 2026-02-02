@@ -10,6 +10,7 @@ interface KPISectionProps {
 export function KPISection({ apiClient }: KPISectionProps) {
   const [metrics, setMetrics] = useState<ManagerMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -21,24 +22,14 @@ export function KPISection({ apiClient }: KPISectionProps) {
   const loadMetrics = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await apiClient.getManagerMetrics();
       setMetrics(data);
       setLastUpdate(new Date());
     } catch (err) {
       console.error('Error loading metrics:', err);
-      
-      // Mock data pour développement
-      if (import.meta.env.DEV) {
-        setMetrics({
-          companyScore: 78,
-          averageScore: 75.5,
-          totalUsers: 156,
-          activeUsers: 142,
-          completedExercises: 1247,
-          departments: [],
-          topics: [],
-        });
-      }
+      setError('Impossible de charger les metriques. Verifiez la connexion au backend.');
+      setMetrics(null);
     } finally {
       setLoading(false);
     }
@@ -53,6 +44,24 @@ export function KPISection({ apiClient }: KPISectionProps) {
       <div className="card">
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !metrics) {
+    return (
+      <div className="card bg-red-50 border-red-200">
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <span className="text-4xl mb-4">⚠️</span>
+          <p className="text-red-700 font-medium mb-2">Erreur de chargement</p>
+          <p className="text-red-600 text-sm mb-4">{error}</p>
+          <button
+            onClick={loadMetrics}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Reessayer
+          </button>
         </div>
       </div>
     );

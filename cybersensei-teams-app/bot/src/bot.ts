@@ -1,5 +1,7 @@
 /**
- * Bot principal CyberSensei avec reconnaissance d'intentions
+ * Bot principal CyberSensei avec reconnaissance d'intentions avancée
+ * - Support glossaire, questions thématiques, recommandations
+ * - Gestion du contexte conversationnel
  */
 
 import {
@@ -11,7 +13,8 @@ import {
 } from 'botbuilder';
 import { backendService } from './services/backendService';
 import { conversationState } from './conversationState';
-import { intentRecognizer } from './intentRecognizer';
+import { intentRecognizer, RecognizedIntent } from './intentRecognizer';
+import { contextManager } from './contextManager';
 import { createQuizCard } from './cards/quizCard';
 import { createResultCard } from './cards/resultCard';
 import { createHelpCard } from './cards/helpCard';
@@ -76,7 +79,12 @@ export class CyberSenseiBot extends ActivityHandler {
     const recognized = intentRecognizer.recognize(text);
     console.log(`[Bot] Recognized intent: ${recognized.intent} (confidence: ${recognized.confidence})`);
 
+    // Initialiser/récupérer le contexte de conversation
+    const userContext = contextManager.getContext(conversationId, userId, userName);
+
     try {
+      let response: string | undefined;
+
       switch (recognized.intent) {
         case 'quiz':
           await this.handleQuizIntent(context, conversationId, userId);
@@ -98,12 +106,35 @@ export class CyberSenseiBot extends ActivityHandler {
           await this.handleGreetingIntent(context, userName);
           break;
 
+        case 'glossary':
+          response = await this.handleGlossaryIntent(context, recognized);
+          break;
+
+        case 'topic_question':
+          response = await this.handleTopicQuestionIntent(context, recognized, text);
+          break;
+
+        case 'recommendation':
+          response = await this.handleRecommendationIntent(context, conversationId);
+          break;
+
+        case 'progress_query':
+          await this.handleProgressQueryIntent(context, conversationId);
+          break;
+
+        case 'feedback':
+          response = await this.handleFeedbackIntent(context, recognized, text);
+          break;
+
         case 'unknown':
         default:
           // Si aucune intention reconnue, utiliser le chat IA
           await this.handleChatIntent(context, conversationId, text);
           break;
       }
+
+      // Enregistrer le tour de conversation
+      contextManager.recordTurn(conversationId, text, recognized, response);
     } catch (error) {
       console.error('[Bot] Error handling message:', error);
       await context.sendActivity(
@@ -157,14 +188,16 @@ export class CyberSenseiBot extends ActivityHandler {
 Bienvenue sur **CyberSensei**, votre assistant personnel en cybersécurité ! 🛡️
 
 Je suis là pour vous aider à :
-✅ Vous entraîner avec des quiz interactifs
-✅ Suivre votre progression
-✅ Répondre à toutes vos questions sur la cybersécurité
+✅ Vous entraîner avec des **quiz interactifs** adaptés à votre niveau
+✅ Suivre votre **progression** en temps réel
+✅ Apprendre avec un **glossaire** complet de la cybersécurité
+✅ Obtenir des **recommandations personnalisées**
 
 **🚀 Pour commencer :**
 • Tapez **"quiz"** pour un exercice
+• Demandez **"c'est quoi le phishing ?"** pour une définition
+• Tapez **"que dois-je apprendre ?"** pour des conseils
 • Tapez **"aide"** pour voir toutes les commandes
-• Ou posez-moi directement une question !
 
 Prêt à devenir un expert en cybersécurité ? 💪`;
 
@@ -331,16 +364,25 @@ Je suis là pour vous aider à renforcer vos compétences en cybersécurité de 
 
 **💬 Commandes disponibles :**
 
-• **"quiz"** ou **"exercice"** - Commencer un quiz du jour
-• **"score"** ou **"progression"** - Voir vos résultats
+• **"quiz"** ou **"exercice"** - Commencer un quiz personnalisé
+• **"score"** ou **"ma progression"** - Voir tes résultats
+• **"recommande"** ou **"que dois-je apprendre"** - Obtenir des conseils
 • **"aide"** ou **"help"** - Afficher ce message
 
-**🤖 Posez-moi n'importe quelle question !**
+**📚 Glossaire cybersécurité :**
 
-Exemples :
-• "Qu'est-ce que le phishing ?"
-• "Comment créer un mot de passe sécurisé ?"
-• "Explique-moi le ransomware"
+• "**C'est quoi le phishing ?**" - Définition d'un terme
+• "**Qu'est-ce qu'un ransomware ?**" - Explication détaillée
+• "**Définition de VPN**" - Apprendre un concept
+
+**🔍 Questions sur les sujets :**
+
+• "Comment se protéger du phishing ?"
+• "Quels sont les risques du ransomware ?"
+• "Que faire en cas d'email suspect ?"
+
+**💡 Sujets couverts :**
+Phishing, Mots de passe, Ransomware, Ingénierie sociale, Télétravail, RGPD, Shadow IT, et plus encore !
 
 Tapez simplement votre question et je vous répondrai ! 😊`;
 
@@ -476,5 +518,136 @@ Tapez simplement votre question et je vous répondrai ! 😊`;
         '❌ Désolé, je n\'ai pas pu traiter votre message. Tapez "**aide**" pour voir les commandes disponibles.'
       );
     }
+  }
+
+  /**
+   * Gère les demandes de définition (glossaire)
+   */
+  private async handleGlossaryIntent(
+    context: TurnContext,
+    recognized: RecognizedIntent
+  ): Promise<string> {
+    const term = recognized.entities.term;
+
+    if (!term) {
+      const response = `🤔 De quel terme souhaitez-vous la définition ?\n\nExemples :\n• "C'est quoi le phishing ?"\n• "Qu'est-ce qu'un ransomware ?"\n• "Définition de VPN"`;
+      await context.sendActivity(response);
+      return response;
+    }
+
+    const response = contextManager.getGlossaryResponse(term);
+    await context.sendActivity(response);
+
+    // Proposer un quiz sur le sujet
+    if (recognized.entities.topic) {
+      await context.sendActivity(
+        `💡 Tape "**quiz**" pour tester tes connaissances sur ce sujet !`
+      );
+    }
+
+    return response;
+  }
+
+  /**
+   * Gère les questions sur un sujet spécifique
+   */
+  private async handleTopicQuestionIntent(
+    context: TurnContext,
+    recognized: RecognizedIntent,
+    originalMessage: string
+  ): Promise<string> {
+    await context.sendActivity({ type: 'typing' });
+
+    const topic = recognized.entities.topic;
+
+    if (!topic) {
+      // Pas de topic détecté, utiliser le chat IA
+      try {
+        const aiResponse = await backendService.chatWithAI(originalMessage);
+        await context.sendActivity(aiResponse.response);
+        return aiResponse.response;
+      } catch {
+        const fallback = `🤔 Je n'ai pas compris votre question. Pouvez-vous la reformuler ?\n\nExemples :\n• "Comment se protéger du phishing ?"\n• "Quels sont les risques du ransomware ?"\n• "Que faire en cas d'email suspect ?"`;
+        await context.sendActivity(fallback);
+        return fallback;
+      }
+    }
+
+    const response = contextManager.getTopicResponse(topic, originalMessage);
+    await context.sendActivity(response);
+
+    // Proposer un quiz
+    await context.sendActivity(
+      `📝 Tape "**quiz**" pour un exercice pratique sur ${topic} !`
+    );
+
+    return response;
+  }
+
+  /**
+   * Gère les demandes de recommandation
+   */
+  private async handleRecommendationIntent(
+    context: TurnContext,
+    conversationId: string
+  ): Promise<string> {
+    await context.sendActivity({ type: 'typing' });
+
+    // Récupérer la progression pour personnaliser les recommandations
+    try {
+      const progress = await backendService.getUserProgress();
+      contextManager.updateUserScore(conversationId, progress.averageScore);
+    } catch {
+      // Pas de progression, recommandations génériques
+    }
+
+    const response = contextManager.getRecommendations(conversationId);
+    await context.sendActivity(response);
+
+    return response;
+  }
+
+  /**
+   * Gère les questions sur la progression
+   */
+  private async handleProgressQueryIntent(
+    context: TurnContext,
+    conversationId: string
+  ): Promise<void> {
+    await context.sendActivity({ type: 'typing' });
+
+    try {
+      const progress = await backendService.getUserProgress();
+      contextManager.updateUserScore(conversationId, progress.averageScore);
+
+      const response = contextManager.getProgressResponse(conversationId, progress);
+      await context.sendActivity(response);
+
+      // Stats de session locale
+      const sessionStats = conversationState.getSessionStats(conversationId);
+      if (sessionStats.count > 0) {
+        await context.sendActivity(
+          `📈 **Cette session:** ${sessionStats.count} exercice(s), score moyen ${sessionStats.avgScore}%`
+        );
+      }
+    } catch (error) {
+      console.error('[Bot] Error loading progress:', error);
+      const fallback = contextManager.getProgressResponse(conversationId);
+      await context.sendActivity(fallback);
+    }
+  }
+
+  /**
+   * Gère les feedbacks utilisateur
+   */
+  private async handleFeedbackIntent(
+    context: TurnContext,
+    recognized: RecognizedIntent,
+    originalMessage: string
+  ): Promise<string> {
+    const sentiment = recognized.entities.sentiment || 'neutral';
+    const response = contextManager.getFeedbackResponse(sentiment, originalMessage);
+    await context.sendActivity(response);
+    return response;
   }
 }

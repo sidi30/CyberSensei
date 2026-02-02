@@ -76,7 +76,7 @@ docker-compose up -d
 docker-compose ps
 
 # 5. Access
-# Dashboard: http://localhost:3000
+# Dashboard: http://localhost:3005
 # Backend: http://localhost:8080
 # Swagger: http://localhost:8080/swagger-ui.html
 ```
@@ -373,7 +373,7 @@ curl http://localhost:8080/actuator/health
 curl http://localhost:8000/health
 
 # Dashboard
-curl http://localhost:3000
+curl http://localhost:3005
 ```
 
 ### Logs

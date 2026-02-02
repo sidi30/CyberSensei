@@ -1,6 +1,9 @@
 package io.cybersensei.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cybersensei.domain.entity.Config;
+import io.cybersensei.domain.entity.Exercise;
 import io.cybersensei.domain.repository.ConfigRepository;
 import io.cybersensei.domain.repository.ExerciseRepository;
 import io.cybersensei.domain.repository.UserExerciseResultRepository;
@@ -34,8 +37,7 @@ import java.security.MessageDigest;
 import java.sql.Connection;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -328,20 +330,157 @@ public class SyncAgentService {
 
     /**
      * Import exercises from JSON file
+     * Format expected:
+     * {
+     *   "version": "1.3.0",
+     *   "timestamp": "2025-11-24T10:00:00Z",
+     *   "exercises": [
+     *     {
+     *       "centralId": "uuid",
+     *       "topic": "Phishing",
+     *       "type": "QUIZ",
+     *       "difficulty": "BEGINNER",
+     *       "payloadJSON": { ... },
+     *       "version": "1.0.0"
+     *     }
+     *   ],
+     *   "deletions": ["uuid-to-delete"]
+     * }
      */
-    private void importExercises(Path exercisesFile) throws IOException {
+    @Transactional
+    public void importExercises(Path exercisesFile) throws IOException {
         log.info("📚 Importing exercises from: {}", exercisesFile);
 
-        // TODO: Parse JSON and import exercises
-        // For now, just log
+        ObjectMapper objectMapper = new ObjectMapper();
         String content = Files.readString(exercisesFile);
-        log.info("Exercises content: {} bytes", content.length());
 
-        // Example: Parse and save
-        // List<Exercise> exercises = objectMapper.readValue(content, new TypeReference<List<Exercise>>() {});
-        // exerciseRepository.saveAll(exercises);
+        ExerciseImportPayload payload = objectMapper.readValue(content, ExerciseImportPayload.class);
 
-        log.info("✅ Exercises imported successfully");
+        log.info("Exercise import payload: version={}, exercises={}, deletions={}",
+                payload.getVersion(),
+                payload.getExercises() != null ? payload.getExercises().size() : 0,
+                payload.getDeletions() != null ? payload.getDeletions().size() : 0);
+
+        int created = 0;
+        int updated = 0;
+        int deleted = 0;
+
+        // Process deletions first
+        if (payload.getDeletions() != null) {
+            for (String centralIdToDelete : payload.getDeletions()) {
+                if (exerciseRepository.existsByCentralId(centralIdToDelete)) {
+                    exerciseRepository.deleteByCentralId(centralIdToDelete);
+                    deleted++;
+                    log.debug("Deleted exercise with centralId: {}", centralIdToDelete);
+                }
+            }
+        }
+
+        // Process exercises (upsert by centralId)
+        if (payload.getExercises() != null) {
+            for (ExerciseImportDto dto : payload.getExercises()) {
+                if (dto.getCentralId() == null || dto.getCentralId().isEmpty()) {
+                    log.warn("Skipping exercise without centralId: {}", dto.getTopic());
+                    continue;
+                }
+
+                Optional<Exercise> existingOpt = exerciseRepository.findByCentralId(dto.getCentralId());
+
+                if (existingOpt.isPresent()) {
+                    // Update existing exercise
+                    Exercise existing = existingOpt.get();
+
+                    // Only update if version is newer
+                    if (dto.getVersion() != null && !dto.getVersion().equals(existing.getVersion())) {
+                        existing.setTopic(dto.getTopic());
+                        existing.setType(Exercise.ExerciseType.valueOf(dto.getType()));
+                        existing.setDifficulty(Exercise.Difficulty.valueOf(dto.getDifficulty()));
+                        existing.setPayloadJSON(dto.getPayloadJSON());
+                        existing.setVersion(dto.getVersion());
+                        existing.setSyncedAt(LocalDateTime.now());
+                        existing.setActive(dto.getActive() != null ? dto.getActive() : true);
+                        exerciseRepository.save(existing);
+                        updated++;
+                        log.debug("Updated exercise: {} (centralId: {})", dto.getTopic(), dto.getCentralId());
+                    }
+                } else {
+                    // Create new exercise
+                    Exercise newExercise = Exercise.builder()
+                            .centralId(dto.getCentralId())
+                            .topic(dto.getTopic())
+                            .type(Exercise.ExerciseType.valueOf(dto.getType()))
+                            .difficulty(Exercise.Difficulty.valueOf(dto.getDifficulty()))
+                            .payloadJSON(dto.getPayloadJSON())
+                            .version(dto.getVersion())
+                            .syncedAt(LocalDateTime.now())
+                            .active(dto.getActive() != null ? dto.getActive() : true)
+                            .build();
+                    exerciseRepository.save(newExercise);
+                    created++;
+                    log.debug("Created exercise: {} (centralId: {})", dto.getTopic(), dto.getCentralId());
+                }
+            }
+        }
+
+        log.info("✅ Exercises imported: {} created, {} updated, {} deleted", created, updated, deleted);
+    }
+
+    // ========== Exercise Import DTOs ==========
+
+    /**
+     * Root payload for exercises.json
+     */
+    public static class ExerciseImportPayload {
+        private String version;
+        private String timestamp;
+        private List<ExerciseImportDto> exercises;
+        private List<String> deletions;
+
+        public String getVersion() { return version; }
+        public void setVersion(String version) { this.version = version; }
+
+        public String getTimestamp() { return timestamp; }
+        public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+
+        public List<ExerciseImportDto> getExercises() { return exercises; }
+        public void setExercises(List<ExerciseImportDto> exercises) { this.exercises = exercises; }
+
+        public List<String> getDeletions() { return deletions; }
+        public void setDeletions(List<String> deletions) { this.deletions = deletions; }
+    }
+
+    /**
+     * Individual exercise DTO for import
+     */
+    public static class ExerciseImportDto {
+        private String centralId;
+        private String topic;
+        private String type;
+        private String difficulty;
+        private Map<String, Object> payloadJSON;
+        private String version;
+        private Boolean active;
+
+        public String getCentralId() { return centralId; }
+        public void setCentralId(String centralId) { this.centralId = centralId; }
+
+        public String getTopic() { return topic; }
+        public void setTopic(String topic) { this.topic = topic; }
+
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+
+        public String getDifficulty() { return difficulty; }
+        public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
+
+        public Map<String, Object> getPayloadJSON() { return payloadJSON; }
+        public void setPayloadJSON(Map<String, Object> payloadJSON) { this.payloadJSON = payloadJSON; }
+
+        public String getVersion() { return version; }
+        public void setVersion(String version) { this.version = version; }
+
+        public Boolean getActive() { return active; }
+        public void setActive(Boolean active) { this.active = active; }
     }
 
     /**

@@ -18,6 +18,17 @@
     <include file="db/changelog/changes/010-insert-sample-data.xml"/>
     <include file="db/changelog/changes/011-create-logs-table.xml"/>
     <include file="db/changelog/changes/012-update-exercises-french.xml"/>
+    <include file="db/changelog/changes/013-fix-exercises-keytakeaway.xml"/>
+
+    <!-- Complete Exercise Bank (54 exercises across 12 topics) -->
+    <include file="db/changelog/changes/020-seed-complete-exercises.xml"/>
+    <include file="db/changelog/changes/021-seed-exercises-part2.xml"/>
+
+    <!-- AI Profile Enhancement for Personalization -->
+    <include file="db/changelog/changes/022-enhance-ai-profile.xml"/>
+
+    <!-- Exercise Sync Fields for Central Integration -->
+    <include file="db/changelog/changes/023-add-exercise-sync-fields.xml"/>
 
     <!-- Phishing Simulation Module (Enterprise) -->
     <include file="db/changelog/phishing/db.changelog-phishing-master.xml"/>

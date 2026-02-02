@@ -191,8 +191,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Development/Standalone mode
       if (!inTeams) {
-        console.warn('⚠️ MODE STANDALONE - Pas dans Teams, utilisation de données de test');
-        
+        console.warn('⚠️ MODE STANDALONE - Pas dans Teams, connexion au backend en mode dev');
+
         const cached = getCachedCredentials();
         if (cached) {
           setBackendToken(cached.token);
@@ -202,20 +202,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const devUser: GraphUser = {
-          id: 'dev-manager-' + Math.random().toString(36).substring(7),
-          displayName: 'Marie Dupont (Manager)',
-          mail: 'marie.dupont@entreprise.fr',
-          jobTitle: 'Responsable Sécurité',
-          department: 'IT Security',
-          userPrincipalName: 'marie.dupont@entreprise.fr',
-        };
+        // Try to authenticate with backend dev-login endpoint
+        try {
+          const response = await axios.post(
+            `${config.backendBaseUrl}/api/auth/dev-login?role=MANAGER`,
+            {},
+            { timeout: 10000 }
+          );
 
-        setToken('dev-token');
-        setBackendToken('bypass-token');
-        setUser(devUser);
-        setLoading(false);
-        return;
+          if (response.data?.token) {
+            const devUser: GraphUser = {
+              id: response.data.userId?.toString() || 'dev-manager',
+              displayName: response.data.displayName || 'Manager Test',
+              mail: response.data.email || 'manager@entreprise.fr',
+              jobTitle: 'Responsable Securite',
+              department: 'IT Security',
+              userPrincipalName: response.data.email || 'manager@entreprise.fr',
+            };
+
+            setToken('dev-token');
+            setBackendToken(response.data.token);
+            setUser(devUser);
+            cacheCredentials(response.data.token, devUser);
+            console.log('✅ Dev login (Manager) successful:', devUser.displayName);
+            setLoading(false);
+            return;
+          }
+        } catch (devErr) {
+          console.error('Dev login failed:', devErr);
+          setError('Backend non disponible. Demarrez le backend avec: docker compose --profile node up -d');
+          setLoading(false);
+          return;
+        }
       }
 
       // Production Teams SSO flow
@@ -249,18 +267,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setBackendToken(cached.token);
         setUser(cached.user);
         setToken('cached-token');
-      } else if (import.meta.env.DEV) {
-        console.warn('Using development fallback');
-        setToken('dev-token');
-        setBackendToken('bypass-token');
-        setUser({
-          id: 'dev-manager-fallback',
-          displayName: 'Marie Dupont (Manager Fallback)',
-          mail: 'marie.dupont@entreprise.fr',
-          jobTitle: 'Responsable Sécurité',
-          department: 'IT Security',
-          userPrincipalName: 'marie.dupont@entreprise.fr',
-        });
       } else {
         setError('Erreur d\'authentification. Veuillez actualiser la page ou contacter le support.');
       }

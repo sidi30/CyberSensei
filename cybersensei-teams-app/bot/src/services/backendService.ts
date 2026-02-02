@@ -117,6 +117,15 @@ export interface ExerciseHistory {
   date: string;
 }
 
+export interface GlossaryEntry {
+  term: string;
+  definition: string;
+  example: string;
+  category: string;
+  relatedTerms: string[];
+  aliases: string[];
+}
+
 /**
  * Service pour communiquer avec le backend CyberSensei
  */
@@ -277,6 +286,37 @@ export class BackendService {
    */
   async getManagerMetrics(): Promise<ManagerMetrics> {
     const response = await this.client.get<ManagerMetrics>('/api/manager/metrics');
+    return response.data;
+  }
+
+  /**
+   * Recherche un terme dans le glossaire
+   */
+  async searchGlossary(term: string): Promise<GlossaryEntry | null> {
+    try {
+      const response = await this.client.get<GlossaryEntry>('/api/glossary/search', {
+        params: { term },
+      });
+      return response.data;
+    } catch (error) {
+      // Terme non trouvé
+      return null;
+    }
+  }
+
+  /**
+   * Récupère tous les termes du glossaire
+   */
+  async getAllGlossaryTerms(): Promise<Record<string, GlossaryEntry>> {
+    const response = await this.client.get<Record<string, GlossaryEntry>>('/api/glossary/all');
+    return response.data;
+  }
+
+  /**
+   * Récupère les termes liés à un terme donné
+   */
+  async getRelatedTerms(term: string): Promise<GlossaryEntry[]> {
+    const response = await this.client.get<GlossaryEntry[]>(`/api/glossary/related/${term}`);
     return response.data;
   }
 }

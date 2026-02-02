@@ -14,8 +14,8 @@ import java.util.Map;
  */
 @Entity
 @Table(name = "user_exercise_results", indexes = {
-    @Index(name = "idx_result_user", columnList = "userId"),
-    @Index(name = "idx_result_exercise", columnList = "exerciseId"),
+    @Index(name = "idx_result_user", columnList = "user_id"),
+    @Index(name = "idx_result_exercise", columnList = "exercise_id"),
     @Index(name = "idx_result_date", columnList = "date")
 })
 @Getter
@@ -29,10 +29,10 @@ public class UserExerciseResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(nullable = false)
+    @Column(name = "exercise_id", nullable = false)
     private Long exerciseId;
 
     @Column(nullable = false)
@@ -53,11 +53,11 @@ public class UserExerciseResult {
     private LocalDateTime date;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "exerciseId", insertable = false, updatable = false)
+    @JoinColumn(name = "exercise_id", insertable = false, updatable = false)
     private Exercise exercise;
 }
 

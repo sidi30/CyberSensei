@@ -24,5 +24,11 @@ public class TeamsTokenExchangeResponse {
 
     @Schema(description = "Tenant local ID", example = "tenant-local-123")
     private String tenantLocalId;
+
+    @Schema(description = "User display name", example = "Jean Dupont")
+    private String displayName;
+
+    @Schema(description = "User email", example = "jean.dupont@entreprise.fr")
+    private String email;
 }
 
