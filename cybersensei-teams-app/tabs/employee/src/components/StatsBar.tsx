@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApi, PersonalizedGreeting } from '../hooks/useApi';
-import { Flame, Star, Award, ChevronDown, ChevronUp, Target } from 'lucide-react';
+import { Flame, Star, Award, ChevronDown, ChevronUp } from 'lucide-react';
 
 export function StatsBar() {
   const { backendToken } = useAuth();

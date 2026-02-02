@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { config } from '../config';
 
 export interface ProgressEvent {
-  type: 'USER_PROGRESS' | 'COMPANY_METRICS' | 'EXERCISE_COMPLETE' | 'LEADERBOARD_UPDATE';
-  timestamp: number;
+  type: 'USER_PROGRESS' | 'COMPANY_METRICS' | 'EXERCISE_COMPLETE' | 'LEADERBOARD_UPDATE' | 'PONG';
+  timestamp?: number;
   [key: string]: unknown;
 }
 
@@ -47,8 +47,8 @@ export function useWebSocket(options: UseWebSocketOptions) {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;

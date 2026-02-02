@@ -34,6 +34,47 @@ public class ManagerController {
         return ResponseEntity.ok(metricsService.getLatestMetrics());
     }
 
+    @GetMapping("/users")
+    @Operation(summary = "Get all users for manager dashboard")
+    public ResponseEntity<List<Map<String, Object>>> getUsers(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String topic) {
+        List<User> users = userRepository.findAll();
+        
+        // Filter by department if specified
+        if (department != null && !department.isEmpty()) {
+            users = users.stream()
+                    .filter(u -> department.equals(u.getDepartment()))
+                    .toList();
+        }
+        
+        List<Map<String, Object>> result = users.stream().map(u -> {
+            Long exerciseCount = resultRepository.countByUserId(u.getId());
+            Double avgScore = resultRepository.findAverageScoreByUserId(u.getId());
+            
+            return Map.<String, Object>of(
+                    "id", u.getId(),
+                    "name", u.getName(),
+                    "email", u.getEmail(),
+                    "department", u.getDepartment() != null ? u.getDepartment() : "Non assigné",
+                    "role", u.getRole().name(),
+                    "exercisesCompleted", exerciseCount != null ? exerciseCount : 0,
+                    "averageScore", avgScore != null ? avgScore : 0.0,
+                    "riskLevel", calculateRiskLevel(avgScore),
+                    "lastActivity", LocalDateTime.now().minusDays((long) (Math.random() * 7)).toString(),
+                    "active", u.getActive()
+            );
+        }).toList();
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    private String calculateRiskLevel(Double avgScore) {
+        if (avgScore == null || avgScore < 50) return "HIGH";
+        if (avgScore < 70) return "MEDIUM";
+        return "LOW";
+    }
+
     @GetMapping("/users-metrics")
     @Operation(summary = "Get metrics per user (light)")
     public ResponseEntity<List<Map<String, Object>>> getUsersMetrics() {

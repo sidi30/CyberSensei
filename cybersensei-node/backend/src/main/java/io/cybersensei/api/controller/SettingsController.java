@@ -14,6 +14,34 @@ import java.util.Map;
 @Tag(name = "Settings", description = "SMTP & frequency settings (dev/demo)")
 public class SettingsController {
 
+    @GetMapping
+    @Operation(summary = "Get all settings")
+    public ResponseEntity<Map<String, Object>> getAllSettings() {
+        return ResponseEntity.ok(Map.of(
+                "smtp", Map.of(
+                        "host", "smtp.gmail.com",
+                        "port", 587,
+                        "username", "noreply@cybersensei.io",
+                        "fromEmail", "noreply@cybersensei.io",
+                        "fromName", "CyberSensei"
+                ),
+                "frequency", Map.of(
+                        "phishingFrequency", 1,
+                        "trainingIntensity", "MEDIUM"
+                ),
+                "notifications", Map.of(
+                        "emailEnabled", true,
+                        "teamsEnabled", true,
+                        "weeklyReport", true
+                ),
+                "company", Map.of(
+                        "name", "CyberSensei Demo",
+                        "timezone", "Europe/Paris",
+                        "locale", "fr-FR"
+                )
+        ));
+    }
+
     @GetMapping("/smtp")
     @Operation(summary = "Get SMTP configuration")
     public ResponseEntity<Map<String, Object>> getSmtp() {

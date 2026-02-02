@@ -144,7 +144,7 @@ export function KPISection({ apiClient }: KPISectionProps) {
           </div>
           <div className="flex items-baseline space-x-1 mb-2">
             <span className="text-4xl font-bold text-purple-900">
-              {metrics?.averageScore.toFixed(1) || '0.0'}
+              {(metrics?.averageScore ?? 0).toFixed(1)}
             </span>
             <span className="text-lg text-purple-700">%</span>
           </div>

@@ -39,4 +39,7 @@ public interface UserExerciseResultRepository extends JpaRepository<UserExercise
 
     @Query("SELECT r.exerciseId FROM UserExerciseResult r WHERE r.userId = :userId")
     List<Long> findCompletedExerciseIdsByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(r) FROM UserExerciseResult r WHERE r.userId = :userId")
+    Long countByUserId(@Param("userId") Long userId);
 }
