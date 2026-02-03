@@ -114,6 +114,11 @@ services:
       timeout: 10s
       retries: 5
       start_period: 90s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
     networks:
       - cybersensei-network
     deploy:
@@ -310,10 +315,16 @@ services:
       - full
     ports:
       - "${TEAMS_TABS_PORT:-5176}:80"
+      - "80:80"  # Also expose on port 80 directly
     depends_on:
       - node-backend
     networks:
       - cybersensei-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tabs.rule=PathPrefix(`/tabs`)"
+      - "traefik.http.routers.tabs.entrypoints=web"
+      - "traefik.http.services.tabs.loadbalancer.server.port=80"
 
   # ===========================================================================
   # WEBSITE - Marketing Site
@@ -382,6 +393,34 @@ services:
       - grafana-data:/var/lib/grafana
     networks:
       - cybersensei-network
+
+# ===========================================================================
+# REVERSE PROXY (Traefik)
+# ===========================================================================
+
+  reverse-proxy:
+    image: traefik:v3.0
+    container_name: cybersensei-reverse-proxy
+    restart: unless-stopped
+    profiles:
+      - proxy
+      - full
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--entrypoints.web.address=:80"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=cybersensei-network"
+      - "--log.level=INFO"
+    ports:
+      - "8088:8080"  # Traefik dashboard only (port 80 used by tabs)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - cybersensei-network
+    labels:
+      - "traefik.enable=true"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # NETWORKS
