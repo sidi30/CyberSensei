@@ -52,15 +52,15 @@ RUN mkdir -p /app/logs && \
 USER cybersensei
 
 # Expose bot port
-EXPOSE 3978
+EXPOSE 5175
 
 # Health check endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3978/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:5175/health || exit 1
 
 # Environment variables with defaults
 ENV NODE_ENV=production \
-    PORT=3978 \
+    PORT=5175 \
     BOT_ID="" \
     BOT_PASSWORD="" \
     BACKEND_BASE_URL="http://localhost:8080"

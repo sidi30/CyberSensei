@@ -145,7 +145,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -266,7 +266,7 @@ services:
     depends_on:
       - central-backend
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -294,11 +294,17 @@ services:
       MICROSOFT_APP_PASSWORD: ${TEAMS_APP_PASSWORD}
       MICROSOFT_APP_TENANT_ID: ${TEAMS_APP_TENANT_ID}
       BACKEND_URL: http://node-backend:8080
+      BACKEND_BASE_URL: http://node-backend:8080
       PORT: 5175
+      NODE_ENV: development
     ports:
       - "${TEAMS_BOT_PORT:-5175}:5175"
-    depends_on:
-      - node-backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:5175/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     networks:
       - cybersensei-network
 
@@ -315,7 +321,6 @@ services:
       - full
     ports:
       - "${TEAMS_TABS_PORT:-5176}:80"
-      - "80:80"  # Also expose on port 80 directly
     depends_on:
       - node-backend
     networks:
@@ -414,7 +419,8 @@ services:
       - "--providers.docker.network=cybersensei-network"
       - "--log.level=INFO"
     ports:
-      - "8088:8080"  # Traefik dashboard only (port 80 used by tabs)
+      - "80:80"      # Traefik entrypoint web
+      - "8088:8080"  # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
