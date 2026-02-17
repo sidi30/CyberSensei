@@ -4,11 +4,11 @@
 # Version unifiée et corrigée avec ports cohérents
 #
 # MODES D'UTILISATION :
-#   make start-minimal    # Database + Node Dashboard seulement
-#   make start-node       # Database + Node (Backend + Dashboard)
-#   make start-central    # Database + Central (Backend + Dashboard)
-#   make start-full       # Tout (Node + Central + Teams + AI + Monitoring)
-#   make stop            # Arrêter tous les services
+#   docker compose --profile minimal up -d   # Database + Node Dashboard
+#   docker compose --profile node up -d      # Database + Node (Backend + Dashboard)
+#   docker compose --profile central up -d   # Database + Central (Backend + Dashboard)
+#   docker compose --profile full up -d      # Tout (Node + Central + Teams + AI + Monitoring)
+#   docker compose down                      # Arreter tous les services
 #
 # PORTS FIXES (plus de conflits) :
 #   5432  - PostgreSQL
@@ -101,6 +101,10 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       AI_SERVICE_URL: http://node-ai:${NODE_AI_PORT:-8000}
+      JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production-please}
+      SECURITY_BYPASS: ${SECURITY_BYPASS:-true}
+      DEV_MODE: ${DEV_MODE:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
       SERVER_PORT: 8080
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     ports:

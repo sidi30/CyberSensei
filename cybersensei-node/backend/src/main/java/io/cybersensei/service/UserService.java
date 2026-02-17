@@ -1,5 +1,7 @@
 package io.cybersensei.service;
 
+import io.cybersensei.api.exception.ResourceNotFoundException;
+import io.cybersensei.api.exception.BusinessRuleException;
 import io.cybersensei.api.dto.AuthRequest;
 import io.cybersensei.api.dto.AuthResponse;
 import io.cybersensei.api.dto.TeamsTokenExchangeRequest;
@@ -54,14 +56,14 @@ public class UserService {
         
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return userMapper.toDto(user);
     }
 
     @Transactional(readOnly = true)
     public UserDto getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         return userMapper.toDto(user);
     }
 
@@ -74,7 +76,7 @@ public class UserService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String token = tokenProvider.generateToken(authentication);
         String refreshToken = tokenProvider.generateRefreshToken(user.getId(), user.getEmail());
@@ -89,7 +91,7 @@ public class UserService {
     @Transactional
     public UserDto createUser(String email, String name, String password, User.UserRole role) {
         if (userRepository.existsByEmail(email)) {
-            throw new RuntimeException("User already exists with email: " + email);
+            throw new BusinessRuleException("User already exists with email: " + email);
         }
 
         User user = User.builder()

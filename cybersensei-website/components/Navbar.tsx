@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Shield, Sparkles } from "lucide-react";
+import { Menu, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const navLinks = [

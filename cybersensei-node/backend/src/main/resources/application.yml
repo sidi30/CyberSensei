@@ -52,20 +52,20 @@ spring:
     encoding: UTF-8
     cache: false
 
-# ====== JWT CONFIGURATION ======
-jwt:
-  secret: ${JWT_SECRET:YourSuperSecretKeyForJWTTokenGenerationWithAtLeast256Bits}
-  expiration: 86400000 # 24 hours in milliseconds
-  refresh-expiration: 604800000 # 7 days
-
 # ====== CYBERSENSEI CONFIGURATION ======
 cybersensei:
-  # Security configuration (JWT)
+  # Security configuration
   security:
+    bypass: ${SECURITY_BYPASS:false}
+    cors:
+      allowed-origins: ${CORS_ORIGINS:*}
     jwt:
-      secret: ${JWT_SECRET:YourSuperSecretKeyForJWTTokenGenerationWithAtLeast256Bits}
+      secret: ${JWT_SECRET}
       expiration: 86400000 # 24 hours in milliseconds
       refresh-expiration: 604800000 # 7 days
+
+  # Dev mode (enables /api/auth/dev-login)
+  dev-mode: ${DEV_MODE:false}
   
   # AI Service configuration
   ai:

@@ -39,10 +39,11 @@ domain_suffix = "local"
 # image_tag = "latest"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Credentials (override defaults if needed)
+# Credentials (REQUIRED - no defaults, must be set)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# central_postgres_password = "your_secure_password"
-# node_postgres_password    = "your_secure_password"
-# grafana_admin_password    = "your_secure_password"
+central_postgres_password = "change_me_central_pg"
+central_mongo_password    = "change_me_central_mongo"
+node_postgres_password    = "change_me_node_pg"
+grafana_admin_password    = "change_me_grafana"
 

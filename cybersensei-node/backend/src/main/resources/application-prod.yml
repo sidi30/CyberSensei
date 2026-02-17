@@ -1,0 +1,31 @@
+# =============================================================================
+# CyberSensei - Production Profile
+# =============================================================================
+# Activate with: SPRING_PROFILES_ACTIVE=prod
+# Security enforced, JWT_SECRET required, minimal logging
+
+cybersensei:
+  security:
+    bypass: false
+    cors:
+      allowed-origins: ${CORS_ORIGINS:https://cybersensei.io}
+  dev-mode: false
+
+logging:
+  level:
+    root: WARN
+    io.cybersensei: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+  file:
+    name: logs/cybersensei.log
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never

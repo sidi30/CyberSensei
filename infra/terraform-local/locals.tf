@@ -49,7 +49,7 @@ locals {
     grafana       = "grafana/grafana:10.2.2"
     alertmanager  = "prom/alertmanager:v0.26.0"
     mailhog       = "mailhog/mailhog:latest"
-    mistral       = "ghcr.io/mistralai/mistral-inference:latest"
+    mistral       = "ghcr.io/mistralai/mistral-inference:v0.0.4"
   }
 
   # Remote images

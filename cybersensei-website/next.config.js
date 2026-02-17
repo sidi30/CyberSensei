@@ -3,10 +3,10 @@ const nextConfig = {
   reactStrictMode: true,
   // Désactiver les checks stricts qui cassent le build Docker
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 };
 
