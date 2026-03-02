@@ -17,6 +17,7 @@
 #   3005  - Node Dashboard  
 #   3006  - Central Backend
 #   5173  - Central Dashboard
+#   5174  - M365 Dashboard
 #   8000  - Node AI
 #   5175  - Teams Bot
 #   5176  - Teams Tabs
@@ -236,6 +237,17 @@ services:
       # JWT
       JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
+      # M365 Monitoring
+      M365_CLIENT_ID: ${M365_CLIENT_ID:-}
+      M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
+      M365_REDIRECT_URI: ${M365_REDIRECT_URI:-http://localhost:3006/m365/auth/callback}
+      M365_TOKEN_ENCRYPTION_KEY: ${M365_TOKEN_ENCRYPTION_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@cybersensei.io}
     ports:
       - "${CENTRAL_BACKEND_PORT:-3006}:3000"
     depends_on:
@@ -267,6 +279,30 @@ services:
       - full
     ports:
       - "${CENTRAL_DASHBOARD_PORT:-5173}:80"
+    depends_on:
+      - central-backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cybersensei-network
+
+  m365-dashboard:
+    build:
+      context: ./cybersensei-central/m365-dashboard
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:${CENTRAL_BACKEND_PORT:-3006}
+    container_name: cybersensei-m365-dashboard
+    restart: unless-stopped
+    profiles:
+      - central
+      - full
+    ports:
+      - "${M365_DASHBOARD_PORT:-5174}:80"
     depends_on:
       - central-backend
     healthcheck:

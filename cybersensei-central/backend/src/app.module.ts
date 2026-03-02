@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { LicenseModule } from './modules/license/license.module';
 import { UpdateModule } from './modules/update/update.module';
@@ -9,6 +10,13 @@ import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { AdminAuthModule } from './modules/admin-auth/admin-auth.module';
 import { GlobalMetricsModule } from './modules/global-metrics/global-metrics.module';
 import { ExerciseModule } from './modules/exercise/exercise.module';
+import { AiModule } from './modules/ai/ai.module';
+import { M365AuthModule } from './modules/m365-auth/m365-auth.module';
+import { M365ScanModule } from './modules/m365-scan/m365-scan.module';
+import { M365ScoreModule } from './modules/m365-score/m365-score.module';
+import { M365ReportModule } from './modules/m365-report/m365-report.module';
+import { M365AlertModule } from './modules/m365-alert/m365-alert.module';
+import { M365SchedulerModule } from './modules/m365-scheduler/m365-scheduler.module';
 
 @Module({
   imports: [
@@ -17,6 +25,9 @@ import { ExerciseModule } from './modules/exercise/exercise.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Scheduler
+    ScheduleModule.forRoot(),
 
     // PostgreSQL
     TypeOrmModule.forRootAsync({
@@ -52,6 +63,15 @@ import { ExerciseModule } from './modules/exercise/exercise.module';
     AdminAuthModule,
     GlobalMetricsModule,
     ExerciseModule,
+
+    // M365 Monitoring modules
+    AiModule,
+    M365AuthModule,
+    M365ScanModule,
+    M365ScoreModule,
+    M365ReportModule,
+    M365AlertModule,
+    M365SchedulerModule,
   ],
 })
 export class AppModule {}
