@@ -9,7 +9,7 @@ export class MfaCollector implements ICollector {
   readonly category = FindingCategory.MFA;
   readonly name = 'MFA Collector';
 
-  async collect(accessToken: string): Promise<CollectorResult> {
+  async collect(accessToken: string, _tenantDomain: string): Promise<CollectorResult> {
     const findings: CollectorFinding[] = [];
     const apiCalls = { count: 0 };
 

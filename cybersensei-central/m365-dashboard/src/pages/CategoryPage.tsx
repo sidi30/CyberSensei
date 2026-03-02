@@ -21,7 +21,7 @@ const categoryLabels: Record<string, string> = {
 
 export default function CategoryPage() {
   const { categoryId } = useParams<{ categoryId: string }>();
-  const [score, setScore] = useState<M365Score | null>(null);
+  const [, setScore] = useState<M365Score | null>(null);
   const [findings, setFindings] = useState<M365Finding[]>([]);
   const [catScore, setCatScore] = useState<CategoryScore | null>(null);
 

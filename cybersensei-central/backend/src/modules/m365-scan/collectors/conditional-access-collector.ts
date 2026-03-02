@@ -9,7 +9,7 @@ export class ConditionalAccessCollector implements ICollector {
   readonly category = FindingCategory.CONDITIONAL_ACCESS;
   readonly name = 'Conditional Access Collector';
 
-  async collect(accessToken: string): Promise<CollectorResult> {
+  async collect(accessToken: string, _tenantDomain: string): Promise<CollectorResult> {
     const findings: CollectorFinding[] = [];
     const apiCalls = { count: 0 };
 

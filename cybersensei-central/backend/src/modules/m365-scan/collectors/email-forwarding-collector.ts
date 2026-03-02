@@ -9,7 +9,7 @@ export class EmailForwardingCollector implements ICollector {
   readonly category = FindingCategory.EMAIL_FORWARDING;
   readonly name = 'Email Forwarding Collector';
 
-  async collect(accessToken: string): Promise<CollectorResult> {
+  async collect(accessToken: string, _tenantDomain: string): Promise<CollectorResult> {
     const findings: CollectorFinding[] = [];
     const apiCalls = { count: 0 };
 

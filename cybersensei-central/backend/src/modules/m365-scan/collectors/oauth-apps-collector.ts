@@ -19,7 +19,7 @@ export class OAuthAppsCollector implements ICollector {
     'RoleManagement.ReadWrite.Directory',
   ];
 
-  async collect(accessToken: string): Promise<CollectorResult> {
+  async collect(accessToken: string, _tenantDomain: string): Promise<CollectorResult> {
     const findings: CollectorFinding[] = [];
     const apiCalls = { count: 0 };
 

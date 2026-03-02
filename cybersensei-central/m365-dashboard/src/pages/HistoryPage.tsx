@@ -6,7 +6,7 @@ import type { M365Scan, M365Score } from '../types';
 export default function HistoryPage() {
   const [scans, setScans] = useState<M365Scan[]>([]);
   const [scores, setScores] = useState<M365Score[]>([]);
-  const [total, setTotal] = useState(0);
+  const [, setTotal] = useState(0);
 
   useEffect(() => {
     loadData();
