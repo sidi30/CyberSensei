@@ -4,10 +4,11 @@
 # Version unifiée et corrigée avec ports cohérents
 #
 # MODES D'UTILISATION :
-#   docker compose --profile minimal up -d   # Database + Node Dashboard
-#   docker compose --profile node up -d      # Database + Node (Backend + Dashboard)
-#   docker compose --profile central up -d   # Database + Central (Backend + Dashboard)
-#   docker compose --profile full up -d      # Tout (Node + Central + Teams + AI + Monitoring)
+#   docker compose --profile minimal up -d      # Database + Node Dashboard
+#   docker compose --profile node up -d         # Database + Node (Backend + Dashboard)
+#   docker compose --profile central up -d      # Database + Central (Backend + Dashboard)
+#   docker compose --profile ai-security up -d  # Database + AI Security Backend
+#   docker compose --profile full up -d         # Tout (Node + Central + Teams + AI + AI Security + Monitoring)
 #   docker compose down                      # Arreter tous les services
 #
 # PORTS FIXES (plus de conflits) :
@@ -22,6 +23,7 @@
 #   5175  - Teams Bot
 #   5176  - Teams Tabs
 #   3002  - Website
+#   8081  - AI Security Backend
 #   3300  - Grafana
 #   9090  - Prometheus
 # =============================================================================
@@ -49,6 +51,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybersensei} -d ${POSTGRES_DB:-cybersensei_db}"]
       interval: 10s
@@ -397,6 +400,50 @@ services:
       start_period: 30s
     networks:
       - cybersensei-network
+
+  # ===========================================================================
+  # AI SECURITY - Sécurité & Gouvernance AI
+  # ===========================================================================
+
+  ai-security-backend:
+    build:
+      context: ./cybersensei-ai-security/backend
+      dockerfile: Dockerfile
+    container_name: cybersensei-ai-security-backend
+    restart: unless-stopped
+    profiles:
+      - ai-security
+      - full
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      AI_SECURITY_DB: ${AI_SECURITY_DB:-cybersensei_ai_security}
+      JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production-please}
+      SECURITY_BYPASS: ${SECURITY_BYPASS:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3005}
+      NODE_BACKEND_URL: http://node-backend:8080
+      SERVER_PORT: 8081
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    ports:
+      - "${AI_SECURITY_PORT:-8081}:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/api/ai-security/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   # ===========================================================================
   # MONITORING - Observabilité
