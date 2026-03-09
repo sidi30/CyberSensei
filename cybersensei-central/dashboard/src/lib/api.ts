@@ -30,25 +30,28 @@ class ApiClient {
       },
     });
 
-    // ⚠️ MODE BYPASS - Intercepteurs désactivés
-    // Intercepteur de requête pour ajouter le token - DÉSACTIVÉ
+    // Request interceptor - attach JWT token
     this.client.interceptors.request.use(
       (config) => {
-        // Ne plus ajouter de token JWT
-        console.warn('⚠️ MODE BYPASS - Pas de token JWT ajouté');
+        const token = this.getToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     );
 
-    // Intercepteur de réponse pour gérer les erreurs - DÉSACTIVÉ
+    // Response interceptor - handle 401 errors
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError<ApiError>) => {
-        // Ne plus rediriger vers /login en cas d'erreur 401
-        console.warn('⚠️ MODE BYPASS - Erreur 401 ignorée, pas de redirection');
+        if (error.response?.status === 401) {
+          this.clearAuth();
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
-      }
+      },
     );
   }
 
@@ -68,13 +71,18 @@ class ApiClient {
     localStorage.removeItem('access_token');
   }
 
-  private setUser(user: any): void {
+  private setUser(user: User): void {
     localStorage.setItem('user', JSON.stringify(user));
   }
 
-  getUser(): any {
+  getUser(): User | null {
     const userJson = localStorage.getItem('user');
-    return userJson ? JSON.parse(userJson) : null;
+    if (!userJson) return null;
+    try {
+      return JSON.parse(userJson) as User;
+    } catch {
+      return null;
+    }
   }
 
   private clearUser(): void {
@@ -97,7 +105,7 @@ class ApiClient {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     const { data } = await this.client.post<LoginResponse>('/auth/login', credentials);
     this.setToken(data.access_token);
-    this.setUser(data.user);
+    this.setUser(data.user as User);
     return data;
   }
 
@@ -170,11 +178,11 @@ class ApiClient {
   async getTenantMetrics(
     tenantId: string,
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<PaginatedResponse<TenantMetric>> {
     const { data } = await this.client.get<PaginatedResponse<TenantMetric>>(
       `/admin/tenant/${tenantId}/metrics`,
-      { params: { limit, offset } }
+      { params: { limit, offset } },
     );
     return data;
   }
@@ -186,11 +194,11 @@ class ApiClient {
 
   async getAggregatedMetrics(
     tenantId: string,
-    period: '24h' | '7d' | '30d' = '7d'
+    period: '24h' | '7d' | '30d' = '7d',
   ): Promise<AggregatedMetrics> {
     const { data } = await this.client.get<AggregatedMetrics>(
       `/admin/tenant/${tenantId}/metrics/aggregated`,
-      { params: { period } }
+      { params: { period } },
     );
     return data;
   }
@@ -201,7 +209,7 @@ class ApiClient {
   }
 
   async getUsageTrends(days: number = 30): Promise<UsageTrends> {
-    const { data} = await this.client.get<UsageTrends>('/admin/global/usage-trends', {
+    const { data } = await this.client.get<UsageTrends>('/admin/global/usage-trends', {
       params: { days },
     });
     return data;
@@ -245,4 +253,3 @@ class ApiClient {
 
 export const api = new ApiClient();
 export default api;
-

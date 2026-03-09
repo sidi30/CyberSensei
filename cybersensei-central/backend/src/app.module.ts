@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { LicenseModule } from './modules/license/license.module';
 import { UpdateModule } from './modules/update/update.module';
@@ -17,6 +19,7 @@ import { M365ScoreModule } from './modules/m365-score/m365-score.module';
 import { M365ReportModule } from './modules/m365-report/m365-report.module';
 import { M365AlertModule } from './modules/m365-alert/m365-alert.module';
 import { M365SchedulerModule } from './modules/m365-scheduler/m365-scheduler.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -25,6 +28,14 @@ import { M365SchedulerModule } from './modules/m365-scheduler/m365-scheduler.mod
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Rate limiting - 60 requests per minute per IP
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 60,
+      },
+    ]),
 
     // Scheduler
     ScheduleModule.forRoot(),
@@ -41,8 +52,8 @@ import { M365SchedulerModule } from './modules/m365-scheduler/m365-scheduler.mod
         password: configService.get('POSTGRES_PASSWORD'),
         database: configService.get('POSTGRES_DB'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Central has its own database
-        logging: false,
+        synchronize: false,
+        logging: configService.get('NODE_ENV') !== 'production' ? ['error', 'warn'] : ['error'],
       }),
     }),
 
@@ -72,7 +83,14 @@ import { M365SchedulerModule } from './modules/m365-scheduler/m365-scheduler.mod
     M365ReportModule,
     M365AlertModule,
     M365SchedulerModule,
+    HealthModule,
+  ],
+  providers: [
+    // Global rate limiting guard
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
-

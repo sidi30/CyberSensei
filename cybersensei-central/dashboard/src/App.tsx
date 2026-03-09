@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { DashboardLayout } from './components/Layout/DashboardLayout';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Pages
+import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TenantsListPage from './pages/TenantsListPage';
 import TenantDetailsPage from './pages/TenantDetailsPage';
@@ -14,10 +16,17 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Toutes les routes sans authentification */}
+          {/* Public routes */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Protected routes */}
           <Route
             path="/"
-            element={<DashboardLayout />}
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
@@ -36,4 +45,3 @@ function App() {
 }
 
 export default App;
-

@@ -14,7 +14,7 @@ import { ExerciseService, ExerciseExportPayload } from './exercise.service';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { Exercise, ExerciseDifficulty } from '../../entities/exercise.entity';
-import { JwtAuthGuard } from '../admin-auth/strategies/jwt.strategy';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @Controller('admin/exercises')
 @UseGuards(JwtAuthGuard)

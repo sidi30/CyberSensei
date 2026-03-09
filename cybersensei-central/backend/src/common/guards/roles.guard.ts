@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AdminRole } from '../../entities/admin-user.entity';
 import { ROLES_KEY } from '../decorators/roles.decorator';
@@ -8,9 +8,29 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // ⚠️ MODE BYPASS - Vérification des rôles désactivée
-    console.warn('⚠️ MODE BYPASS ACTIVÉ - RolesGuard désactivé');
-    return true; // Toujours autoriser peu importe le rôle
+    const requiredRoles = this.reflector.getAllAndOverride<AdminRole[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
+    }
+
+    const { user } = context.switchToHttp().getRequest();
+
+    if (!user || !user.role) {
+      throw new ForbiddenException('Accès refusé : aucun rôle détecté');
+    }
+
+    const hasRole = requiredRoles.includes(user.role);
+
+    if (!hasRole) {
+      throw new ForbiddenException(
+        `Accès refusé : rôle ${requiredRoles.join(' ou ')} requis`,
+      );
+    }
+
+    return true;
   }
 }
-

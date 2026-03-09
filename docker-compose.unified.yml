@@ -103,9 +103,9 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
       AI_SERVICE_URL: http://node-ai:${NODE_AI_PORT:-8000}
       JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production-please}
-      SECURITY_BYPASS: ${SECURITY_BYPASS:-true}
-      DEV_MODE: ${DEV_MODE:-true}
-      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      SECURITY_BYPASS: ${SECURITY_BYPASS:-false}
+      DEV_MODE: ${DEV_MODE:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3005}
       SERVER_PORT: 8080
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     ports:
@@ -137,7 +137,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: http://localhost:${NODE_BACKEND_PORT:-8080}/api
-        VITE_BYPASS_AUTH: "true"
+        VITE_BYPASS_AUTH: "${VITE_BYPASS_AUTH:-false}"
     container_name: cybersensei-node-dashboard
     restart: unless-stopped
     profiles:
@@ -224,7 +224,7 @@ services:
       - central
       - full
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
       # PostgreSQL connection - separate database for central
       POSTGRES_HOST: postgres
@@ -431,7 +431,7 @@ services:
       - full
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
     ports:
       - "${GRAFANA_PORT:-3300}:3000"
     volumes:
@@ -451,8 +451,8 @@ services:
       - proxy
       - full
     command:
-      - "--api.dashboard=true"
-      - "--api.insecure=true"
+      - "--api.dashboard=${TRAEFIK_DASHBOARD:-false}"
+      - "--api.insecure=${TRAEFIK_INSECURE:-false}"
       - "--entrypoints.web.address=:80"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"

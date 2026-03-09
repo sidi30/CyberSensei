@@ -1,16 +1,29 @@
-import { Controller, Get, Delete, Param, Query, Res, Logger } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Delete, Param, Query, Res, Logger, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { M365AuthService } from './m365-auth.service';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('M365 Auth')
 @Controller('m365/auth')
 export class M365AuthController {
   private readonly logger = new Logger(M365AuthController.name);
+  private readonly dashboardUrl: string;
 
-  constructor(private readonly authService: M365AuthService) {}
+  constructor(
+    private readonly authService: M365AuthService,
+    private readonly configService: ConfigService,
+  ) {
+    this.dashboardUrl = this.configService.get<string>(
+      'M365_DASHBOARD_URL',
+      'http://localhost:5174',
+    );
+  }
 
   @Get('connect/:tenantId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Initiate M365 OAuth connection for a tenant' })
   @ApiResponse({ status: 302, description: 'Redirect to Microsoft login' })
   connect(
@@ -43,17 +56,18 @@ export class M365AuthController {
         errorDescription,
       );
 
-      // Redirect to dashboard with success
-      const dashboardUrl = `http://localhost:5174/settings?connected=true&domain=${connection.microsoftTenantDomain || ''}`;
-      return res.redirect(dashboardUrl);
+      const redirectUrl = `${this.dashboardUrl}/settings?connected=true&domain=${encodeURIComponent(connection.microsoftTenantDomain || '')}`;
+      return res.redirect(redirectUrl);
     } catch (err) {
       this.logger.error('OAuth callback failed', err);
-      const dashboardUrl = `http://localhost:5174/settings?error=${encodeURIComponent(err.message)}`;
-      return res.redirect(dashboardUrl);
+      const redirectUrl = `${this.dashboardUrl}/settings?error=${encodeURIComponent(err.message)}`;
+      return res.redirect(redirectUrl);
     }
   }
 
   @Get('status/:tenantId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get M365 connection status for a tenant' })
   @ApiResponse({ status: 200, description: 'Connection status' })
   async getStatus(@Param('tenantId') tenantId: string) {
@@ -61,6 +75,8 @@ export class M365AuthController {
   }
 
   @Delete('disconnect/:tenantId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Disconnect M365 for a tenant' })
   @ApiResponse({ status: 200, description: 'Disconnected' })
   async disconnect(@Param('tenantId') tenantId: string) {
