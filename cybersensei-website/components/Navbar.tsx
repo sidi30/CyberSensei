@@ -9,6 +9,7 @@ import Link from "next/link";
 const navLinks = [
   { href: "#fonctionnement", label: "Comment ça marche" },
   { href: "#fonctionnalites", label: "Fonctionnalités" },
+  { href: "#dlp", label: "Protection DLP" },
   { href: "#tarifs", label: "Tarifs" },
   { href: "#faq", label: "FAQ" },
 ];

@@ -17,6 +17,7 @@ const trustBadges = [
   { icon: Shield, label: "IA locale" },
   { icon: MessageSquare, label: "Multi-plateformes" },
   { icon: Zap, label: "5 min/jour" },
+  { icon: Shield, label: "Protection DLP temps réel" },
 ];
 
 export function Hero() {
@@ -73,7 +74,7 @@ export function Hero() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyber-500/10 border border-cyber-500/20 text-cyber-400 text-sm mb-8"
           >
             <Zap className="w-4 h-4" />
-            <span>Nouveau : Simulations de phishing avancées</span>
+            <span>Nouveau : Protection DLP & Extension navigateur IA</span>
           </motion.div>
 
           {/* Headline */}
@@ -98,8 +99,8 @@ export function Hero() {
             className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10"
           >
             Formez vos équipes à reconnaître les menaces cyber avec un coach IA
-            bienveillant. 5 minutes par jour, sur Teams, Slack, ou votre plateforme.
-            Solution souveraine.
+            bienveillant. Protégez vos données sensibles contre les fuites vers les outils IA
+            avec notre extension navigateur DLP. 5 minutes par jour, solution souveraine.
           </motion.p>
 
           {/* CTAs */}

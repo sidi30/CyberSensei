@@ -9,6 +9,7 @@ import {
   Target,
   BarChart3,
   ArrowRight,
+  ShieldAlert,
 } from "lucide-react";
 
 const steps = [
@@ -38,6 +39,14 @@ const steps = [
   },
   {
     number: "04",
+    icon: ShieldAlert,
+    title: "Protection DLP navigateur",
+    description:
+      "L'extension Chrome analyse chaque prompt envoyé vers ChatGPT, Copilot ou Gemini. Détection des données personnelles, financières, médicales et secrets techniques en temps réel.",
+    color: "cyber",
+  },
+  {
+    number: "05",
     icon: BarChart3,
     title: "Suivi manager",
     description:

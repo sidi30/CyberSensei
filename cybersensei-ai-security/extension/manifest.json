@@ -13,7 +13,9 @@
     "https://gemini.google.com/*",
     "https://copilot.microsoft.com/*",
     "https://claude.ai/*",
-    "https://chat.mistral.ai/*"
+    "https://chat.mistral.ai/*",
+    "http://localhost:8080/*",
+    "http://localhost:8081/*"
   ],
   "background": {
     "service_worker": "background.js"

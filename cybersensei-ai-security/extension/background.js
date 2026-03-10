@@ -7,6 +7,7 @@
 
 const DEFAULT_CONFIG = {
   apiUrl: "http://localhost:8081",
+  trainingApiUrl: "http://localhost:8080",
   companyId: 1,
   userId: 1,
   enabled: true,

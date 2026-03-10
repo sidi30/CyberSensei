@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
-import { AlertTriangle, TrendingUp, Users, Target } from "lucide-react";
+import { AlertTriangle, TrendingUp, Users, Target, Brain } from "lucide-react";
 
 const stats = [
   {
@@ -29,6 +29,12 @@ const stats = [
     value: "50k€",
     label: "coût moyen",
     description: "d'une cyberattaque pour une PME française",
+  },
+  {
+    icon: Brain,
+    value: "38%",
+    label: "des employés",
+    description: "partagent des données sensibles dans les outils IA (ChatGPT, Copilot...)",
   },
 ];
 
@@ -70,9 +76,10 @@ export function Problem() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg text-gray-400 max-w-2xl mx-auto"
           >
-            Phishing, ingénierie sociale, faux emails du patron... Les
-            cyberattaques ciblent d&apos;abord vos collaborateurs. Sans
-            formation adaptée, votre entreprise reste vulnérable.
+            Phishing, ingénierie sociale, fuites de données vers les IA
+            génératives... Les cyberattaques ciblent d&apos;abord vos
+            collaborateurs. Sans formation et protection adaptées, votre
+            entreprise reste vulnérable.
           </motion.p>
         </div>
 

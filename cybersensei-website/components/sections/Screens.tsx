@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   Clock,
   Award,
+  ShieldAlert,
+  Globe,
 } from "lucide-react";
 
 export function Screens() {
@@ -44,7 +46,7 @@ export function Screens() {
           </motion.h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Chat Interface Preview */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -102,6 +104,74 @@ export function Screens() {
                       <Clock className="w-3 h-3" />
                       <span>~30 secondes</span>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Extension DLP Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.25 }}
+          >
+            <div className="glass-card p-6 h-full">
+              <h3 className="font-display text-xl font-bold text-white mb-4">
+                Extension DLP
+              </h3>
+              <p className="text-gray-400 text-sm mb-6">
+                Protection temps reel sur les outils IA.
+              </p>
+
+              {/* Extension Mockup */}
+              <div className="bg-navy-950 rounded-xl p-4 space-y-4">
+                {/* Header */}
+                <div className="flex items-center gap-2 pb-3 border-b border-white/10">
+                  <ShieldAlert className="w-5 h-5 text-yellow-400" />
+                  <span className="text-sm text-white font-medium">CyberSensei DLP</span>
+                  <span className="ml-auto px-2 py-0.5 rounded text-xs bg-green-500/10 text-green-400">Actif</span>
+                </div>
+
+                {/* Alert */}
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                    <span className="text-sm text-yellow-400 font-medium">Alerte : donnee sensible</span>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    IBAN detecte dans votre prompt vers ChatGPT
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="h-1.5 flex-grow bg-navy-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-yellow-400 rounded-full" style={{ width: "65%" }} />
+                    </div>
+                    <span className="text-xs text-yellow-400">65/100</span>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-cyber-400">12</div>
+                    <div className="text-xs text-gray-500">Alertes/jour</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-green-400">3</div>
+                    <div className="text-xs text-gray-500">Bloques</div>
+                  </div>
+                </div>
+
+                {/* Sites monitored */}
+                <div className="bg-white/5 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="w-3 h-3 text-gray-400" />
+                    <span className="text-xs text-gray-400">Sites surveilles</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {["ChatGPT", "Copilot", "Gemini", "Claude"].map((site) => (
+                      <span key={site} className="px-2 py-0.5 text-xs rounded bg-white/5 text-gray-400">{site}</span>
+                    ))}
                   </div>
                 </div>
               </div>

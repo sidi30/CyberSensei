@@ -19,9 +19,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CyberSensei | Coach Cybersécurité IA pour PME",
+  title: "CyberSensei | Coach Cybersécurité IA & Protection DLP pour PME",
   description:
-    "Formez vos équipes à la cybersécurité avec CyberSensei. Coach IA intégré à Microsoft Teams, exercices quotidiens, simulations de phishing et pédagogie bienveillante. Solution souveraine.",
+    "Formez vos équipes à la cybersécurité avec CyberSensei. Coach IA intégré à Microsoft Teams, simulations de phishing, protection DLP contre les fuites de données vers ChatGPT/Copilot, extension navigateur et conformité RGPD. Solution souveraine.",
   keywords: [
     "cybersécurité",
     "formation",
@@ -30,6 +30,12 @@ export const metadata: Metadata = {
     "Teams",
     "IA",
     "sensibilisation",
+    "DLP",
+    "protection données",
+    "RGPD",
+    "ChatGPT",
+    "extension navigateur",
+    "fuite de données",
   ],
   authors: [{ name: "CyberSensei" }],
   icons: {
@@ -38,9 +44,9 @@ export const metadata: Metadata = {
     apple: "/logo.png",
   },
   openGraph: {
-    title: "CyberSensei | Coach Cybersécurité IA pour PME",
+    title: "CyberSensei | Coach Cybersécurité IA & Protection DLP pour PME",
     description:
-      "Formez vos équipes à la cybersécurité avec un coach IA bienveillant intégré à Microsoft Teams.",
+      "Formez vos équipes à la cybersécurité et protégez vos données sensibles contre les fuites vers les outils IA. Coach IA, DLP temps réel, conformité RGPD.",
     type: "website",
     locale: "fr_FR",
     images: [

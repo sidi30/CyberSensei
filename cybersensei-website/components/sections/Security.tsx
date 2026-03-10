@@ -11,6 +11,8 @@ import {
   Check,
   FileCheck,
   Building2,
+  ShieldAlert,
+  Brain,
 } from "lucide-react";
 
 const securityPoints = [
@@ -37,6 +39,18 @@ const securityPoints = [
     title: "RGPD-friendly",
     description:
       "Conçu avec la protection des données en tête. Pas de transfert hors UE, pas de traitement non consenti.",
+  },
+  {
+    icon: ShieldAlert,
+    title: "DLP pour outils IA",
+    description:
+      "Extension navigateur qui détecte et bloque les fuites de données sensibles vers ChatGPT, Copilot, Gemini, Claude et Mistral en temps réel.",
+  },
+  {
+    icon: Brain,
+    title: "Analyse double couche",
+    description:
+      "Couche 1 rapide (Presidio NER, ~5ms) + Couche 2 sémantique (Mistral 7B, ~500ms). Détection des données personnelles, financières, médicales et RGPD Article 9.",
   },
 ];
 
@@ -131,6 +145,43 @@ export function Security() {
                   <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-400">
                     <Check className="w-4 h-4 text-green-400" />
                     <span>Données chiffrées au repos</span>
+                  </div>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex justify-center">
+                  <div className="w-px h-8 bg-gradient-to-b from-cyber-500/50 to-transparent relative">
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-xs text-gray-500">
+                      Métriques anonymes (optionnel)
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Security DLP */}
+                <div className="border-2 border-dashed border-yellow-500/30 rounded-xl p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <ShieldAlert className="w-5 h-5 text-yellow-400" />
+                    <span className="font-semibold text-white">
+                      Protection DLP IA
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-navy-900 rounded-lg p-4 text-center">
+                      <ShieldAlert className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+                      <div className="text-sm text-white">Extension Chrome</div>
+                      <div className="text-xs text-gray-500">Manifest V3</div>
+                    </div>
+                    <div className="bg-navy-900 rounded-lg p-4 text-center">
+                      <Brain className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+                      <div className="text-sm text-white">Analyse IA</div>
+                      <div className="text-xs text-gray-500">Presidio + Mistral</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-400">
+                    <Check className="w-4 h-4 text-yellow-400" />
+                    <span>RGPD Article 9 conforme</span>
                   </div>
                 </div>
 

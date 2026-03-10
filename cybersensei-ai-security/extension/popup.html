@@ -181,6 +181,33 @@
       opacity: 1;
     }
 
+    .training-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #00d4aa 0%, #00a388 100%);
+      color: #0a0a1a;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .training-btn:hover {
+      background: linear-gradient(135deg, #00e6b8 0%, #00b89a 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 212, 170, 0.25);
+    }
+
+    .training-icon {
+      font-size: 16px;
+    }
+
     .sites-list {
       display: flex;
       flex-wrap: wrap;
@@ -210,12 +237,24 @@
     <span class="status-text" id="statusText">Protection active</span>
   </div>
 
+  <div class="section" style="padding-bottom:8px">
+    <button class="training-btn" id="trainingBtn">
+      <span class="training-icon">&#x1F393;</span>
+      Formation Cybersecurite
+    </button>
+  </div>
+
   <div class="section">
     <div class="section-title">Configuration</div>
 
     <div class="field">
-      <label for="apiUrl">URL du serveur CyberSensei</label>
+      <label for="apiUrl">URL serveur DLP (Protection)</label>
       <input type="text" id="apiUrl" placeholder="http://localhost:8081">
+    </div>
+
+    <div class="field">
+      <label for="trainingApiUrl">URL serveur Formation</label>
+      <input type="text" id="trainingApiUrl" placeholder="http://localhost:8080">
     </div>
 
     <div class="field">
