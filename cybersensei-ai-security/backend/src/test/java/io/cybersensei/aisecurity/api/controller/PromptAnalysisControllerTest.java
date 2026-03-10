@@ -5,6 +5,7 @@ import io.cybersensei.aisecurity.api.dto.request.AnalyzePromptRequest;
 import io.cybersensei.aisecurity.api.dto.response.AnalyzePromptResponse;
 import io.cybersensei.aisecurity.domain.enums.AiTool;
 import io.cybersensei.aisecurity.domain.enums.RiskLevel;
+import io.cybersensei.aisecurity.security.JwtTokenProvider;
 import io.cybersensei.aisecurity.service.PromptSecurityService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.bean.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -33,8 +34,11 @@ class PromptAnalysisControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private PromptSecurityService promptSecurityService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
     // ── POST /api/ai-security/analyze with valid request ──
 

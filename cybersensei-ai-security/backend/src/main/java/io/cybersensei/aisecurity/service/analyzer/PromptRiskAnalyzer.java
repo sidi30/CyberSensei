@@ -46,7 +46,7 @@ public class PromptRiskAnalyzer {
     private static final Map<SensitiveDataCategory, List<PatternRule>> PATTERNS = Map.of(
             SensitiveDataCategory.PERSONAL_DATA, List.of(
                     new PatternRule(Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"), "email", 70),
-                    new PatternRule(Pattern.compile("\\b(?:\\+33|0033|0)[1-9](?:[\\s.-]?\\d{2}){4}\\b"), "phone_fr", 65),
+                    new PatternRule(Pattern.compile("(?:^|\\s)(?:\\+33|0033|0)[1-9](?:[\\s.-]?\\d{2}){4}\\b"), "phone_fr", 65),
                     new PatternRule(Pattern.compile("\\b\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4}\\b"), "phone_us", 60),
                     new PatternRule(Pattern.compile("\\b[12]\\s?\\d{2}\\s?\\d{2}\\s?\\d{2}\\s?[A-Za-z]?\\s?\\d{3}\\s?\\d{3}\\s?\\d{2}\\b"), "ssn_fr", 90),
                     new PatternRule(Pattern.compile("\\b\\d{3}-\\d{2}-\\d{4}\\b"), "ssn_us", 90),
@@ -187,6 +187,9 @@ public class PromptRiskAnalyzer {
     private double getCategoryWeight(SensitiveDataCategory category) {
         return switch (category) {
             case CREDENTIALS_SECRETS -> 1.5;
+            case HEALTH_DATA, BIOMETRIC_DATA, CRIMINAL_DATA -> 1.6;
+            case POLITICAL_OPINION, UNION_MEMBERSHIP, RELIGIOUS_BELIEF,
+                 SEXUAL_ORIENTATION, ETHNIC_ORIGIN -> 1.5;
             case PERSONAL_DATA, MEDICAL_DATA -> 1.3;
             case FINANCIAL_DATA, LEGAL_DOCUMENTS -> 1.2;
             case CLIENT_INFORMATION, COMPANY_CONFIDENTIAL -> 1.1;

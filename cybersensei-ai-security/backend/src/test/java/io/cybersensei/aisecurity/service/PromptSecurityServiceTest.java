@@ -10,7 +10,9 @@ import io.cybersensei.aisecurity.domain.enums.RiskLevel;
 import io.cybersensei.aisecurity.domain.enums.SensitiveDataCategory;
 import io.cybersensei.aisecurity.domain.repository.AlertRepository;
 import io.cybersensei.aisecurity.domain.repository.PromptEventRepository;
+import io.cybersensei.aisecurity.domain.repository.RetentionPolicyRepository;
 import io.cybersensei.aisecurity.domain.repository.RiskDetectionRepository;
+import io.cybersensei.aisecurity.service.analyzer.AiSecurityClient;
 import io.cybersensei.aisecurity.service.analyzer.PromptRiskAnalyzer;
 import io.cybersensei.aisecurity.service.sanitizer.PromptSanitizer;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -25,7 +27,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,6 +39,9 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PromptSecurityServiceTest {
+
+    @Mock
+    private AiSecurityClient aiSecurityClient;
 
     @Mock
     private PromptRiskAnalyzer analyzer;
@@ -51,6 +58,9 @@ class PromptSecurityServiceTest {
     @Mock
     private AlertRepository alertRepository;
 
+    @Mock
+    private RetentionPolicyRepository retentionPolicyRepository;
+
     @InjectMocks
     private PromptSecurityService service;
 
@@ -58,6 +68,12 @@ class PromptSecurityServiceTest {
     void setUp() {
         ReflectionTestUtils.setField(service, "blockThreshold", 80);
         ReflectionTestUtils.setField(service, "warnThreshold", 40);
+
+        // AI service returns null so all tests fall back to regex analyzer
+        lenient().when(aiSecurityClient.analyze(anyString(), any())).thenReturn(null);
+        // No custom retention policy — use defaults
+        lenient().when(retentionPolicyRepository.findByCompanyIdAndIsActiveTrue(any()))
+                .thenReturn(Optional.empty());
     }
 
     private AnalyzePromptRequest buildRequest(String prompt) {
@@ -379,6 +395,56 @@ class PromptSecurityServiceTest {
 
             // Assert: alert is created but prompt is sanitized not blocked
             verify(alertRepository).save(any(Alert.class));
+        }
+    }
+
+    // ── Article 9 Detection ──
+
+    @Nested
+    @DisplayName("Article 9 data detection and retention")
+    class Article9Detection {
+
+        @Test
+        @DisplayName("should set containsArticle9 to true when HEALTH_DATA is detected")
+        void shouldSetContainsArticle9WhenHealthDataDetected() {
+            // Arrange
+            String prompt = "Patient diagnosed with diabetes type 2";
+            var request = buildRequest(prompt);
+
+            var detection = PromptRiskAnalyzer.Detection.builder()
+                    .category(SensitiveDataCategory.HEALTH_DATA)
+                    .confidence(90)
+                    .method("regex")
+                    .matchedPattern("health_condition")
+                    .redactedSnippet("di****es")
+                    .build();
+
+            var analysisResult = new PromptRiskAnalyzer.AnalysisResult(70, RiskLevel.HIGH, List.of(detection));
+
+            when(analyzer.analyze(prompt)).thenReturn(analysisResult);
+            when(sanitizer.sanitize(eq(prompt), anyList())).thenReturn("[HEALTH_DATA]");
+            when(promptEventRepository.save(any(PromptEvent.class))).thenAnswer(inv -> {
+                PromptEvent evt = inv.getArgument(0);
+                evt.setId(10L);
+                return evt;
+            });
+            when(riskDetectionRepository.save(any(RiskDetection.class))).thenReturn(new RiskDetection());
+            when(alertRepository.save(any(Alert.class))).thenReturn(new Alert());
+
+            // Act
+            service.analyzeAndProcess(request);
+
+            // Assert
+            ArgumentCaptor<PromptEvent> eventCaptor = ArgumentCaptor.forClass(PromptEvent.class);
+            verify(promptEventRepository).save(eventCaptor.capture());
+
+            PromptEvent savedEvent = eventCaptor.getValue();
+            assertThat(savedEvent.getContainsArticle9()).isTrue();
+            assertThat(savedEvent.getRetentionExpiresAt()).isNotNull();
+            // Article 9 default retention is 30 days
+            assertThat(savedEvent.getRetentionExpiresAt())
+                    .isAfter(LocalDateTime.now().plusDays(29))
+                    .isBefore(LocalDateTime.now().plusDays(31));
         }
     }
 }

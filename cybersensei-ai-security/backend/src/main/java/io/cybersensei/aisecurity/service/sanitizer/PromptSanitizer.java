@@ -24,7 +24,7 @@ public class PromptSanitizer {
             ),
             // Phone numbers (FR)
             new ReplacementRule(
-                    Pattern.compile("\\b(?:\\+33|0033|0)[1-9](?:[\\s.-]?\\d{2}){4}\\b"),
+                    Pattern.compile("(?:^|(?<=\\s))(?:\\+33|0033|0)[1-9](?:[\\s.-]?\\d{2}){4}\\b"),
                     "[TELEPHONE]"
             ),
             // Phone numbers (US/INT)
@@ -52,19 +52,19 @@ public class PromptSanitizer {
                     Pattern.compile("\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"),
                     "[CARTE_BANCAIRE]"
             ),
-            // API keys / tokens
-            new ReplacementRule(
-                    Pattern.compile("(?i)(?:sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9-]{20,})"),
-                    "[CLE_API]"
-            ),
-            // Private keys
+            // Private keys (must be before credential pairs)
             new ReplacementRule(
                     Pattern.compile("-----BEGIN (?:RSA |EC )?PRIVATE KEY-----[\\s\\S]*?-----END (?:RSA |EC )?PRIVATE KEY-----"),
                     "[CLE_PRIVEE]"
             ),
-            // Credential pairs
+            // API keys / tokens (must be before credential pairs)
             new ReplacementRule(
-                    Pattern.compile("(?i)(password|mot.?de.?passe|pwd|secret|token|api.?key)\\s*[:=]\\s*\\S+"),
+                    Pattern.compile("(?i)(?:sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36,}|glpat-[a-zA-Z0-9-]{20,})"),
+                    "[CLE_API]"
+            ),
+            // Credential pairs (token only matches if value is not a known API key prefix)
+            new ReplacementRule(
+                    Pattern.compile("(?i)(password|mot.?de.?passe|pwd|secret|token|api.?key)\\s*[:=]\\s*(?!(?:sk-|ghp_|glpat-|\\[))\\S+"),
                     "$1=[MASQUE]"
             ),
             // Connection strings

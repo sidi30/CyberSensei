@@ -16,11 +16,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,9 +52,9 @@ class RiskScoringServiceTest {
                 .thenReturn(sanitized);
         when(promptEventRepository.countDistinctUsersByCompanyIdAndCreatedAtAfter(eq(companyId), any(LocalDateTime.class)))
                 .thenReturn(uniqueUsers);
-        when(riskDetectionRepository.countByCategoryAndCompany(eq(companyId), any(LocalDateTime.class)))
+        lenient().when(riskDetectionRepository.countByCategoryAndCompany(eq(companyId), any(LocalDateTime.class)))
                 .thenReturn(List.of());
-        when(promptEventRepository.dailyStatsForCompany(eq(companyId), any(LocalDateTime.class)))
+        lenient().when(promptEventRepository.dailyStatsForCompany(eq(companyId), any(LocalDateTime.class)))
                 .thenReturn(List.of());
     }
 
@@ -261,9 +263,10 @@ class RiskScoringServiceTest {
                     .thenReturn(Optional.empty());
             stubCommonRepositoryCalls(companyId, 10, 2, 1, 1, 1);
 
-            Object[] row = new Object[]{"PERSONAL_DATA", 5L};
+            List<Object[]> rows = new ArrayList<>();
+            rows.add(new Object[]{"PERSONAL_DATA", 5L});
             when(riskDetectionRepository.countByCategoryAndCompany(eq(companyId), any()))
-                    .thenReturn(List.of(row));
+                    .thenReturn(rows);
 
             RiskScoreResponse response = riskScoringService.getRiskScore(companyId, 30);
 
@@ -280,9 +283,10 @@ class RiskScoringServiceTest {
                     .thenReturn(Optional.empty());
             stubCommonRepositoryCalls(companyId, 10, 2, 1, 1, 1);
 
-            Object[] row = new Object[]{LocalDate.now(), 10L, 25.5};
+            List<Object[]> rows = new ArrayList<>();
+            rows.add(new Object[]{LocalDate.now(), 10L, 25.5});
             when(promptEventRepository.dailyStatsForCompany(eq(companyId), any()))
-                    .thenReturn(List.of(row));
+                    .thenReturn(rows);
 
             RiskScoreResponse response = riskScoringService.getRiskScore(companyId, 30);
 
