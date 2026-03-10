@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -20,6 +20,8 @@ import { M365ReportModule } from './modules/m365-report/m365-report.module';
 import { M365AlertModule } from './modules/m365-alert/m365-alert.module';
 import { M365SchedulerModule } from './modules/m365-scheduler/m365-scheduler.module';
 import { HealthModule } from './modules/health/health.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
+import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
 @Module({
   imports: [
@@ -84,6 +86,7 @@ import { HealthModule } from './modules/health/health.module';
     M365AlertModule,
     M365SchedulerModule,
     HealthModule,
+    MetricsModule,
   ],
   providers: [
     // Global rate limiting guard
@@ -93,4 +96,8 @@ import { HealthModule } from './modules/health/health.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(MetricsMiddleware).forRoutes('*');
+  }
+}

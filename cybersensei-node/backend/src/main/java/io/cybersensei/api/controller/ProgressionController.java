@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/api/progression")
 @RequiredArgsConstructor
 @Tag(name = "Progression", description = "Gestion de la progression utilisateur, modules et badges")
-@CrossOrigin(origins = "*")
 public class ProgressionController {
 
     private final ProgressionService progressionService;

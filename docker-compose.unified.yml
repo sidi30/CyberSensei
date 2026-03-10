@@ -102,7 +102,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-cybersensei_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-cybersensei}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_JPA_SHOW_SQL: "false"
       AI_SERVICE_URL: http://node-ai:${NODE_AI_PORT:-8000}
       JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production-please}
@@ -257,7 +257,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -339,7 +339,7 @@ services:
       BACKEND_URL: http://node-backend:8080
       BACKEND_BASE_URL: http://node-backend:8080
       PORT: 5175
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "${TEAMS_BOT_PORT:-5175}:5175"
     healthcheck:
