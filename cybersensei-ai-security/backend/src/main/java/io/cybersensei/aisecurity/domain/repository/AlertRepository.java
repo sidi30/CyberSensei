@@ -20,4 +20,8 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     long countByCompanyIdAndStatus(Long companyId, AlertStatus status);
 
     List<Alert> findByCompanyIdAndStatusIn(Long companyId, List<AlertStatus> statuses);
+
+    void deleteByUserId(Long userId);
+
+    void deleteByPromptEventId(Long promptEventId);
 }

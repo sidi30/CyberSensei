@@ -9,5 +9,7 @@
     <include file="db/changelog/changes/002-create-risk-detections.xml"/>
     <include file="db/changelog/changes/003-create-company-risk-scores.xml"/>
     <include file="db/changelog/changes/004-create-alerts.xml"/>
+    <include file="db/changelog/changes/005-create-retention-policies.xml"/>
+    <include file="db/changelog/changes/006-create-rgpd-audit-log.xml"/>
 
 </databaseChangeLog>

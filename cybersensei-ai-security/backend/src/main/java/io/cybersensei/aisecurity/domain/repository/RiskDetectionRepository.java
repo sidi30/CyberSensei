@@ -20,4 +20,8 @@ public interface RiskDetectionRepository extends JpaRepository<RiskDetection, Lo
             "GROUP BY rd.category ORDER BY COUNT(rd) DESC")
     List<Object[]> countByCategoryAndCompany(
             @Param("companyId") Long companyId, @Param("after") LocalDateTime after);
+
+    void deleteByPromptEventId(Long promptEventId);
+
+    void deleteByPromptEventUserId(Long userId);
 }

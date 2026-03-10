@@ -43,4 +43,22 @@ public interface PromptEventRepository extends JpaRepository<PromptEvent, Long> 
     long countByCompanyIdAndWasBlockedTrueAndCreatedAtAfter(Long companyId, LocalDateTime after);
 
     long countByCompanyIdAndWasSanitizedTrueAndCreatedAtAfter(Long companyId, LocalDateTime after);
+
+    // ── RGPD ──
+
+    List<PromptEvent> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    long countByUserId(Long userId);
+
+    void deleteByUserId(Long userId);
+
+    @Query("SELECT pe FROM PromptEvent pe WHERE pe.retentionExpiresAt IS NOT NULL AND pe.retentionExpiresAt < :now")
+    List<PromptEvent> findExpiredEvents(@Param("now") LocalDateTime now);
+
+    @Query("SELECT pe FROM PromptEvent pe WHERE pe.containsArticle9 = true " +
+            "AND pe.retentionExpiresAt IS NOT NULL AND pe.retentionExpiresAt < :now")
+    List<PromptEvent> findExpiredArticle9Events(@Param("now") LocalDateTime now);
+
+    @Query("SELECT DISTINCT pe.companyId FROM PromptEvent pe WHERE pe.createdAt > :after")
+    List<Long> findDistinctCompanyIdsByCreatedAtAfter(@Param("after") LocalDateTime after);
 }

@@ -64,4 +64,11 @@ public class PromptEvent {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "retention_expires_at")
+    private LocalDateTime retentionExpiresAt;
+
+    @Column(name = "contains_article9")
+    @Builder.Default
+    private Boolean containsArticle9 = false;
 }

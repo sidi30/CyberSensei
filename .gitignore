@@ -326,3 +326,4 @@ terraform.tfvars
 
 # Investor presentation (not source code)
 presentation-investisseurs.html
+.claude

@@ -41,6 +41,11 @@ ai-security:
     risk-threshold-warn: 40
     risk-threshold-block: 80
 
+  # AI Security Service (Python FastAPI: LLM Guard + Mistral)
+  ai-service:
+    url: ${AI_SECURITY_SERVICE_URL:http://localhost:8000}
+    timeout: ${AI_SECURITY_SERVICE_TIMEOUT:30000}
+
   # Inter-service communication
   node-backend-url: ${NODE_BACKEND_URL:http://localhost:8080}
 
