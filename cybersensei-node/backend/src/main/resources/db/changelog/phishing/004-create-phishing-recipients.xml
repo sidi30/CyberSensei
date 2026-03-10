@@ -6,8 +6,11 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
     <changeSet id="phishing-004-create-phishing-recipients" author="cybersensei">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="phishing_recipients"/></not>
+        </preConditions>
         <comment>Create phishing_recipients table for tracking email recipients</comment>
-        
+
         <createTable tableName="phishing_recipients">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>

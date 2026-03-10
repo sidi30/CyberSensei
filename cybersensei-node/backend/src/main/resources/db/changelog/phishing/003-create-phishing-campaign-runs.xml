@@ -6,8 +6,11 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
     <changeSet id="phishing-003-create-phishing-campaign-runs" author="cybersensei">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="phishing_campaign_runs"/></not>
+        </preConditions>
         <comment>Create phishing_campaign_runs table for execution tracking</comment>
-        
+
         <createTable tableName="phishing_campaign_runs">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>

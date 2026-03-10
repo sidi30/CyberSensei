@@ -6,8 +6,11 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
     <changeSet id="phishing-005-create-phishing-events" author="cybersensei">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="phishing_events"/></not>
+        </preConditions>
         <comment>Create phishing_events table for tracking user interactions</comment>
-        
+
         <createTable tableName="phishing_events">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>

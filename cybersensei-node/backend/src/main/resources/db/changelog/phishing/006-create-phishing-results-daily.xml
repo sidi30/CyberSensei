@@ -6,6 +6,9 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
     <changeSet id="phishing-006-create-phishing-results-daily" author="cybersensei">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="phishing_results_daily"/></not>
+        </preConditions>
         <comment>Create phishing_results_daily table for aggregated reporting</comment>
         
         <createTable tableName="phishing_results_daily">

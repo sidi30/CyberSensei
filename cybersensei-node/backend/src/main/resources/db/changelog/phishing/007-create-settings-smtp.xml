@@ -6,8 +6,11 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
     <changeSet id="phishing-007-create-settings-smtp" author="cybersensei">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="settings_smtp"/></not>
+        </preConditions>
         <comment>Create settings_smtp table for SMTP configuration</comment>
-        
+
         <createTable tableName="settings_smtp">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
