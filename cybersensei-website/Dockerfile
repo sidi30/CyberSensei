@@ -31,7 +31,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+ENV HOSTNAME=0.0.0.0
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
@@ -56,5 +56,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
-# Start Next.js in production mode
-CMD ["npm", "start"]
+# Start Next.js in production mode on PORT 3000
+CMD ["npx", "next", "start", "-p", "3000"]

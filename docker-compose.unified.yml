@@ -102,7 +102,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-cybersensei_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-cybersensei}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       AI_SERVICE_URL: http://ai-security-ai:8000
       JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production-please}
@@ -219,6 +219,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@cybersensei.io}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:5174}
     ports:
       - "${CENTRAL_BACKEND_PORT:-3006}:3000"
     depends_on:

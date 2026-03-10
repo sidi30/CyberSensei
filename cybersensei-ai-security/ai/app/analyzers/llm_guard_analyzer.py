@@ -81,7 +81,7 @@ class LlmGuardAnalyzer:
         self.vault = Vault()
         self.secrets_scanner = Secrets(redact_mode="all")
         self.code_scanner = Code(
-            languages=["Java", "Python", "JavaScript", "SQL", "Go", "PHP"],
+            languages=["Java", "Python", "JavaScript", "Go", "PHP", "C"],
             is_blocked=True,
         )
 
