@@ -42,6 +42,15 @@ export class TenantService {
     return segments.join('-');
   }
 
+  private generateActivationCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // pas de 0/O/1/I pour éviter confusion
+    let code = 'CS-';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  }
+
   async create(createTenantDto: CreateTenantDto) {
     const existing = await this.tenantRepository.findOne({
       where: [
@@ -55,10 +64,12 @@ export class TenantService {
     }
 
     const licenseKey = this.generateLicenseKey();
+    const activationCode = this.generateActivationCode();
 
     const tenant = this.tenantRepository.create({
       ...createTenantDto,
       licenseKey,
+      activationCode,
     });
 
     const savedTenant = await this.tenantRepository.save(tenant);

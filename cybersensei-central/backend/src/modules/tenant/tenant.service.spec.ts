@@ -16,6 +16,7 @@ describe('TenantService', () => {
     name: 'Test Tenant',
     contactEmail: 'tenant@test.com',
     licenseKey: 'ABCD1234-EFGH5678-IJKL9012-MNOP3456',
+    activationCode: 'ACT-TEST-1234',
     active: true,
     companyName: 'Test Corp',
     address: '123 Test St',

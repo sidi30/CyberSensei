@@ -516,15 +516,15 @@ services:
       - proxy
       - full
     command:
-      - "--api.dashboard=${TRAEFIK_DASHBOARD:-false}"
-      - "--api.insecure=${TRAEFIK_INSECURE:-false}"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
       - "--entrypoints.web.address=:80"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=cybersensei-network"
       - "--log.level=INFO"
     ports:
-      - "80:80"      # Traefik entrypoint web
+      - "${TRAEFIK_PORT:-8180}:80"      # Traefik entrypoint web
       - "8088:8080"  # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

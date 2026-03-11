@@ -27,6 +27,7 @@ import { EmailModule } from './modules/email/email.module';
 import { M365DiagnosticModule } from './modules/m365-diagnostic/m365-diagnostic.module';
 import { NIS2DiagnosticModule } from './modules/nis2-diagnostic/nis2-diagnostic.module';
 import { StripeModule } from './modules/stripe/stripe.module';
+import { ExtensionModule } from './modules/extension/extension.module';
 import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
 @Module({
@@ -103,6 +104,9 @@ import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
     // Billing
     StripeModule,
+
+    // Chrome/Edge Extension API
+    ExtensionModule,
   ],
   providers: [
     // Global rate limiting guard

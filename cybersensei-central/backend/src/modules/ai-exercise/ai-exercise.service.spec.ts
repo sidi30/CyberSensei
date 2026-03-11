@@ -108,6 +108,7 @@ describe('AiExerciseService', () => {
     name: 'Test Tenant',
     contactEmail: 'tenant@test.com',
     licenseKey: 'ABCD-1234-EFGH-5678',
+    activationCode: 'ACT-TEST-1234',
     active: true,
     companyName: 'Test Corp',
     address: '123 Test St',

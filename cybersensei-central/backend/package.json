@@ -24,7 +24,8 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:show": "npm run typeorm -- migration:show",
-    "db:seed": "psql -U cybersensei -d cybersensei_central -f database/seed-data.sql",
+    "db:seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+    "db:seed:sql": "psql -U cybersensei -d cybersensei_central -f database/seed-data.sql",
     "db:maintenance": "psql -U cybersensei -d cybersensei_central -f database/maintenance.sql"
   },
   "dependencies": {

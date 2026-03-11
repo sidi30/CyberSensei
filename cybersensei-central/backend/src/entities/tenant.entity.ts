@@ -36,6 +36,9 @@ export class Tenant {
   @Column({ unique: true })
   licenseKey: string;
 
+  @Column({ unique: true, nullable: true })
+  activationCode: string;
+
   @Column({ default: true })
   active: boolean;
 

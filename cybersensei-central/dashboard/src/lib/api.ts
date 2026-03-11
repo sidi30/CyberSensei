@@ -142,27 +142,27 @@ class ApiClient {
   // ============================================
 
   async getTenants(): Promise<Tenant[]> {
-    const { data } = await this.client.get<Tenant[]>('/admin/tenant');
+    const { data } = await this.client.get<Tenant[]>('/admin/tenants');
     return data;
   }
 
   async getTenant(id: string): Promise<Tenant> {
-    const { data } = await this.client.get<Tenant>(`/admin/tenant/${id}`);
+    const { data } = await this.client.get<Tenant>(`/admin/tenants/${id}`);
     return data;
   }
 
   async createTenant(tenantData: CreateTenantData): Promise<Tenant> {
-    const { data } = await this.client.post<Tenant>('/admin/tenant', tenantData);
+    const { data } = await this.client.post<Tenant>('/admin/tenants', tenantData);
     return data;
   }
 
   async updateTenant(id: string, tenantData: Partial<CreateTenantData>): Promise<Tenant> {
-    const { data } = await this.client.patch<Tenant>(`/admin/tenant/${id}`, tenantData);
+    const { data } = await this.client.patch<Tenant>(`/admin/tenants/${id}`, tenantData);
     return data;
   }
 
   async deleteTenant(id: string): Promise<void> {
-    await this.client.delete(`/admin/tenant/${id}`);
+    await this.client.delete(`/admin/tenants/${id}`);
   }
 
   // ============================================
@@ -170,12 +170,12 @@ class ApiClient {
   // ============================================
 
   async getLicenses(): Promise<License[]> {
-    const { data } = await this.client.get<License[]>('/admin/license');
+    const { data } = await this.client.get<License[]>('/api/license');
     return data;
   }
 
   async getTenantLicenses(tenantId: string): Promise<License[]> {
-    const { data } = await this.client.get<License[]>(`/admin/tenant/${tenantId}/licenses`);
+    const { data } = await this.client.get<License[]>(`/admin/tenants/${tenantId}/licenses`);
     return data;
   }
 
@@ -189,14 +189,14 @@ class ApiClient {
     offset: number = 0,
   ): Promise<PaginatedResponse<TenantMetric>> {
     const { data } = await this.client.get<PaginatedResponse<TenantMetric>>(
-      `/admin/tenant/${tenantId}/metrics`,
+      `/admin/tenants/${tenantId}/metrics`,
       { params: { limit, offset } },
     );
     return data;
   }
 
   async getLatestMetric(tenantId: string): Promise<{ tenantId: string; tenantName: string; metric: TenantMetric }> {
-    const { data } = await this.client.get(`/admin/tenant/${tenantId}/metrics/latest`);
+    const { data } = await this.client.get(`/admin/tenants/${tenantId}/metrics/latest`);
     return data;
   }
 
@@ -205,7 +205,7 @@ class ApiClient {
     period: '24h' | '7d' | '30d' = '7d',
   ): Promise<AggregatedMetrics> {
     const { data } = await this.client.get<AggregatedMetrics>(
-      `/admin/tenant/${tenantId}/metrics/aggregated`,
+      `/admin/tenants/${tenantId}/metrics/aggregated`,
       { params: { period } },
     );
     return data;
