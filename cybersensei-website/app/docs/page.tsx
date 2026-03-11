@@ -47,6 +47,17 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/sections/Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CONFIG - Change NEXT_PUBLIC_PLATFORM_URL to update all links at once
+// Example: NEXT_PUBLIC_PLATFORM_URL=https://cybersensei.example.com
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PLATFORM_URL = process.env.NEXT_PUBLIC_PLATFORM_URL || "http://localhost";
+
+function buildUrl(port: string, path = ""): string {
+  return `${PLATFORM_URL}:${port}${path}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -181,7 +192,7 @@ const services: ServiceInfo[] = [
       "Vue detaillee par utilisateur avec faiblesses identifiees",
     ],
     usage: [
-      "Accedez a http://localhost:3005 dans votre navigateur",
+      `Accedez a ${buildUrl("3005")} dans votre navigateur`,
       "Connectez-vous en tant qu'administrateur",
       "Le dashboard affiche les KPI globaux de l'entreprise",
       "Allez dans 'Utilisateurs' pour gerer les comptes",
@@ -257,7 +268,7 @@ const services: ServiceInfo[] = [
       "Distribution des licences",
     ],
     usage: [
-      "Accedez a http://localhost:5173",
+      `Accedez a ${buildUrl("5173")}`,
       "Connectez-vous avec le compte admin",
       "Le dashboard affiche la vue globale de la plateforme",
       "Allez dans 'Tenants' pour gerer vos clients",
@@ -290,7 +301,7 @@ const services: ServiceInfo[] = [
       "Vue detaillee par categorie avec recommandations",
     ],
     usage: [
-      "Accedez a http://localhost:5174",
+      `Accedez a ${buildUrl("5174")}`,
       "Allez dans 'Parametres' et entrez votre Tenant ID Microsoft",
       "Cliquez sur 'Connecter' pour lancer le flux OAuth M365",
       "De retour sur l'overview, cliquez 'Lancer un scan'",
@@ -513,9 +524,10 @@ const services: ServiceInfo[] = [
 const credentials = [
   {
     service: "Node Dashboard",
-    url: "http://localhost:3005",
+    url: buildUrl("3005"),
     icon: <Monitor className="w-5 h-5" />,
     color: "#61DAFB",
+    clickable: true,
     creds: [
       { role: "Admin", user: "admin@cybersensei.io", pass: "admin123" },
       { role: "Manager", user: "manager@cybersensei.io", pass: "manager123" },
@@ -524,9 +536,10 @@ const credentials = [
   },
   {
     service: "Central Dashboard (Admin SaaS)",
-    url: "http://localhost:5173",
+    url: buildUrl("5173"),
     icon: <Crown className="w-5 h-5" />,
     color: "#8B5CF6",
+    clickable: true,
     creds: [
       { role: "SuperAdmin", user: "admin@cybersensei.com", pass: "Admin@123456" },
     ],
@@ -534,17 +547,19 @@ const credentials = [
   },
   {
     service: "M365 Dashboard",
-    url: "http://localhost:5174",
+    url: buildUrl("5174"),
     icon: <ShieldCheck className="w-5 h-5" />,
     color: "#0078D4",
+    clickable: true,
     creds: [],
     note: "Necessaire : OAuth M365 avec Tenant ID Microsoft configure",
   },
   {
     service: "PgAdmin",
-    url: "http://localhost:5050",
+    url: buildUrl("5050"),
     icon: <Database className="w-5 h-5" />,
     color: "#336791",
+    clickable: true,
     creds: [
       { role: "Admin", user: "admin@cybersensei.io", pass: "admin123" },
     ],
@@ -552,9 +567,10 @@ const credentials = [
   },
   {
     service: "Grafana",
-    url: "http://localhost:3300",
+    url: buildUrl("3300"),
     icon: <Gauge className="w-5 h-5" />,
     color: "#F46800",
+    clickable: true,
     creds: [
       { role: "Admin", user: "admin", pass: "changeme" },
     ],
@@ -562,9 +578,10 @@ const credentials = [
   },
   {
     service: "PostgreSQL (direct)",
-    url: "localhost:5432",
+    url: `${PLATFORM_URL.replace(/^https?:\/\//, "")}:5432`,
     icon: <Database className="w-5 h-5" />,
     color: "#336791",
+    clickable: false,
     creds: [
       { role: "DB User", user: "cybersensei", pass: "cybersensei123" },
     ],
@@ -572,9 +589,10 @@ const credentials = [
   },
   {
     service: "MongoDB (direct)",
-    url: "localhost:27017",
+    url: `${PLATFORM_URL.replace(/^https?:\/\//, "")}:27017`,
     icon: <HardDrive className="w-5 h-5" />,
     color: "#47A248",
+    clickable: false,
     creds: [
       { role: "Root", user: "cybersensei", pass: "cybersensei123" },
     ],
@@ -582,9 +600,10 @@ const credentials = [
   },
   {
     service: "Coolify",
-    url: "http://localhost:8000/login",
+    url: buildUrl("8000", "/login"),
     icon: <Server className="w-5 h-5" />,
     color: "#6B16ED",
+    clickable: true,
     creds: [
       { role: "Admin", user: "admin@cybersensei.io", pass: "Admin@123456" },
     ],
@@ -1694,13 +1713,25 @@ export default function DocsPage() {
                   style={{ backgroundColor: cred.color + "08" }}
                 >
                   <span style={{ color: cred.color }}>{cred.icon}</span>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <h4 className="text-white font-semibold text-sm">
                       {cred.service}
                     </h4>
-                    <span className="text-xs text-white/30 font-mono">
-                      {cred.url}
-                    </span>
+                    {cred.clickable ? (
+                      <a
+                        href={cred.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-mono text-cyber-400/70 hover:text-cyber-400 transition-colors inline-flex items-center gap-1"
+                      >
+                        {cred.url}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      <span className="text-xs text-white/30 font-mono">
+                        {cred.url}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="p-4 space-y-2">
