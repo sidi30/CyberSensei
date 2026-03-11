@@ -9,6 +9,7 @@
 .env.local
 .env.*.local
 .env.production
+.env.prod
 .env.development
 .env.test
 .env.secrets
