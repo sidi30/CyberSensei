@@ -24,7 +24,8 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:show": "npm run typeorm -- migration:show",
-    "db:seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+    "db:seed": "cat src/scripts/seed.sql | docker exec -i cybersensei-postgres psql -U cybersensei -d cybersensei_central",
+    "db:seed:ts": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
     "db:seed:sql": "psql -U cybersensei -d cybersensei_central -f database/seed-data.sql",
     "db:maintenance": "psql -U cybersensei -d cybersensei_central -f database/maintenance.sql"
   },

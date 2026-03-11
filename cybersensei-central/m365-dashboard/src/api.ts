@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { M365Score, M365Scan, M365Finding, M365Alert, ConnectionStatus } from './types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3006';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
