@@ -220,6 +220,9 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@cybersensei.io}
+      # Admin seed
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@cybersensei.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123456}
       # Stripe
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}

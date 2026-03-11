@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberSensei</title>
+  <link rel="stylesheet" href="../styles/popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header fixe -->
+    <header class="header">
+      <div class="header-brand">
+        <span class="header-icon">🛡️</span>
+        <span class="header-title">CyberSensei</span>
+      </div>
+      <button id="btn-settings" class="btn-icon" title="Paramètres">⚙️</button>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="quiz">🎯 Quiz</button>
+      <button class="tab" data-tab="glossary">📚 Glossaire</button>
+      <button class="tab" data-tab="chat">💬 Chat IA</button>
+      <button class="tab" data-tab="progress">📊 Progrès</button>
+    </nav>
+
+    <!-- Zone de contenu -->
+    <main class="content">
+
+      <!-- TAB: Quiz -->
+      <section id="tab-quiz" class="tab-content active">
+        <div id="quiz-loading" class="loading">
+          <div class="spinner"></div>
+          <p>Chargement du quiz du jour...</p>
+        </div>
+        <div id="quiz-container" class="hidden"></div>
+        <div id="quiz-result" class="hidden"></div>
+        <div id="quiz-error" class="hidden">
+          <div class="empty-state">
+            <span class="empty-icon">😕</span>
+            <p>Aucun quiz disponible pour le moment.</p>
+            <button id="btn-retry-quiz" class="btn btn-primary">Réessayer</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: Glossaire -->
+      <section id="tab-glossary" class="tab-content hidden">
+        <div class="search-bar">
+          <input type="text" id="glossary-search" placeholder="Rechercher un terme (ex: phishing, VPN, RGPD...)" />
+        </div>
+        <div id="glossary-result" class="hidden"></div>
+        <div id="glossary-terms" class="term-grid"></div>
+      </section>
+
+      <!-- TAB: Chat IA -->
+      <section id="tab-chat" class="tab-content hidden">
+        <div id="chat-messages" class="chat-messages">
+          <div class="chat-bubble bot">
+            <strong>CyberSensei</strong>
+            <p>Bonjour ! Posez-moi vos questions sur la cybersécurité. 🛡️</p>
+          </div>
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" id="chat-input" placeholder="Votre question..." />
+          <button id="btn-send-chat" class="btn btn-primary btn-sm">Envoyer</button>
+        </div>
+      </section>
+
+      <!-- TAB: Progression -->
+      <section id="tab-progress" class="tab-content hidden">
+        <div id="progress-loading" class="loading">
+          <div class="spinner"></div>
+        </div>
+        <div id="progress-content" class="hidden"></div>
+        <div id="progress-error" class="hidden">
+          <div class="empty-state">
+            <span class="empty-icon">📊</span>
+            <p>Complétez votre premier quiz pour voir votre progression.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Settings overlay -->
+    <div id="settings-overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <div class="overlay-header">
+          <h3>⚙️ Configuration</h3>
+          <button id="btn-close-settings" class="btn-icon">✕</button>
+        </div>
+        <form id="settings-form">
+          <label>
+            URL du serveur
+            <input type="url" id="setting-url" placeholder="https://votre-serveur.com" required />
+          </label>
+          <label>
+            Clé de licence
+            <input type="text" id="setting-license" placeholder="XXXX-XXXX-XXXX-XXXX" required />
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+        <p id="settings-status" class="status-msg hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

@@ -76,6 +76,7 @@ interface ServiceInfo {
   features: string[];
   endpoints?: { method: string; path: string; desc: string }[];
   usage?: string[];
+  webUrl?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,6 +130,7 @@ const services: ServiceInfo[] = [
     id: "node-backend",
     name: "Node Backend (On-Premise)",
     shortName: "Node Backend",
+    webUrl: buildUrl("8080", "/swagger-ui.html"),
     icon: <Server className="w-6 h-6" />,
     color: "#6DB33F",
     port: "8080",
@@ -175,6 +177,7 @@ const services: ServiceInfo[] = [
     icon: <Monitor className="w-6 h-6" />,
     color: "#61DAFB",
     port: "3005",
+    webUrl: buildUrl("3005"),
     tech: "React + TypeScript + Vite",
     techIcon: "⚛️",
     profile: "minimal, node, full",
@@ -208,6 +211,7 @@ const services: ServiceInfo[] = [
     icon: <Globe className="w-6 h-6" />,
     color: "#E0234E",
     port: "3006",
+    webUrl: buildUrl("3006", "/api"),
     tech: "NestJS + TypeORM",
     techIcon: "🔴",
     profile: "central, full",
@@ -252,6 +256,7 @@ const services: ServiceInfo[] = [
     icon: <Crown className="w-6 h-6" />,
     color: "#8B5CF6",
     port: "5173",
+    webUrl: buildUrl("5173"),
     tech: "React + TypeScript + Vite",
     techIcon: "⚛️",
     profile: "central, full",
@@ -283,6 +288,7 @@ const services: ServiceInfo[] = [
     icon: <ShieldCheck className="w-6 h-6" />,
     color: "#0078D4",
     port: "5174",
+    webUrl: buildUrl("5174"),
     tech: "React + TypeScript + Vite",
     techIcon: "⚛️",
     profile: "central, full",
@@ -314,6 +320,7 @@ const services: ServiceInfo[] = [
     id: "ai-security-ai",
     name: "AI Security Engine (Python)",
     shortName: "AI Engine",
+    webUrl: buildUrl("8002", "/health"),
     icon: <Brain className="w-6 h-6" />,
     color: "#FF6F00",
     port: "8002",
@@ -456,6 +463,7 @@ const services: ServiceInfo[] = [
     icon: <Globe className="w-6 h-6" />,
     color: "#00e6b8",
     port: "3002",
+    webUrl: buildUrl("3002"),
     tech: "Next.js 14 + Tailwind CSS",
     techIcon: "▲",
     profile: "website, full",
@@ -479,6 +487,7 @@ const services: ServiceInfo[] = [
     icon: <Activity className="w-6 h-6" />,
     color: "#E6522C",
     port: "9090",
+    webUrl: buildUrl("9090"),
     tech: "Prometheus",
     techIcon: "🔥",
     profile: "monitoring, full",
@@ -499,6 +508,7 @@ const services: ServiceInfo[] = [
     icon: <Gauge className="w-6 h-6" />,
     color: "#F46800",
     port: "3300",
+    webUrl: buildUrl("3300"),
     tech: "Grafana",
     techIcon: "📊",
     profile: "monitoring, full",
@@ -513,7 +523,7 @@ const services: ServiceInfo[] = [
       "Multi-utilisateur avec roles",
     ],
     usage: [
-      "Accedez a http://localhost:3300",
+      `Accedez a ${buildUrl("3300")}`,
       "Connectez-vous avec admin / changeme",
       "Ajoutez Prometheus comme datasource (http://prometheus:9090)",
       "Creez vos dashboards ou importez des templates",
@@ -529,8 +539,7 @@ const credentials = [
     color: "#61DAFB",
     clickable: true,
     creds: [
-      { role: "Admin", user: "admin@cybersensei.io", pass: "admin123" },
-      { role: "Manager", user: "manager@cybersensei.io", pass: "manager123" },
+      { role: "Admin", user: "admin@cybersensei.io", pass: "Demo123!" },
     ],
     note: "Mode dev avec SECURITY_BYPASS=true pour les tests",
   },
@@ -597,17 +606,6 @@ const credentials = [
       { role: "Root", user: "cybersensei", pass: "cybersensei123" },
     ],
     note: "Base : cybersensei_central",
-  },
-  {
-    service: "Coolify",
-    url: buildUrl("8000", "/login"),
-    icon: <Server className="w-5 h-5" />,
-    color: "#6B16ED",
-    clickable: true,
-    creds: [
-      { role: "Admin", user: "admin@cybersensei.io", pass: "Admin@123456" },
-    ],
-    note: "Plateforme de deploiement self-hosted (PaaS)",
   },
 ];
 
@@ -1001,15 +999,32 @@ function ServiceCard({
               <h3 className="text-lg font-semibold text-white">
                 {service.name}
               </h3>
-              <span
-                className="text-xs font-mono px-2 py-0.5 rounded-full"
-                style={{
-                  backgroundColor: service.color + "15",
-                  color: service.color,
-                }}
-              >
-                :{service.port}
-              </span>
+              {service.webUrl ? (
+                <a
+                  href={service.webUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs font-mono px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 transition-all hover:scale-105"
+                  style={{
+                    backgroundColor: service.color + "20",
+                    color: service.color,
+                  }}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Ouvrir :{service.port}
+                </a>
+              ) : (
+                <span
+                  className="text-xs font-mono px-2 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: service.color + "15",
+                    color: service.color,
+                  }}
+                >
+                  :{service.port}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               <span className="text-xs text-white/40 flex items-center gap-1">
@@ -1714,23 +1729,30 @@ export default function DocsPage() {
                 >
                   <span style={{ color: cred.color }}>{cred.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-white font-semibold text-sm">
-                      {cred.service}
-                    </h4>
                     {cred.clickable ? (
                       <a
                         href={cred.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs font-mono text-cyber-400/70 hover:text-cyber-400 transition-colors inline-flex items-center gap-1"
+                        className="group/link"
                       >
-                        {cred.url}
-                        <ExternalLink className="w-3 h-3" />
+                        <h4 className="text-white font-semibold text-sm group-hover/link:text-cyber-400 transition-colors inline-flex items-center gap-2">
+                          {cred.service}
+                          <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                        </h4>
+                        <span className="text-xs font-mono text-cyber-400/70 group-hover/link:text-cyber-400 transition-colors">
+                          {cred.url}
+                        </span>
                       </a>
                     ) : (
-                      <span className="text-xs text-white/30 font-mono">
-                        {cred.url}
-                      </span>
+                      <>
+                        <h4 className="text-white font-semibold text-sm">
+                          {cred.service}
+                        </h4>
+                        <span className="text-xs text-white/30 font-mono">
+                          {cred.url}
+                        </span>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1796,7 +1818,7 @@ export default function DocsPage() {
                   color: "#22c55e",
                   steps: [
                     "Lancez : docker compose --profile node up -d",
-                    "Accedez au dashboard : http://localhost:3005",
+                    `Accedez au dashboard : ${buildUrl("3005")}`,
                     "Connectez-vous en admin",
                     "Creez les comptes utilisateurs",
                     "Configurez le SMTP pour le phishing",
@@ -1810,7 +1832,7 @@ export default function DocsPage() {
                   steps: [
                     "Lancez : docker compose --profile ai-security up -d",
                     "Attendez le telechargement de Mistral (~4 Go)",
-                    "Verifiez la sante : http://localhost:8002/health",
+                    `Verifiez la sante : ${buildUrl("8002", "/health")}`,
                     "Installez l'extension Chrome CyberSensei",
                     "Les prompts vers ChatGPT/Copilot seront analyses",
                     "Consultez les alertes sur le dashboard",
@@ -1822,7 +1844,7 @@ export default function DocsPage() {
                   color: "#8b5cf6",
                   steps: [
                     "Lancez : docker compose --profile central up -d",
-                    "Accedez a http://localhost:5173 (admin SaaS)",
+                    `Accedez a ${buildUrl("5173")} (admin SaaS)`,
                     "Creez des tenants pour vos clients",
                     "Generez des licences",
                     "Uploadez les mises a jour de contenu",
@@ -1835,7 +1857,7 @@ export default function DocsPage() {
                   color: "#0078D4",
                   steps: [
                     "Configurez M365_CLIENT_ID dans le .env",
-                    "Accedez a http://localhost:5174 (M365 Dashboard)",
+                    `Accedez a ${buildUrl("5174")} (M365 Dashboard)`,
                     "Entrez votre Tenant ID dans les parametres",
                     "Autorisez l'acces OAuth (lecture seule)",
                     "Lancez un scan de securite",
