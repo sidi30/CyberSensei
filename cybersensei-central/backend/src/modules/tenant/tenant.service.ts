@@ -1,7 +1,10 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   ConflictException,
+  Logger,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,14 +13,20 @@ import { Tenant } from '../../entities/tenant.entity';
 import { TenantMetric } from '../../entities/tenant-metric.entity';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { SubscriptionService } from '../subscription/subscription.service';
+import { PlanType } from '../../entities/subscription.entity';
 
 @Injectable()
 export class TenantService {
+  private readonly logger = new Logger(TenantService.name);
+
   constructor(
     @InjectRepository(Tenant)
     private tenantRepository: Repository<Tenant>,
     @InjectRepository(TenantMetric)
     private metricRepository: Repository<TenantMetric>,
+    @Inject(forwardRef(() => SubscriptionService))
+    private subscriptionService: SubscriptionService,
   ) {}
 
   private generateLicenseKey(): string {
@@ -52,7 +61,20 @@ export class TenantService {
       licenseKey,
     });
 
-    return await this.tenantRepository.save(tenant);
+    const savedTenant = await this.tenantRepository.save(tenant);
+
+    // Auto-create FREE subscription for new tenants
+    try {
+      await this.subscriptionService.create({
+        tenantId: savedTenant.id,
+        plan: PlanType.FREE,
+      });
+      this.logger.log(`Abonnement FREE créé pour le tenant ${savedTenant.name}`);
+    } catch (error) {
+      this.logger.warn(`Impossible de créer l'abonnement pour ${savedTenant.name}: ${error.message}`);
+    }
+
+    return savedTenant;
   }
 
   async findAll() {

@@ -1,8 +1,11 @@
-import { Controller, Post, Get, Param, Query, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Param, Query, Logger, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { M365ScanService } from './m365-scan.service';
 import { FindingCategory } from '../../entities/m365-finding.entity';
 import { ScanTrigger } from '../../entities/m365-scan.entity';
+import { PlanGuard } from '../../common/guards/plan.guard';
+import { PlanRequired } from '../../common/decorators/plan-required.decorator';
+import { PlanType } from '../../entities/subscription.entity';
 
 @ApiTags('M365 Scan')
 @Controller('m365/scan')
@@ -42,6 +45,8 @@ export class M365ScanController {
   }
 
   @Get('tenant/:tenantId/history')
+  @UseGuards(PlanGuard)
+  @PlanRequired(PlanType.STARTER)
   @ApiOperation({ summary: 'Get scan history for a tenant' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })

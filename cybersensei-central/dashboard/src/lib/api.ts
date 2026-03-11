@@ -15,6 +15,14 @@ import type {
   UpdateCheckResponse,
   ApiError,
   PaginatedResponse,
+  Exercise,
+  ExerciseStats,
+  AiConfig,
+  AiProvider,
+  GenerationFrequency,
+  Subscription,
+  SubscriptionStats,
+  PlanType,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -247,6 +255,114 @@ class ApiClient {
     const { data } = await this.client.get(`/update/download/${updateId}`, {
       responseType: 'blob',
     });
+    return data;
+  }
+
+  // ============================================
+  // EXERCISES
+  // ============================================
+
+  async getExercises(): Promise<Exercise[]> {
+    const { data } = await this.client.get<Exercise[]>('/admin/exercises');
+    return data;
+  }
+
+  async getExerciseStats(): Promise<ExerciseStats> {
+    const { data } = await this.client.get<ExerciseStats>('/admin/exercises/stats');
+    return data;
+  }
+
+  // ============================================
+  // AI EXERCISE GENERATION
+  // ============================================
+
+  async getAiConfig(tenantId: string): Promise<AiConfig> {
+    const { data } = await this.client.get<AiConfig>(`/admin/ai-exercises/config/${tenantId}`);
+    return data;
+  }
+
+  async createAiConfig(config: {
+    tenantId: string;
+    provider: AiProvider;
+    apiKey: string;
+    enabled?: boolean;
+    generationFrequency?: GenerationFrequency;
+  }): Promise<AiConfig> {
+    const { data } = await this.client.post<AiConfig>('/admin/ai-exercises/config', config);
+    return data;
+  }
+
+  async updateAiConfig(tenantId: string, config: {
+    provider?: AiProvider;
+    apiKey?: string;
+    enabled?: boolean;
+    generationFrequency?: GenerationFrequency;
+  }): Promise<AiConfig> {
+    const { data } = await this.client.patch<AiConfig>(`/admin/ai-exercises/config/${tenantId}`, config);
+    return data;
+  }
+
+  async deleteAiConfig(tenantId: string): Promise<void> {
+    await this.client.delete(`/admin/ai-exercises/config/${tenantId}`);
+  }
+
+  async testAiConfig(tenantId: string): Promise<{ success: boolean; message: string }> {
+    const { data } = await this.client.post<{ success: boolean; message: string }>(`/admin/ai-exercises/config/${tenantId}/test`);
+    return data;
+  }
+
+  async generateExercises(params: {
+    tenantId: string;
+    topics?: string[];
+    difficulty?: string;
+    count?: number;
+  }): Promise<{ generated: number; exercises: Exercise[] }> {
+    const { data } = await this.client.post<{ generated: number; exercises: Exercise[] }>('/admin/ai-exercises/generate', params);
+    return data;
+  }
+
+  async getGeneratedExercises(): Promise<Exercise[]> {
+    const { data } = await this.client.get<Exercise[]>('/admin/ai-exercises/generated');
+    return data;
+  }
+
+  // ============================================
+  // SUBSCRIPTIONS
+  // ============================================
+
+  async getSubscriptions(): Promise<Subscription[]> {
+    const { data } = await this.client.get<Subscription[]>('/subscriptions');
+    return data;
+  }
+
+  async getSubscriptionStats(): Promise<SubscriptionStats> {
+    const { data } = await this.client.get<SubscriptionStats>('/subscriptions/stats');
+    return data;
+  }
+
+  async getSubscriptionByTenant(tenantId: string): Promise<Subscription> {
+    const { data } = await this.client.get<Subscription>(`/subscriptions/tenant/${tenantId}`);
+    return data;
+  }
+
+  async createSubscription(params: {
+    tenantId: string;
+    plan?: PlanType;
+    monthlyPrice?: number;
+  }): Promise<Subscription> {
+    const { data } = await this.client.post<Subscription>('/subscriptions', params);
+    return data;
+  }
+
+  async upgradeSubscription(tenantId: string, params: {
+    plan?: PlanType;
+    status?: string;
+    monthlyPrice?: number;
+  }): Promise<Subscription> {
+    const { data } = await this.client.patch<Subscription>(
+      `/subscriptions/tenant/${tenantId}/upgrade`,
+      params,
+    );
     return data;
   }
 }

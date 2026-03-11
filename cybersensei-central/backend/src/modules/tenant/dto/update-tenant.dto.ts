@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import { TenantSector } from '../../../entities/tenant.entity';
 
 export class UpdateTenantDto {
   @ApiProperty({ required: false })
@@ -31,5 +32,10 @@ export class UpdateTenantDto {
   @IsBoolean()
   @IsOptional()
   active?: boolean;
+
+  @ApiProperty({ enum: TenantSector, required: false, example: 'TECH' })
+  @IsEnum(TenantSector)
+  @IsOptional()
+  sector?: TenantSector;
 }
 

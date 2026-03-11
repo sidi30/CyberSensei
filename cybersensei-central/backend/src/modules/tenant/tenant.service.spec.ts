@@ -20,6 +20,7 @@ describe('TenantService', () => {
     companyName: 'Test Corp',
     address: '123 Test St',
     phone: '+1234567890',
+    sector: null,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     licenses: [],

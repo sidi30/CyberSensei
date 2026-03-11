@@ -21,6 +21,9 @@ import { M365AlertModule } from './modules/m365-alert/m365-alert.module';
 import { M365SchedulerModule } from './modules/m365-scheduler/m365-scheduler.module';
 import { HealthModule } from './modules/health/health.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
+import { AiExerciseModule } from './modules/ai-exercise/ai-exercise.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { EmailModule } from './modules/email/email.module';
 import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
 @Module({
@@ -87,6 +90,9 @@ import { MetricsMiddleware } from './common/middleware/metrics.middleware';
     M365SchedulerModule,
     HealthModule,
     MetricsModule,
+    AiExerciseModule,
+    SubscriptionModule,
+    EmailModule,
   ],
   providers: [
     // Global rate limiting guard

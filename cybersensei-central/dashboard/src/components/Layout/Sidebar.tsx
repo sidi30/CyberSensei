@@ -5,6 +5,9 @@ import {
   Upload,
   Users,
   Shield,
+  BookOpen,
+  Bot,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../lib/utils';
@@ -12,6 +15,9 @@ import { cn } from '../../lib/utils';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['SUPERADMIN', 'SUPPORT'] },
   { name: 'Tenants', href: '/tenants', icon: Server, roles: ['SUPERADMIN', 'SUPPORT'] },
+  { name: 'Exercices', href: '/exercises', icon: BookOpen, roles: ['SUPERADMIN', 'SUPPORT'] },
+  { name: 'Abonnements', href: '/subscriptions', icon: CreditCard, roles: ['SUPERADMIN'] },
+  { name: 'Config IA', href: '/ai-config', icon: Bot, roles: ['SUPERADMIN'] },
   { name: 'Mises à jour', href: '/updates', icon: Upload, roles: ['SUPERADMIN'] },
   { name: 'Administrateurs', href: '/admins', icon: Users, roles: ['SUPERADMIN'] },
 ];

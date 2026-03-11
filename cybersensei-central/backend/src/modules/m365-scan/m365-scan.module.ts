@@ -4,6 +4,7 @@ import { M365Scan } from '../../entities/m365-scan.entity';
 import { M365Finding } from '../../entities/m365-finding.entity';
 import { M365Connection } from '../../entities/m365-connection.entity';
 import { M365AuthModule } from '../m365-auth/m365-auth.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
 import { M365ScanController } from './m365-scan.controller';
 import { M365ScanService } from './m365-scan.service';
 import { MfaCollector } from './collectors/mfa-collector';
@@ -21,6 +22,7 @@ import { SignInCollector } from './collectors/sign-in-collector';
   imports: [
     TypeOrmModule.forFeature([M365Scan, M365Finding, M365Connection]),
     M365AuthModule,
+    SubscriptionModule,
   ],
   controllers: [M365ScanController],
   providers: [

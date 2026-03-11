@@ -17,6 +17,7 @@ export interface ExerciseExportDto {
   payloadJSON: Record<string, any>;
   version: string;
   active: boolean;
+  generatedByAi: boolean;
 }
 
 export interface ExerciseExportPayload {
@@ -122,6 +123,7 @@ export class ExerciseService {
       payloadJSON: e.payloadJSON,
       version: e.version,
       active: e.active,
+      generatedByAi: e.generatedByAi,
     }));
 
     const payload: ExerciseExportPayload = {

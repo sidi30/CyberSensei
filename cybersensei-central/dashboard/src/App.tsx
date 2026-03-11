@@ -10,6 +10,9 @@ import TenantsListPage from './pages/TenantsListPage';
 import TenantDetailsPage from './pages/TenantDetailsPage';
 import UpdatesPage from './pages/UpdatesPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import ExercisesPage from './pages/ExercisesPage';
+import AiConfigPage from './pages/AiConfigPage';
+import SubscriptionsPage from './pages/SubscriptionsPage';
 
 function App() {
   return (
@@ -34,6 +37,9 @@ function App() {
             <Route path="tenants/:id" element={<TenantDetailsPage />} />
             <Route path="updates" element={<UpdatesPage />} />
             <Route path="admins" element={<AdminUsersPage />} />
+            <Route path="exercises" element={<ExercisesPage />} />
+            <Route path="subscriptions" element={<SubscriptionsPage />} />
+            <Route path="ai-config" element={<AiConfigPage />} />
           </Route>
 
           {/* 404 */}

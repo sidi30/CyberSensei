@@ -12,6 +12,7 @@ const navLinks = [
   { href: "#dlp", label: "Protection DLP" },
   { href: "#tarifs", label: "Tarifs" },
   { href: "#faq", label: "FAQ" },
+  { href: "/docs", label: "Documentation" },
 ];
 
 export function Navbar() {

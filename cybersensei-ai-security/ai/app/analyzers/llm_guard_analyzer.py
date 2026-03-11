@@ -8,6 +8,7 @@ from typing import List, Tuple
 
 from loguru import logger
 from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
+from presidio_analyzer.nlp_engine import NlpEngineProvider
 from presidio_anonymizer import AnonymizerEngine
 from presidio_anonymizer.entities import OperatorConfig
 
@@ -65,15 +66,32 @@ class LlmGuardAnalyzer:
 
     def _init_presidio(self):
         """Initialise Presidio avec les recognizers FR custom."""
-        registry = RecognizerRegistry()
-        registry.load_predefined_recognizers(languages=SUPPORTED_LANGUAGES)
+        # Configure NLP engine with French + English spaCy models
+        nlp_config = {
+            "nlp_engine_name": "spacy",
+            "models": [
+                {"lang_code": "fr", "model_name": "fr_core_news_lg"},
+                {"lang_code": "en", "model_name": "en_core_web_lg"},
+            ],
+        }
+        nlp_engine = NlpEngineProvider(nlp_configuration=nlp_config).create_engine()
+
+        registry = RecognizerRegistry(supported_languages=SUPPORTED_LANGUAGES)
+        registry.load_predefined_recognizers(
+            languages=SUPPORTED_LANGUAGES,
+            nlp_engine=nlp_engine,
+        )
 
         # Ajouter les recognizers français
         for recognizer in get_all_fr_recognizers():
             registry.add_recognizer(recognizer)
             logger.info(f"  Registered FR recognizer: {recognizer.supported_entities}")
 
-        self.analyzer = AnalyzerEngine(registry=registry)
+        self.analyzer = AnalyzerEngine(
+            registry=registry,
+            nlp_engine=nlp_engine,
+            supported_languages=SUPPORTED_LANGUAGES,
+        )
         self.anonymizer = AnonymizerEngine()
 
     def _init_llm_guard(self):
@@ -143,25 +161,25 @@ class LlmGuardAnalyzer:
             sanitized_text = text
 
         # ── LLM Guard : Secrets ──
-        _, is_valid, risk_score = self.secrets_scanner.scan("", text)
-        if not is_valid or risk_score < 1.0:
-            score = 1.0 - risk_score
+        _, is_valid, risk_score = self.secrets_scanner.scan(text)
+        if not is_valid and risk_score >= 0:
+            score = min(1.0, 1.0 - risk_score)
             max_score = max(max_score, score)
             detections.append(Detection(
                 category="CREDENTIALS_SECRETS",
-                confidence=int(score * 100),
+                confidence=min(100, int(score * 100)),
                 method="llm_guard_secrets",
                 snippet="Secrets/credentials detectes",
             ))
 
         # ── LLM Guard : Code ──
-        _, is_valid, risk_score = self.code_scanner.scan("", text)
-        if not is_valid or risk_score < 1.0:
-            score = 1.0 - risk_score
+        _, is_valid, risk_score = self.code_scanner.scan(text)
+        if not is_valid and risk_score >= 0:
+            score = min(1.0, 1.0 - risk_score)
             max_score = max(max_score, score)
             detections.append(Detection(
                 category="SOURCE_CODE",
-                confidence=int(score * 100),
+                confidence=min(100, int(score * 100)),
                 method="llm_guard_code",
                 snippet="Code source detecte",
             ))
