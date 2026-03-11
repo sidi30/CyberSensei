@@ -10,7 +10,9 @@ async function bootstrap() {
   // Validate environment variables before starting
   validateEnv();
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
   const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 

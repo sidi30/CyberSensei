@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { M365Connection } from '../../entities/m365-connection.entity';
+import { Tenant } from '../../entities/tenant.entity';
 import { M365TokenService } from './m365-token.service';
 
 interface OAuthState {
@@ -22,6 +23,8 @@ export class M365AuthService {
     private configService: ConfigService,
     @InjectRepository(M365Connection)
     private connectionRepo: Repository<M365Connection>,
+    @InjectRepository(Tenant)
+    private tenantRepo: Repository<Tenant>,
     private tokenService: M365TokenService,
   ) {}
 
@@ -44,7 +47,16 @@ export class M365AuthService {
     ];
   }
 
-  generateAuthUrl(tenantId: string, adminEmail?: string): string {
+  async generateAuthUrl(tenantId: string, adminEmail?: string): Promise<string> {
+    // Validate that the tenant exists before initiating OAuth
+    const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } });
+    if (!tenant) {
+      throw new NotFoundException(`Tenant ${tenantId} introuvable`);
+    }
+    if (!tenant.active) {
+      throw new BadRequestException(`Tenant ${tenant.name} est désactivé`);
+    }
+
     const clientId = this.configService.get<string>('M365_CLIENT_ID');
     const redirectUri = this.configService.get<string>('M365_REDIRECT_URI');
 

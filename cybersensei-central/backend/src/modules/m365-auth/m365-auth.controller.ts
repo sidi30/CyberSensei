@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { M365AuthService } from './m365-auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('M365 Auth')
 @Controller('m365/auth')
@@ -22,17 +23,16 @@ export class M365AuthController {
   }
 
   @Get('connect/:tenantId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Initiate M365 OAuth connection for a tenant' })
+  @Public()
+  @ApiOperation({ summary: 'Initiate M365 OAuth connection for a tenant (public - browser redirect)' })
   @ApiResponse({ status: 302, description: 'Redirect to Microsoft login' })
-  connect(
+  async connect(
     @Param('tenantId') tenantId: string,
     @Query('adminEmail') adminEmail: string,
     @Res() res: Response,
   ) {
     this.logger.log(`Initiating M365 OAuth for tenant ${tenantId}`);
-    const authUrl = this.authService.generateAuthUrl(tenantId, adminEmail);
+    const authUrl = await this.authService.generateAuthUrl(tenantId, adminEmail);
     return res.redirect(authUrl);
   }
 

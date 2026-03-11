@@ -69,8 +69,8 @@ export class SubscriptionService {
 
     const priceMap: Record<PlanType, number> = {
       [PlanType.FREE]: 0,
-      [PlanType.STARTER]: 79,
-      [PlanType.BUSINESS]: 199,
+      [PlanType.STARTER]: 49,
+      [PlanType.BUSINESS]: 149,
       [PlanType.ENTERPRISE]: 500,
     };
 

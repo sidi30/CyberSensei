@@ -305,7 +305,7 @@ const services: ServiceInfo[] = [
     shortName: "AI Engine",
     icon: <Brain className="w-6 h-6" />,
     color: "#FF6F00",
-    port: "8000",
+    port: "8002",
     tech: "Python + FastAPI + Mistral 7B",
     techIcon: "🐍",
     profile: "ai-security, full",
@@ -580,6 +580,16 @@ const credentials = [
     ],
     note: "Base : cybersensei_central",
   },
+  {
+    service: "Coolify",
+    url: "http://localhost:8000/login",
+    icon: <Server className="w-5 h-5" />,
+    color: "#6B16ED",
+    creds: [
+      { role: "Admin", user: "admin@cybersensei.io", pass: "Admin@123456" },
+    ],
+    note: "Plateforme de deploiement self-hosted (PaaS)",
+  },
 ];
 
 const dockerProfiles = [
@@ -718,7 +728,7 @@ function AnimatedArchitecture() {
       color: "#f97316",
       items: [
         { name: "AI Security API", port: "8081", icon: "☕" },
-        { name: "AI Engine (Mistral)", port: "8000", icon: "🐍" },
+        { name: "AI Engine (Mistral)", port: "8002", icon: "🐍" },
       ],
     },
     {
@@ -1769,7 +1779,7 @@ export default function DocsPage() {
                   steps: [
                     "Lancez : docker compose --profile ai-security up -d",
                     "Attendez le telechargement de Mistral (~4 Go)",
-                    "Verifiez la sante : http://localhost:8000/health",
+                    "Verifiez la sante : http://localhost:8002/health",
                     "Installez l'extension Chrome CyberSensei",
                     "Les prompts vers ChatGPT/Copilot seront analyses",
                     "Consultez les alertes sur le dashboard",

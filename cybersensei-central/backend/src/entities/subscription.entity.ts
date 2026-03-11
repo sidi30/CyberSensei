@@ -48,11 +48,11 @@ export const PLAN_LIMITS: Record<
   }
 > = {
   [PlanType.FREE]: {
-    maxUsers: 3,
-    maxExercisesPerMonth: 5,
+    maxUsers: 5,
+    maxExercisesPerMonth: 10,
     exerciseTypes: ['QUIZ'],
     maxPhishingCampaignsPerMonth: 0,
-    dlpLayer1: true,
+    dlpLayer1: false,
     dlpLayer2: false,
     dlpBlocking: false,
     m365ScanFrequency: 'one_shot',
@@ -66,8 +66,8 @@ export const PLAN_LIMITS: Record<
   },
   [PlanType.STARTER]: {
     maxUsers: 25,
-    maxExercisesPerMonth: 20,
-    exerciseTypes: ['QUIZ', 'SIMULATION'],
+    maxExercisesPerMonth: -1, // illimité
+    exerciseTypes: ['QUIZ', 'SIMULATION', 'SCENARIO'],
     maxPhishingCampaignsPerMonth: 1,
     dlpLayer1: true,
     dlpLayer2: false,
@@ -79,10 +79,10 @@ export const PLAN_LIMITS: Record<
     apiAccess: false,
     prioritySupport: false,
     onPremise: false,
-    gamification: false,
+    gamification: true,
   },
   [PlanType.BUSINESS]: {
-    maxUsers: 100,
+    maxUsers: 200,
     maxExercisesPerMonth: -1, // illimité
     exerciseTypes: ['QUIZ', 'SIMULATION', 'SCENARIO', 'CHALLENGE'],
     maxPhishingCampaignsPerMonth: -1, // illimité

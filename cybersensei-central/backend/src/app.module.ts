@@ -24,6 +24,9 @@ import { MetricsModule } from './modules/metrics/metrics.module';
 import { AiExerciseModule } from './modules/ai-exercise/ai-exercise.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { EmailModule } from './modules/email/email.module';
+import { M365DiagnosticModule } from './modules/m365-diagnostic/m365-diagnostic.module';
+import { NIS2DiagnosticModule } from './modules/nis2-diagnostic/nis2-diagnostic.module';
+import { StripeModule } from './modules/stripe/stripe.module';
 import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
 @Module({
@@ -93,6 +96,13 @@ import { MetricsMiddleware } from './common/middleware/metrics.middleware';
     AiExerciseModule,
     SubscriptionModule,
     EmailModule,
+
+    // Free diagnostic tools (public endpoints)
+    M365DiagnosticModule,
+    NIS2DiagnosticModule,
+
+    // Billing
+    StripeModule,
   ],
   providers: [
     // Global rate limiting guard

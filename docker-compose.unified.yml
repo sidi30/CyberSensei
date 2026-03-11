@@ -19,7 +19,7 @@
 #   3006  - Central Backend
 #   5173  - Central Dashboard
 #   5174  - M365 Dashboard
-#   8000  - AI Security AI (LLM Guard + Mistral)
+#   8002  - AI Security AI (LLM Guard + Mistral)
 #   5175  - Teams Bot
 #   5176  - Teams Tabs
 #   3002  - Website
@@ -106,9 +106,9 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
       AI_SERVICE_URL: http://ai-security-ai:8000
       JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production-please}
-      SECURITY_BYPASS: ${SECURITY_BYPASS:-false}
-      DEV_MODE: ${DEV_MODE:-false}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3005,http://localhost,http://localhost:5176}
+      SECURITY_BYPASS: ${SECURITY_BYPASS:-true}
+      DEV_MODE: ${DEV_MODE:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3005,http://localhost:5173,http://localhost:5174,http://localhost:3002,http://localhost,http://localhost:5176}
       SERVER_PORT: 8080
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     ports:
@@ -435,8 +435,8 @@ services:
       AI_SECURITY_DB: ${AI_SECURITY_DB:-cybersensei_ai_security}
       AI_SECURITY_SERVICE_URL: http://ai-security-ai:8000
       JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production-please}
-      SECURITY_BYPASS: ${SECURITY_BYPASS:-false}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3005}
+      SECURITY_BYPASS: ${SECURITY_BYPASS:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3005,http://localhost:5173,http://localhost:5174,http://localhost:3002,http://localhost:8080,http://localhost}
       NODE_BACKEND_URL: http://node-backend:8080
       SERVER_PORT: 8081
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
