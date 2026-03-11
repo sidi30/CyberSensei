@@ -6,8 +6,11 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
     <changeSet id="phishing-009-create-audit-logs" author="cybersensei">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="phishing_audit_logs"/></not>
+        </preConditions>
         <comment>Create audit_logs table for security audit trail</comment>
-        
+
         <createTable tableName="phishing_audit_logs">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>

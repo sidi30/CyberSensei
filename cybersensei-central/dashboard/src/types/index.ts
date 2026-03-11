@@ -35,6 +35,83 @@ export interface CreateAdminData {
 }
 
 // ============================================
+// SECTOR & AI CONFIG
+// ============================================
+
+export enum TenantSector {
+  BANKING = 'BANKING',
+  HEALTHCARE = 'HEALTHCARE',
+  INDUSTRY = 'INDUSTRY',
+  RETAIL = 'RETAIL',
+  TECH = 'TECH',
+  EDUCATION = 'EDUCATION',
+  GOVERNMENT = 'GOVERNMENT',
+  ENERGY = 'ENERGY',
+  TELECOM = 'TELECOM',
+  LEGAL = 'LEGAL',
+}
+
+export const SECTOR_LABELS: Record<TenantSector, string> = {
+  [TenantSector.BANKING]: 'Banque & Finance',
+  [TenantSector.HEALTHCARE]: 'Santé',
+  [TenantSector.INDUSTRY]: 'Industrie',
+  [TenantSector.RETAIL]: 'Commerce & Distribution',
+  [TenantSector.TECH]: 'Technologie',
+  [TenantSector.EDUCATION]: 'Éducation',
+  [TenantSector.GOVERNMENT]: 'Secteur Public',
+  [TenantSector.ENERGY]: 'Énergie',
+  [TenantSector.TELECOM]: 'Télécommunications',
+  [TenantSector.LEGAL]: 'Juridique',
+};
+
+export enum AiProvider {
+  OPENAI = 'OPENAI',
+  ANTHROPIC = 'ANTHROPIC',
+}
+
+export enum GenerationFrequency {
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+  ON_DEMAND = 'ON_DEMAND',
+}
+
+export interface AiConfig {
+  id: string;
+  tenantId: string;
+  provider: AiProvider;
+  maskedApiKey: string;
+  enabled: boolean;
+  generationFrequency: GenerationFrequency;
+  lastGeneratedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Exercise {
+  id: string;
+  topic: string;
+  type: string;
+  difficulty: string;
+  payloadJSON: Record<string, any>;
+  version: string;
+  active: boolean;
+  generatedByAi: boolean;
+  tenantId?: string;
+  description?: string;
+  tags?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExerciseStats {
+  total: number;
+  active: number;
+  byTopic: Record<string, number>;
+  byDifficulty: Record<string, number>;
+  byType: Record<string, number>;
+}
+
+// ============================================
 // TENANT
 // ============================================
 
@@ -44,6 +121,8 @@ export interface Tenant {
   contactEmail: string;
   licenseKey: string;
   active: boolean;
+  sector?: TenantSector;
+  companyName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +130,8 @@ export interface Tenant {
 export interface CreateTenantData {
   name: string;
   contactEmail: string;
+  companyName?: string;
+  sector?: TenantSector;
 }
 
 // ============================================
@@ -188,6 +269,81 @@ export interface UpdateCheckResponse {
   updateId?: string;
   version?: string;
   changelog?: string;
+}
+
+// ============================================
+// SUBSCRIPTION & PLANS
+// ============================================
+
+export enum PlanType {
+  FREE = 'FREE',
+  STARTER = 'STARTER',
+  BUSINESS = 'BUSINESS',
+  ENTERPRISE = 'ENTERPRISE',
+}
+
+export enum SubscriptionStatus {
+  ACTIVE = 'ACTIVE',
+  TRIAL = 'TRIAL',
+  PAST_DUE = 'PAST_DUE',
+  CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
+}
+
+export const PLAN_LABELS: Record<PlanType, string> = {
+  [PlanType.FREE]: 'Gratuit',
+  [PlanType.STARTER]: 'Starter',
+  [PlanType.BUSINESS]: 'Business',
+  [PlanType.ENTERPRISE]: 'Enterprise',
+};
+
+export const PLAN_PRICES: Record<PlanType, string> = {
+  [PlanType.FREE]: '0 EUR',
+  [PlanType.STARTER]: '79 EUR/mois',
+  [PlanType.BUSINESS]: '199 EUR/mois',
+  [PlanType.ENTERPRISE]: 'Sur devis',
+};
+
+export const PLAN_COLORS: Record<PlanType, string> = {
+  [PlanType.FREE]: 'gray',
+  [PlanType.STARTER]: 'blue',
+  [PlanType.BUSINESS]: 'purple',
+  [PlanType.ENTERPRISE]: 'amber',
+};
+
+export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
+  [SubscriptionStatus.ACTIVE]: 'Actif',
+  [SubscriptionStatus.TRIAL]: 'Essai',
+  [SubscriptionStatus.PAST_DUE]: 'Impayé',
+  [SubscriptionStatus.CANCELLED]: 'Annulé',
+  [SubscriptionStatus.EXPIRED]: 'Expiré',
+};
+
+export interface Subscription {
+  id: string;
+  tenantId: string;
+  plan: PlanType;
+  status: SubscriptionStatus;
+  monthlyPrice: number;
+  trialEndsAt: string | null;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  currentMonthExercises: number;
+  currentMonthPhishing: number;
+  activeUsers: number;
+  usageResetAt: string | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  tenant?: Tenant;
+}
+
+export interface SubscriptionStats {
+  total: number;
+  byPlan: Record<PlanType, number>;
+  byStatus: Record<SubscriptionStatus, number>;
+  mrr: number;
 }
 
 // ============================================

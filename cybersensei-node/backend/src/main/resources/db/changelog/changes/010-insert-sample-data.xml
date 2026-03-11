@@ -6,6 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="010-insert-sample-data" author="cybersensei">
+        <validCheckSum>ANY</validCheckSum>
         
         <!-- Admin user (password: Demo123!) -->
         <insert tableName="users">

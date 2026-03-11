@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { api } from '../lib/api';
 import type { User, LoginCredentials, AdminRole } from '../types';
 
@@ -19,22 +19,30 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  // MODE BYPASS - Utilisateur par défaut toujours connecté
-  const [user, setUser] = useState<User | null>({
-    id: '1',
-    name: 'Admin',
-    email: 'admin@cybersensei.io',
-    role: 'SUPERADMIN' as AdminRole,
-    active: true,
-    createdAt: new Date().toISOString(),
-    lastLoginAt: new Date().toISOString(),
-  });
-  const [loading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refreshProfile = useCallback(async () => {
+    if (!api.isAuthenticated()) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const profile = await api.getProfile();
+      setUser(profile);
+    } catch {
+      api.clearAuth();
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Authentification désactivée - utilisateur toujours connecté
-    console.warn('⚠️ MODE BYPASS ACTIVÉ - Authentification désactivée');
-  }, []);
+    refreshProfile();
+  }, [refreshProfile]);
 
   const login = async (credentials: LoginCredentials) => {
     const response = await api.login(credentials);
@@ -46,18 +54,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null);
   };
 
-  const refreshProfile = async () => {
-    if (api.isAuthenticated()) {
-      const profile = await api.getProfile();
-      setUser(profile);
-    }
-  };
-
   const value: AuthContextValue = {
     user,
     loading,
-    isAuthenticated: true, // Toujours authentifié
-    isSuperAdmin: true, // Toujours super admin
+    isAuthenticated: user !== null,
+    isSuperAdmin: user?.role === ('SUPERADMIN' as AdminRole),
     login,
     logout,
     refreshProfile,
@@ -73,4 +74,3 @@ export function useAuth(): AuthContextValue {
   }
   return context;
 }
-

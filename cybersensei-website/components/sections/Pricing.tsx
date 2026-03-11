@@ -3,41 +3,62 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
-import { Check, Sparkles, Building2, Rocket } from "lucide-react";
+import { Check, Sparkles, Building2, Rocket, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 const plans = [
   {
+    name: "Free",
+    description: "Découvrez CyberSensei sans engagement",
+    price: "0€",
+    period: "/mois",
+    icon: Gift,
+    features: [
+      "Jusqu'à 5 utilisateurs",
+      "10 exercices Quiz/mois",
+      "Diagnostic M365 gratuit",
+      "Score NIS2 gratuit",
+      "Dashboard basique",
+      "Support communauté",
+    ],
+    cta: "Commencer gratuitement",
+    highlight: false,
+  },
+  {
     name: "Starter",
     description: "Pour les petites équipes qui démarrent",
-    price: "À partir de 99€",
+    price: "49€",
     period: "/mois",
     icon: Rocket,
     features: [
       "Jusqu'à 25 utilisateurs",
-      "Exercices quotidiens",
+      "Exercices illimités (Quiz, Simulation, Scénario)",
       "1 campagne phishing/mois",
-      "Dashboard basique",
+      "DLP Layer 1 + blocage",
+      "Scan M365 hebdomadaire",
+      "Gamification",
       "Support email",
     ],
-    cta: "Essayer gratuitement",
+    cta: "Essai gratuit 30 jours",
     highlight: false,
   },
   {
     name: "Business",
     description: "Pour les PME en croissance",
-    price: "À partir de 249€",
+    price: "149€",
     period: "/mois",
     icon: Building2,
     features: [
-      "Jusqu'à 100 utilisateurs",
-      "Exercices adaptatifs",
+      "Jusqu'à 200 utilisateurs",
+      "Exercices adaptatifs IA",
       "Campagnes phishing illimitées",
-      "Dashboard manager complet",
+      "DLP avancé (Layer 1 + Layer 2)",
+      "Scan M365 quotidien",
       "Rapports personnalisés",
-      "Support prioritaire",
       "Intégration SSO",
+      "Support prioritaire",
+      "Gamification avancée",
     ],
     cta: "Demander une démo",
     highlight: true,
@@ -51,11 +72,13 @@ const plans = [
     features: [
       "Utilisateurs illimités",
       "Déploiement on-premise",
-      "Personnalisation complète",
+      "DLP complet + alertes temps réel",
+      "Scan M365 temps réel",
+      "API & intégrations complètes",
       "SLA garanti",
       "Account manager dédié",
       "Formation équipe IT",
-      "API & intégrations",
+      "Personnalisation complète",
     ],
     cta: "Nous contacter",
     highlight: false,
@@ -110,7 +133,7 @@ export function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}

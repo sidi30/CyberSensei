@@ -1,6 +1,8 @@
 package io.cybersensei.security;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,17 +26,26 @@ import java.util.List;
 
 /**
  * Spring Security Configuration
+ * Configurable via cybersensei.security.bypass property:
+ * - bypass=true  (dev): all endpoints public, no JWT filter
+ * - bypass=false (prod): only public endpoints open, JWT required for the rest
  */
 @Configuration
 @EnableWebSecurity
-// Mode bypass : on désactive les contrôles @PreAuthorize / @Secured / @RolesAllowed
-@EnableMethodSecurity(prePostEnabled = false, securedEnabled = false, jsr250Enabled = false)
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @Value("${cybersensei.security.bypass:false}")
+    private boolean securityBypass;
+
+    @Value("${cybersensei.security.cors.allowed-origins:*}")
+    private String allowedOrigins;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -46,14 +57,26 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .authorizeHttpRequests(auth -> auth
-                        // ⚠️ MODE BYPASS - TOUS LES ENDPOINTS SONT PUBLICS
-                        .anyRequest().permitAll()
                 );
-                // ⚠️ Filtres JWT et authentication provider désactivés pour le mode bypass
-                // .authenticationProvider(authenticationProvider())
-                // .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        if (securityBypass) {
+            log.warn("Security BYPASS mode is ENABLED - all endpoints are public. Do NOT use in production!");
+            http.authorizeHttpRequests(auth -> auth
+                    .anyRequest().permitAll()
+            );
+        } else {
+            log.info("Security is ENABLED - JWT authentication required for protected endpoints");
+            http.authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/health/**").permitAll()
+                    .requestMatchers("/t/**").permitAll()
+                    .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                    .anyRequest().authenticated()
+            )
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        }
 
         return http.build();
     }
@@ -79,16 +102,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
+        if ("*".equals(allowedOrigins)) {
+            configuration.setAllowedOrigins(List.of("*"));
+        } else {
+            configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+            configuration.setAllowCredentials(true);
+        }
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }
-
-

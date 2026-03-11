@@ -9,7 +9,7 @@ FROM node:20-alpine AS builder-employee
 WORKDIR /app/employee
 
 COPY employee/package*.json ./
-RUN npm ci
+RUN npm install
 
 COPY employee/ ./
 
@@ -30,7 +30,7 @@ FROM node:20-alpine AS builder-manager
 WORKDIR /app/manager
 
 COPY manager/package*.json ./
-RUN npm ci
+RUN npm install
 
 COPY manager/ ./
 

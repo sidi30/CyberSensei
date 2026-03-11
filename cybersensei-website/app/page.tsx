@@ -4,6 +4,7 @@ import { Problem } from "@/components/sections/Problem";
 import { HowItWorks } from "@/components/sections/HowItWorks";
 import { Platforms } from "@/components/sections/Platforms";
 import { Features } from "@/components/sections/Features";
+import { DLPProtection } from "@/components/sections/DLPProtection";
 import { Screens } from "@/components/sections/Screens";
 import { Security } from "@/components/sections/Security";
 import { UseCases } from "@/components/sections/UseCases";
@@ -21,6 +22,7 @@ export default function Home() {
       <HowItWorks />
       <Platforms />
       <Features />
+      <DLPProtection />
       <Screens />
       <Security />
       <UseCases />

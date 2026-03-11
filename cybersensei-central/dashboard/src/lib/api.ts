@@ -15,9 +15,17 @@ import type {
   UpdateCheckResponse,
   ApiError,
   PaginatedResponse,
+  Exercise,
+  ExerciseStats,
+  AiConfig,
+  AiProvider,
+  GenerationFrequency,
+  Subscription,
+  SubscriptionStats,
+  PlanType,
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -30,25 +38,28 @@ class ApiClient {
       },
     });
 
-    // ⚠️ MODE BYPASS - Intercepteurs désactivés
-    // Intercepteur de requête pour ajouter le token - DÉSACTIVÉ
+    // Request interceptor - attach JWT token
     this.client.interceptors.request.use(
       (config) => {
-        // Ne plus ajouter de token JWT
-        console.warn('⚠️ MODE BYPASS - Pas de token JWT ajouté');
+        const token = this.getToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     );
 
-    // Intercepteur de réponse pour gérer les erreurs - DÉSACTIVÉ
+    // Response interceptor - handle 401 errors
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError<ApiError>) => {
-        // Ne plus rediriger vers /login en cas d'erreur 401
-        console.warn('⚠️ MODE BYPASS - Erreur 401 ignorée, pas de redirection');
+        if (error.response?.status === 401) {
+          this.clearAuth();
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
-      }
+      },
     );
   }
 
@@ -68,13 +79,18 @@ class ApiClient {
     localStorage.removeItem('access_token');
   }
 
-  private setUser(user: any): void {
+  private setUser(user: User): void {
     localStorage.setItem('user', JSON.stringify(user));
   }
 
-  getUser(): any {
+  getUser(): User | null {
     const userJson = localStorage.getItem('user');
-    return userJson ? JSON.parse(userJson) : null;
+    if (!userJson) return null;
+    try {
+      return JSON.parse(userJson) as User;
+    } catch {
+      return null;
+    }
   }
 
   private clearUser(): void {
@@ -97,7 +113,7 @@ class ApiClient {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     const { data } = await this.client.post<LoginResponse>('/auth/login', credentials);
     this.setToken(data.access_token);
-    this.setUser(data.user);
+    this.setUser(data.user as User);
     return data;
   }
 
@@ -126,27 +142,27 @@ class ApiClient {
   // ============================================
 
   async getTenants(): Promise<Tenant[]> {
-    const { data } = await this.client.get<Tenant[]>('/admin/tenant');
+    const { data } = await this.client.get<Tenant[]>('/admin/tenants');
     return data;
   }
 
   async getTenant(id: string): Promise<Tenant> {
-    const { data } = await this.client.get<Tenant>(`/admin/tenant/${id}`);
+    const { data } = await this.client.get<Tenant>(`/admin/tenants/${id}`);
     return data;
   }
 
   async createTenant(tenantData: CreateTenantData): Promise<Tenant> {
-    const { data } = await this.client.post<Tenant>('/admin/tenant', tenantData);
+    const { data } = await this.client.post<Tenant>('/admin/tenants', tenantData);
     return data;
   }
 
   async updateTenant(id: string, tenantData: Partial<CreateTenantData>): Promise<Tenant> {
-    const { data } = await this.client.patch<Tenant>(`/admin/tenant/${id}`, tenantData);
+    const { data } = await this.client.patch<Tenant>(`/admin/tenants/${id}`, tenantData);
     return data;
   }
 
   async deleteTenant(id: string): Promise<void> {
-    await this.client.delete(`/admin/tenant/${id}`);
+    await this.client.delete(`/admin/tenants/${id}`);
   }
 
   // ============================================
@@ -154,12 +170,12 @@ class ApiClient {
   // ============================================
 
   async getLicenses(): Promise<License[]> {
-    const { data } = await this.client.get<License[]>('/admin/license');
+    const { data } = await this.client.get<License[]>('/api/license');
     return data;
   }
 
   async getTenantLicenses(tenantId: string): Promise<License[]> {
-    const { data } = await this.client.get<License[]>(`/admin/tenant/${tenantId}/licenses`);
+    const { data } = await this.client.get<License[]>(`/admin/tenants/${tenantId}/licenses`);
     return data;
   }
 
@@ -170,27 +186,27 @@ class ApiClient {
   async getTenantMetrics(
     tenantId: string,
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<PaginatedResponse<TenantMetric>> {
     const { data } = await this.client.get<PaginatedResponse<TenantMetric>>(
-      `/admin/tenant/${tenantId}/metrics`,
-      { params: { limit, offset } }
+      `/admin/tenants/${tenantId}/metrics`,
+      { params: { limit, offset } },
     );
     return data;
   }
 
   async getLatestMetric(tenantId: string): Promise<{ tenantId: string; tenantName: string; metric: TenantMetric }> {
-    const { data } = await this.client.get(`/admin/tenant/${tenantId}/metrics/latest`);
+    const { data } = await this.client.get(`/admin/tenants/${tenantId}/metrics/latest`);
     return data;
   }
 
   async getAggregatedMetrics(
     tenantId: string,
-    period: '24h' | '7d' | '30d' = '7d'
+    period: '24h' | '7d' | '30d' = '7d',
   ): Promise<AggregatedMetrics> {
     const { data } = await this.client.get<AggregatedMetrics>(
-      `/admin/tenant/${tenantId}/metrics/aggregated`,
-      { params: { period } }
+      `/admin/tenants/${tenantId}/metrics/aggregated`,
+      { params: { period } },
     );
     return data;
   }
@@ -201,7 +217,7 @@ class ApiClient {
   }
 
   async getUsageTrends(days: number = 30): Promise<UsageTrends> {
-    const { data} = await this.client.get<UsageTrends>('/admin/global/usage-trends', {
+    const { data } = await this.client.get<UsageTrends>('/admin/global/usage-trends', {
       params: { days },
     });
     return data;
@@ -241,8 +257,115 @@ class ApiClient {
     });
     return data;
   }
+
+  // ============================================
+  // EXERCISES
+  // ============================================
+
+  async getExercises(): Promise<Exercise[]> {
+    const { data } = await this.client.get<Exercise[]>('/admin/exercises');
+    return data;
+  }
+
+  async getExerciseStats(): Promise<ExerciseStats> {
+    const { data } = await this.client.get<ExerciseStats>('/admin/exercises/stats');
+    return data;
+  }
+
+  // ============================================
+  // AI EXERCISE GENERATION
+  // ============================================
+
+  async getAiConfig(tenantId: string): Promise<AiConfig> {
+    const { data } = await this.client.get<AiConfig>(`/admin/ai-exercises/config/${tenantId}`);
+    return data;
+  }
+
+  async createAiConfig(config: {
+    tenantId: string;
+    provider: AiProvider;
+    apiKey: string;
+    enabled?: boolean;
+    generationFrequency?: GenerationFrequency;
+  }): Promise<AiConfig> {
+    const { data } = await this.client.post<AiConfig>('/admin/ai-exercises/config', config);
+    return data;
+  }
+
+  async updateAiConfig(tenantId: string, config: {
+    provider?: AiProvider;
+    apiKey?: string;
+    enabled?: boolean;
+    generationFrequency?: GenerationFrequency;
+  }): Promise<AiConfig> {
+    const { data } = await this.client.patch<AiConfig>(`/admin/ai-exercises/config/${tenantId}`, config);
+    return data;
+  }
+
+  async deleteAiConfig(tenantId: string): Promise<void> {
+    await this.client.delete(`/admin/ai-exercises/config/${tenantId}`);
+  }
+
+  async testAiConfig(tenantId: string): Promise<{ success: boolean; message: string }> {
+    const { data } = await this.client.post<{ success: boolean; message: string }>(`/admin/ai-exercises/config/${tenantId}/test`);
+    return data;
+  }
+
+  async generateExercises(params: {
+    tenantId: string;
+    topics?: string[];
+    difficulty?: string;
+    count?: number;
+  }): Promise<{ generated: number; exercises: Exercise[] }> {
+    const { data } = await this.client.post<{ generated: number; exercises: Exercise[] }>('/admin/ai-exercises/generate', params);
+    return data;
+  }
+
+  async getGeneratedExercises(): Promise<Exercise[]> {
+    const { data } = await this.client.get<Exercise[]>('/admin/ai-exercises/generated');
+    return data;
+  }
+
+  // ============================================
+  // SUBSCRIPTIONS
+  // ============================================
+
+  async getSubscriptions(): Promise<Subscription[]> {
+    const { data } = await this.client.get<Subscription[]>('/subscriptions');
+    return data;
+  }
+
+  async getSubscriptionStats(): Promise<SubscriptionStats> {
+    const { data } = await this.client.get<SubscriptionStats>('/subscriptions/stats');
+    return data;
+  }
+
+  async getSubscriptionByTenant(tenantId: string): Promise<Subscription> {
+    const { data } = await this.client.get<Subscription>(`/subscriptions/tenant/${tenantId}`);
+    return data;
+  }
+
+  async createSubscription(params: {
+    tenantId: string;
+    plan?: PlanType;
+    monthlyPrice?: number;
+  }): Promise<Subscription> {
+    const { data } = await this.client.post<Subscription>('/subscriptions', params);
+    return data;
+  }
+
+  async upgradeSubscription(tenantId: string, params: {
+    plan?: PlanType;
+    status?: string;
+    monthlyPrice?: number;
+  }): Promise<Subscription> {
+    const { data } = await this.client.patch<Subscription>(
+      `/subscriptions/tenant/${tenantId}/upgrade`,
+      params,
+    );
+    return data;
+  }
 }
 
 export const api = new ApiClient();
 export default api;
-

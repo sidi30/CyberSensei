@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="003-create-company-risk-scores" author="cybersensei">
+        <createTable tableName="company_risk_scores">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="computed_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="overall_score" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="risk_level" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_prompts" type="INT"/>
+            <column name="risky_prompts" type="INT"/>
+            <column name="blocked_prompts" type="INT"/>
+            <column name="sanitized_prompts" type="INT"/>
+            <column name="unique_users" type="INT"/>
+            <column name="top_category" type="VARCHAR(50)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="company_risk_scores"
+                             columnNames="company_id, computed_date"
+                             constraintName="uq_risk_score_company_date"/>
+
+        <createIndex indexName="idx_risk_score_company_date" tableName="company_risk_scores">
+            <column name="company_id"/>
+            <column name="computed_date"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

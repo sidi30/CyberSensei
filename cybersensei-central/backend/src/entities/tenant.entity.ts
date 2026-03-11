@@ -9,6 +9,19 @@ import {
 import { License } from './license.entity';
 import { TenantMetric } from './tenant-metric.entity';
 
+export enum TenantSector {
+  BANKING = 'BANKING',
+  HEALTHCARE = 'HEALTHCARE',
+  INDUSTRY = 'INDUSTRY',
+  RETAIL = 'RETAIL',
+  TECH = 'TECH',
+  EDUCATION = 'EDUCATION',
+  GOVERNMENT = 'GOVERNMENT',
+  ENERGY = 'ENERGY',
+  TELECOM = 'TELECOM',
+  LEGAL = 'LEGAL',
+}
+
 @Entity('tenants')
 export class Tenant {
   @PrimaryGeneratedColumn('uuid')
@@ -23,6 +36,9 @@ export class Tenant {
   @Column({ unique: true })
   licenseKey: string;
 
+  @Column({ unique: true, nullable: true })
+  activationCode: string;
+
   @Column({ default: true })
   active: boolean;
 
@@ -34,6 +50,9 @@ export class Tenant {
 
   @Column({ nullable: true })
   phone: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  sector: TenantSector;
 
   @CreateDateColumn()
   createdAt: Date;

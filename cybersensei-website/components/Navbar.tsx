@@ -3,14 +3,17 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Shield, Sparkles } from "lucide-react";
+import { Menu, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const navLinks = [
-  { href: "#fonctionnement", label: "Comment ça marche" },
-  { href: "#fonctionnalites", label: "Fonctionnalités" },
-  { href: "#tarifs", label: "Tarifs" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#fonctionnement", label: "Comment ça marche" },
+  { href: "/#fonctionnalites", label: "Fonctionnalités" },
+  { href: "/#dlp", label: "Protection DLP" },
+  { href: "/outils-gratuits", label: "Outils Gratuits" },
+  { href: "/#tarifs", label: "Tarifs" },
+  { href: "/#faq", label: "FAQ" },
+  { href: "/docs", label: "Documentation" },
 ];
 
 export function Navbar() {
@@ -68,12 +71,12 @@ export function Navbar() {
 
             {/* Desktop CTA */}
             <div className="hidden lg:flex items-center gap-4">
-              <Link href="#contact">
+              <Link href="/#contact">
                 <Button variant="outline" size="sm">
                   Contact
                 </Button>
               </Link>
-              <Link href="#contact">
+              <Link href="/#contact">
                 <Button size="sm">Demander une démo</Button>
               </Link>
             </div>
@@ -135,12 +138,12 @@ export function Navbar() {
                   transition={{ delay: 0.4 }}
                   className="pt-4 flex flex-col gap-3"
                 >
-                  <Link href="#contact" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link href="/#contact" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full">
                       Contact
                     </Button>
                   </Link>
-                  <Link href="#contact" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link href="/#contact" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button className="w-full">Demander une démo</Button>
                   </Link>
                 </motion.div>

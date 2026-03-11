@@ -1,7 +1,10 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   ConflictException,
+  Logger,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,14 +13,20 @@ import { Tenant } from '../../entities/tenant.entity';
 import { TenantMetric } from '../../entities/tenant-metric.entity';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { SubscriptionService } from '../subscription/subscription.service';
+import { PlanType } from '../../entities/subscription.entity';
 
 @Injectable()
 export class TenantService {
+  private readonly logger = new Logger(TenantService.name);
+
   constructor(
     @InjectRepository(Tenant)
     private tenantRepository: Repository<Tenant>,
     @InjectRepository(TenantMetric)
     private metricRepository: Repository<TenantMetric>,
+    @Inject(forwardRef(() => SubscriptionService))
+    private subscriptionService: SubscriptionService,
   ) {}
 
   private generateLicenseKey(): string {
@@ -33,6 +42,15 @@ export class TenantService {
     return segments.join('-');
   }
 
+  private generateActivationCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // pas de 0/O/1/I pour éviter confusion
+    let code = 'CS-';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  }
+
   async create(createTenantDto: CreateTenantDto) {
     const existing = await this.tenantRepository.findOne({
       where: [
@@ -46,13 +64,28 @@ export class TenantService {
     }
 
     const licenseKey = this.generateLicenseKey();
+    const activationCode = this.generateActivationCode();
 
     const tenant = this.tenantRepository.create({
       ...createTenantDto,
       licenseKey,
+      activationCode,
     });
 
-    return await this.tenantRepository.save(tenant);
+    const savedTenant = await this.tenantRepository.save(tenant);
+
+    // Auto-create FREE subscription for new tenants
+    try {
+      await this.subscriptionService.create({
+        tenantId: savedTenant.id,
+        plan: PlanType.FREE,
+      });
+      this.logger.log(`Abonnement FREE créé pour le tenant ${savedTenant.name}`);
+    } catch (error) {
+      this.logger.warn(`Impossible de créer l'abonnement pour ${savedTenant.name}: ${error.message}`);
+    }
+
+    return savedTenant;
   }
 
   async findAll() {

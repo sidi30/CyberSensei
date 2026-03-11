@@ -52,6 +52,21 @@ const faqs = [
     answer:
       "Oui. L'équipe CyberSensei est française. Support, documentation, contenu pédagogique : tout est en français. Nous connaissons les réalités des PME et collectivités françaises.",
   },
+  {
+    question: "Comment fonctionne l'extension navigateur DLP ?",
+    answer:
+      "L'extension Chrome surveille en temps réel les prompts envoyés vers ChatGPT, Copilot, Gemini, Claude et Mistral. Chaque texte est analysé par notre moteur IA double couche : une analyse rapide (Presidio NER, ~5ms) détecte les données personnelles, financières et les secrets, puis une analyse sémantique (Mistral 7B) identifie les données sensibles reformulées. Un score de risque (0-100) est calculé avec alerte visuelle ou blocage selon la politique configurée.",
+  },
+  {
+    question: "Quelles données sensibles sont détectées par le DLP ?",
+    answer:
+      "Le système détecte les données personnelles (noms, emails, téléphones), les données financières (IBAN, cartes bancaires), les identifiants français (NIR, SIREN, SIRET), les secrets techniques (clés API, mots de passe, code source), et les données RGPD Article 9 (santé, opinions politiques, appartenance syndicale, orientation sexuelle, données biométriques, casier judiciaire).",
+  },
+  {
+    question: "L'extension ralentit-elle le navigateur ?",
+    answer:
+      "Non. La couche 1 d'analyse (Presidio) répond en moins de 20ms. La couche 2 sémantique (Mistral) n'est activée que si nécessaire (score de risque élevé ou texte long). L'expérience utilisateur reste fluide.",
+  },
 ];
 
 export function FAQ() {

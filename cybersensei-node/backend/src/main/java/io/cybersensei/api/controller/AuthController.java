@@ -26,7 +26,7 @@ public class AuthController {
 
     private final UserService userService;
 
-    @Value("${cybersensei.dev-mode:true}")
+    @Value("${cybersensei.dev-mode:false}")
     private boolean devModeEnabled;
 
     @PostMapping("/login")

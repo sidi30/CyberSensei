@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate CyberSensei Icons</title></head>
+<body>
+<h2>Ouvrir cette page dans un navigateur, cliquer pour télécharger les icônes</h2>
+<canvas id="c16" width="16" height="16"></canvas>
+<canvas id="c48" width="48" height="48"></canvas>
+<canvas id="c128" width="128" height="128"></canvas>
+<br><br>
+<button onclick="generate(16)">Télécharger 16x16</button>
+<button onclick="generate(48)">Télécharger 48x48</button>
+<button onclick="generate(128)">Télécharger 128x128</button>
+<button onclick="generateAll()">Tout télécharger</button>
+<script>
+function draw(size) {
+  const canvas = document.getElementById('c' + size);
+  const ctx = canvas.getContext('2d');
+  // Background
+  ctx.fillStyle = '#4F46E5';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, size * 0.15);
+  ctx.fill();
+  // Shield
+  ctx.fillStyle = 'white';
+  ctx.font = `bold ${size * 0.55}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🛡️', size / 2, size / 2);
+  return canvas;
+}
+function generate(size) {
+  const canvas = draw(size);
+  const link = document.createElement('a');
+  link.download = `icon-${size}.png`;
+  link.href = canvas.toDataURL();
+  link.click();
+}
+function generateAll() { [16, 48, 128].forEach(generate); }
+[16, 48, 128].forEach(draw);
+</script>
+</body>
+</html>

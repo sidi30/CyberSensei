@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { TenantSector } from '../../../entities/tenant.entity';
 
 export class CreateTenantDto {
   @ApiProperty({ example: 'cybersensei-corp' })
@@ -26,5 +27,10 @@ export class CreateTenantDto {
   @IsString()
   @IsOptional()
   phone?: string;
+
+  @ApiProperty({ enum: TenantSector, required: false, example: 'TECH' })
+  @IsEnum(TenantSector)
+  @IsOptional()
+  sector?: TenantSector;
 }
 

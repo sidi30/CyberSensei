@@ -57,6 +57,12 @@ export class Exercise {
   @Column({ nullable: true })
   tags: string;
 
+  @Column({ default: false })
+  generatedByAi: boolean;
+
+  @Column({ nullable: true })
+  tenantId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

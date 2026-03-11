@@ -6,8 +6,11 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
     <changeSet id="phishing-001-create-phishing-templates" author="cybersensei">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="phishing_templates"/></not>
+        </preConditions>
         <comment>Create phishing_templates table for email templates</comment>
-        
+
         <createTable tableName="phishing_templates">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>

@@ -1,5 +1,7 @@
 package io.cybersensei.service;
 
+import io.cybersensei.api.exception.ResourceNotFoundException;
+import io.cybersensei.api.exception.BusinessRuleException;
 import io.cybersensei.api.dto.ExerciseDto;
 import io.cybersensei.api.dto.SubmitExerciseRequest;
 import io.cybersensei.api.dto.UserExerciseResultDto;
@@ -80,7 +82,7 @@ public class QuizService {
                     exercise = exerciseRepository.findRandomActiveExercise();
 
                     if (exercise == null) {
-                        throw new RuntimeException("No exercises available in the system");
+                        throw new ResourceNotFoundException("No exercises available in the system");
                     }
                 }
             }
@@ -105,7 +107,7 @@ public class QuizService {
 
         // Verify exercise exists and get it for scoring
         Exercise exercise = exerciseRepository.findById(exerciseId)
-                .orElseThrow(() -> new RuntimeException("Exercise not found: " + exerciseId));
+                .orElseThrow(() -> new ResourceNotFoundException("Exercise", "id", exerciseId));
 
         // Calculate score based on correct answers
         int score = calculateScore(exercise, request);

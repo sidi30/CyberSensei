@@ -1,39 +1,40 @@
 # =============================================================================
 # CyberSensei - Docker Compose Unifié
 # =============================================================================
-# Version unifiée et corrigée avec ports cohérents
 #
 # MODES D'UTILISATION :
-#   make start-minimal    # Database + Node Dashboard seulement
-#   make start-node       # Database + Node (Backend + Dashboard)
-#   make start-central    # Database + Central (Backend + Dashboard)
-#   make start-full       # Tout (Node + Central + Teams + AI + Monitoring)
-#   make stop            # Arrêter tous les services
+#   docker compose --profile minimal up -d      # Database + Node Dashboard
+#   docker compose --profile node up -d         # Database + Node (Backend + Dashboard)
+#   docker compose --profile central up -d      # Database + Central (Backend + Dashboard)
+#   docker compose --profile ai-security up -d  # Database + AI Security
+#   docker compose --profile full up -d         # Tous les services
+#   docker compose down                         # Arrêter tous les services
 #
-# PORTS FIXES (plus de conflits) :
+# PORTS :
 #   5432  - PostgreSQL
+#   27017 - MongoDB
 #   5050  - PgAdmin
-#   8080  - Node Backend
-#   3005  - Node Dashboard  
-#   3006  - Central Backend
-#   5173  - Central Dashboard
-#   8000  - Node AI
-#   5175  - Teams Bot
-#   5176  - Teams Tabs
-#   3002  - Website
+#   8080  - Node Backend (Spring Boot)
+#   3005  - Node Dashboard (React/Nginx)
+#   3006  - Central Backend (NestJS)
+#   5173  - Central Dashboard (React/Nginx)
+#   5174  - M365 Dashboard (React/Nginx)
+#   8002  - AI Security Engine (Python/FastAPI)
+#   8081  - AI Security Backend (Spring Boot)
+#   5175  - Teams Bot (Node.js)
+#   5176  - Teams Tabs (React/Nginx)
+#   3002  - Website (Next.js)
 #   3300  - Grafana
 #   9090  - Prometheus
+#   80    - Traefik (reverse proxy)
+#   8088  - Traefik Dashboard
 # =============================================================================
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SERVICES
-# ─────────────────────────────────────────────────────────────────────────────
 
 services:
   # ===========================================================================
-  # DATABASE - Base pour tout
+  # DATABASE
   # ===========================================================================
-  
+
   postgres:
     image: postgres:15-alpine
     container_name: cybersensei-postgres
@@ -48,6 +49,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybersensei} -d ${POSTGRES_DB:-cybersensei_db}"]
       interval: 10s
@@ -56,6 +58,32 @@ services:
       start_period: 10s
     networks:
       - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  mongo:
+    image: mongo:6-jammy
+    container_name: cybersensei-mongo
+    restart: unless-stopped
+    profiles:
+      - central
+      - full
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-cybersensei}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-cybersensei123}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-cybersensei_central}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -79,11 +107,15 @@ services:
         condition: service_healthy
     networks:
       - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   # ===========================================================================
   # NODE - On-Premise Stack
   # ===========================================================================
-  
+
   node-backend:
     build:
       context: ./cybersensei-node/backend
@@ -100,7 +132,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
-      AI_SERVICE_URL: http://node-ai:${NODE_AI_PORT:-8000}
+      AI_SERVICE_URL: http://ai-security-ai:8000
+      JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production-please}
+      SECURITY_BYPASS: ${SECURITY_BYPASS:-true}
+      DEV_MODE: ${DEV_MODE:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3005,http://localhost:5173,http://localhost:5174,http://localhost:3002,http://localhost,http://localhost:5176}
       SERVER_PORT: 8080
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     ports:
@@ -131,8 +167,8 @@ services:
       context: ./cybersensei-node/dashboard
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:${NODE_BACKEND_PORT:-8080}/api
-        VITE_BYPASS_AUTH: "true"
+        VITE_API_URL: /api
+        VITE_BYPASS_AUTH: "${VITE_BYPASS_AUTH:-false}"
     container_name: cybersensei-node-dashboard
     restart: unless-stopped
     profiles:
@@ -152,62 +188,14 @@ services:
       start_period: 10s
     networks:
       - cybersensei-network
-
-  node-ai:
-    build:
-      context: ./cybersensei-node/ai
-      dockerfile: Dockerfile
-    container_name: cybersensei-node-ai
-    restart: unless-stopped
-    profiles:
-      - ai
-      - full
-    environment:
-      MODEL_PATH: /app/models/mistral-7b-instruct.Q4_K_M.gguf
-      LLAMA_HOST: 0.0.0.0
-      LLAMA_PORT: 8001
-      API_PORT: ${NODE_AI_PORT:-8000}
-      PYTHONUNBUFFERED: 1
-    ports:
-      - "${NODE_AI_PORT:-8000}:${NODE_AI_PORT:-8000}"
-    volumes:
-      - ai-models:/app/models
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${NODE_AI_PORT:-8000}/health || exit 1"]
-      interval: 60s
-      timeout: 10s
-      retries: 3
-      start_period: 180s
-    networks:
-      - cybersensei-network
     deploy:
       resources:
         limits:
-          memory: 8G
-        reservations:
-          memory: 4G
+          memory: 128M
 
   # ===========================================================================
-  # CENTRAL - SaaS Stack  
+  # CENTRAL - SaaS Stack
   # ===========================================================================
-
-  mongo:
-    image: mongo:6-jammy
-    container_name: cybersensei-mongo
-    restart: unless-stopped
-    profiles:
-      - central
-      - full
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-cybersensei}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-cybersensei123}
-      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-cybersensei_central}
-    ports:
-      - "${MONGO_PORT:-27017}:27017"
-    volumes:
-      - mongo-data:/data/db
-    networks:
-      - cybersensei-network
 
   central-backend:
     build:
@@ -219,26 +207,41 @@ services:
       - central
       - full
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
-      # PostgreSQL connection - separate database for central
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
       POSTGRES_DB: ${CENTRAL_POSTGRES_DB:-cybersensei_central}
-      # MongoDB connection
       MONGODB_URI: mongodb://${MONGO_USER:-cybersensei}:${MONGO_PASSWORD:-cybersensei123}@mongo:27017/${MONGO_DATABASE:-cybersensei_central}?authSource=admin
-      # JWT
       JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
+      M365_CLIENT_ID: ${M365_CLIENT_ID:-}
+      M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
+      M365_REDIRECT_URI: ${M365_REDIRECT_URI:-http://localhost:3006/m365/auth/callback}
+      M365_TOKEN_ENCRYPTION_KEY: ${M365_TOKEN_ENCRYPTION_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_KEY_ENCRYPTION_SECRET: ${AI_KEY_ENCRYPTION_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@cybersensei.io}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@cybersensei.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123456}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_STARTER_PRICE_ID: ${STRIPE_STARTER_PRICE_ID:-}
+      STRIPE_BUSINESS_PRICE_ID: ${STRIPE_BUSINESS_PRICE_ID:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:5174}
     ports:
       - "${CENTRAL_BACKEND_PORT:-3006}:3000"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -255,7 +258,7 @@ services:
       context: ./cybersensei-central/dashboard
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:${CENTRAL_BACKEND_PORT:-3006}/api
+        VITE_API_URL: /api
     container_name: cybersensei-central-dashboard
     restart: unless-stopped
     profiles:
@@ -273,11 +276,43 @@ services:
       start_period: 10s
     networks:
       - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  m365-dashboard:
+    build:
+      context: ./cybersensei-central/m365-dashboard
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: cybersensei-m365-dashboard
+    restart: unless-stopped
+    profiles:
+      - central
+      - full
+    ports:
+      - "${M365_DASHBOARD_PORT:-5174}:80"
+    depends_on:
+      - central-backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
   # ===========================================================================
   # TEAMS - Microsoft Teams Integration
   # ===========================================================================
-  
+
   teams-bot:
     build:
       context: ./cybersensei-teams-app/bot
@@ -296,7 +331,7 @@ services:
       BACKEND_URL: http://node-backend:8080
       BACKEND_BASE_URL: http://node-backend:8080
       PORT: 5175
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "${TEAMS_BOT_PORT:-5175}:5175"
     healthcheck:
@@ -307,6 +342,10 @@ services:
       start_period: 15s
     networks:
       - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   teams-tabs:
     build:
@@ -330,11 +369,15 @@ services:
       - "traefik.http.routers.tabs.rule=PathPrefix(`/tabs`)"
       - "traefik.http.routers.tabs.entrypoints=web"
       - "traefik.http.services.tabs.loadbalancer.server.port=80"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
   # ===========================================================================
   # WEBSITE - Marketing Site
   # ===========================================================================
-  
+
   website:
     build:
       context: ./cybersensei-website
@@ -357,9 +400,95 @@ services:
       start_period: 30s
     networks:
       - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # ===========================================================================
-  # MONITORING - Observabilité
+  # AI SECURITY - Sécurité & Gouvernance AI
+  # ===========================================================================
+
+  ai-security-ai:
+    build:
+      context: ./cybersensei-ai-security/ai
+      dockerfile: Dockerfile
+    container_name: cybersensei-ai-security-ai
+    restart: unless-stopped
+    profiles:
+      - ai-security
+      - full
+    environment:
+      MODEL_PATH: /app/models/mistral-7b-instruct.Q4_K_M.gguf
+      LLAMA_HOST: 0.0.0.0
+      LLAMA_PORT: 8001
+      API_PORT: 8000
+      SEMANTIC_THRESHOLD: ${SEMANTIC_THRESHOLD:-40}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "${AI_SECURITY_AI_PORT:-8002}:8000"
+    volumes:
+      - ai-models:/app/models
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+    networks:
+      - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+  ai-security-backend:
+    build:
+      context: ./cybersensei-ai-security/backend
+      dockerfile: Dockerfile
+    container_name: cybersensei-ai-security-backend
+    restart: unless-stopped
+    profiles:
+      - ai-security
+      - full
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      AI_SECURITY_DB: ${AI_SECURITY_DB:-cybersensei_ai_security}
+      AI_SECURITY_SERVICE_URL: http://ai-security-ai:8000
+      JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production-please}
+      SECURITY_BYPASS: ${SECURITY_BYPASS:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3005,http://localhost:5173,http://localhost:5174,http://localhost:3002,http://localhost:8080,http://localhost}
+      NODE_BACKEND_URL: http://node-backend:8080
+      SERVER_PORT: 8081
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    ports:
+      - "${AI_SECURITY_PORT:-8081}:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-security-ai:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/api/ai-security/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ===========================================================================
+  # MONITORING
   # ===========================================================================
 
   prometheus:
@@ -372,6 +501,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
@@ -379,8 +509,13 @@ services:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - prometheus-data:/prometheus
+      - ./cybersensei-central/infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
       - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   grafana:
     image: grafana/grafana:latest
@@ -391,17 +526,22 @@ services:
       - full
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_SERVER_ROOT_URL: http://localhost:${GRAFANA_PORT:-3300}
     ports:
       - "${GRAFANA_PORT:-3300}:3000"
     volumes:
       - grafana-data:/var/lib/grafana
     networks:
       - cybersensei-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
-# ===========================================================================
-# REVERSE PROXY (Traefik)
-# ===========================================================================
+  # ===========================================================================
+  # REVERSE PROXY (Traefik)
+  # ===========================================================================
 
   reverse-proxy:
     image: traefik:v3.0
@@ -419,27 +559,31 @@ services:
       - "--providers.docker.network=cybersensei-network"
       - "--log.level=INFO"
     ports:
-      - "80:80"      # Traefik entrypoint web
-      - "8088:8080"  # Traefik dashboard
+      - "${TRAEFIK_PORT:-80}:80"
+      - "8088:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - cybersensei-network
     labels:
       - "traefik.enable=true"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ===========================================================================
 # NETWORKS
-# ─────────────────────────────────────────────────────────────────────────────
+# ===========================================================================
 
 networks:
   cybersensei-network:
     driver: bridge
     name: cybersensei-network
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ===========================================================================
 # VOLUMES
-# ─────────────────────────────────────────────────────────────────────────────
+# ===========================================================================
 
 volumes:
   postgres-data:

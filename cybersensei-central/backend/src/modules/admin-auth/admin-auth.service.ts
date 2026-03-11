@@ -2,10 +2,12 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { AdminUser } from '../../entities/admin-user.entity';
 import { LoginDto } from './dto/login.dto';
@@ -13,10 +15,13 @@ import { CreateAdminDto } from './dto/create-admin.dto';
 
 @Injectable()
 export class AdminAuthService {
+  private readonly logger = new Logger(AdminAuthService.name);
+
   constructor(
     @InjectRepository(AdminUser)
     private adminUserRepository: Repository<AdminUser>,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -67,7 +72,7 @@ export class AdminAuthService {
       throw new ConflictException('Un utilisateur avec cet email existe déjà');
     }
 
-    const passwordHash = await bcrypt.hash(createAdminDto.password, 10);
+    const passwordHash = await bcrypt.hash(createAdminDto.password, 12);
 
     const admin = this.adminUserRepository.create({
       ...createAdminDto,
@@ -103,15 +108,30 @@ export class AdminAuthService {
   async initializeDefaultAdmin() {
     const count = await this.adminUserRepository.count();
     if (count === 0) {
+      const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+      const adminPassword = this.configService.get<string>('ADMIN_PASSWORD');
+
+      if (!adminEmail || !adminPassword) {
+        this.logger.warn(
+          'ADMIN_EMAIL et ADMIN_PASSWORD doivent être définis dans les variables d\'environnement pour créer l\'admin par défaut',
+        );
+        return;
+      }
+
+      if (adminPassword.length < 12) {
+        this.logger.warn(
+          'ADMIN_PASSWORD doit contenir au minimum 12 caractères pour la production',
+        );
+      }
+
       const defaultAdmin = {
         name: 'Super Admin',
-        email: process.env.ADMIN_EMAIL || 'admin@cybersensei.com',
-        password: process.env.ADMIN_PASSWORD || 'Admin@123456',
+        email: adminEmail,
+        password: adminPassword,
         role: 'SUPERADMIN' as any,
       };
       await this.createAdmin(defaultAdmin);
-      console.log('✅ Admin par défaut créé:', defaultAdmin.email);
+      this.logger.log(`Admin par défaut créé: ${defaultAdmin.email}`);
     }
   }
 }
-

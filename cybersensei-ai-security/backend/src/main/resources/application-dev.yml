@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    show-sql: true
+
+ai-security:
+  security:
+    bypass: true
+    cors:
+      allowed-origins: "*"
+
+logging:
+  level:
+    io.cybersensei: DEBUG
+    org.springframework.security: DEBUG

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-prompt-events" author="cybersensei">
+        <createTable tableName="prompt_events">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prompt_hash" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prompt_length" type="INT"/>
+            <column name="ai_tool" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="risk_score" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="risk_level" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="was_sanitized" type="BOOLEAN"/>
+            <column name="was_blocked" type="BOOLEAN"/>
+            <column name="user_accepted_risk" type="BOOLEAN"/>
+            <column name="source_url" type="VARCHAR(500)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex indexName="idx_prompt_event_company" tableName="prompt_events">
+            <column name="company_id"/>
+        </createIndex>
+        <createIndex indexName="idx_prompt_event_user" tableName="prompt_events">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex indexName="idx_prompt_event_timestamp" tableName="prompt_events">
+            <column name="created_at"/>
+        </createIndex>
+        <createIndex indexName="idx_prompt_event_risk" tableName="prompt_events">
+            <column name="risk_level"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
-import { MessageSquare, Mail, Smartphone, Globe, Check } from "lucide-react";
+import { MessageSquare, Mail, Smartphone, Globe, Check, ShieldAlert } from "lucide-react";
 
 const platforms = [
   {
@@ -38,6 +38,13 @@ const platforms = [
     name: "Portail web",
     icon: Globe,
     description: "Accès navigateur, responsive",
+    status: "Disponible",
+    color: "cyber",
+  },
+  {
+    name: "Extension navigateur DLP",
+    icon: ShieldAlert,
+    description: "Protection temps réel sur ChatGPT, Copilot, Gemini, Claude, Mistral",
     status: "Disponible",
     color: "cyber",
   },

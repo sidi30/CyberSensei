@@ -12,6 +12,9 @@ import {
   RefreshCw,
   Brain,
   Sparkles,
+  ShieldAlert,
+  Globe,
+  FileCheck,
 } from "lucide-react";
 
 const features = [
@@ -62,6 +65,24 @@ const features = [
     title: "Gamification légère",
     description:
       "Points, badges, progression. Une touche de jeu pour maintenir l'engagement sans transformer la sécurité en compétition.",
+  },
+  {
+    icon: ShieldAlert,
+    title: "Protection DLP temps réel",
+    description:
+      "Détection automatique des données sensibles avant envoi vers ChatGPT, Copilot, Gemini ou Claude. Analyse double couche : Presidio + Mistral 7B.",
+  },
+  {
+    icon: Globe,
+    title: "Extension navigateur",
+    description:
+      "Extension Chrome qui intercepte les prompts en temps réel sur les outils IA. Alertes visuelles, blocage configurable et module de formation intégré.",
+  },
+  {
+    icon: FileCheck,
+    title: "Conformité RGPD Article 9",
+    description:
+      "Détection intelligente des données sensibles RGPD : santé, opinions politiques, appartenance syndicale, orientation sexuelle, données biométriques.",
   },
 ];
 

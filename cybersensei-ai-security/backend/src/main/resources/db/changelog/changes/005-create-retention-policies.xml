@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Table des politiques de rétention configurables par entreprise -->
+    <changeSet id="005-1-create-retention-policies" author="cybersensei">
+        <createTable tableName="retention_policies">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="policy_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Durée de rétention par défaut en jours -->
+            <column name="retention_days" type="INT" defaultValueNumeric="90">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Durée spécifique pour les données Art. 9 (max 30j recommandé) -->
+            <column name="article9_retention_days" type="INT" defaultValueNumeric="30">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="retention_policies" indexName="idx_retention_company">
+            <column name="company_id"/>
+        </createIndex>
+
+        <addUniqueConstraint tableName="retention_policies"
+                             columnNames="company_id, policy_name"
+                             constraintName="uq_retention_company_policy"/>
+    </changeSet>
+
+    <!-- Ajout de retention_expires_at sur prompt_events -->
+    <changeSet id="005-2-add-retention-to-prompt-events" author="cybersensei">
+        <addColumn tableName="prompt_events">
+            <column name="retention_expires_at" type="TIMESTAMP"/>
+            <column name="contains_article9" type="BOOLEAN" defaultValueBoolean="false"/>
+        </addColumn>
+
+        <createIndex tableName="prompt_events" indexName="idx_prompt_events_retention">
+            <column name="retention_expires_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,5 +1,7 @@
 package io.cybersensei.service;
 
+import io.cybersensei.api.exception.ResourceNotFoundException;
+import io.cybersensei.api.exception.BusinessRuleException;
 import io.cybersensei.api.dto.CompanyMetricsDto;
 import io.cybersensei.api.mapper.CompanyMetricsMapper;
 import io.cybersensei.domain.entity.CompanyMetrics;

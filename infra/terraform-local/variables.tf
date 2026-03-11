@@ -136,8 +136,12 @@ variable "central_postgres_user" {
 variable "central_postgres_password" {
   description = "Central PostgreSQL password"
   type        = string
-  default     = "central_secret_2024"
   sensitive   = true
+
+  validation {
+    condition     = length(var.central_postgres_password) >= 8
+    error_message = "Central PostgreSQL password must be at least 8 characters."
+  }
 }
 
 variable "central_postgres_db" {
@@ -155,8 +159,12 @@ variable "central_mongo_user" {
 variable "central_mongo_password" {
   description = "Central MongoDB password"
   type        = string
-  default     = "mongo_secret_2024"
   sensitive   = true
+
+  validation {
+    condition     = length(var.central_mongo_password) >= 8
+    error_message = "Central MongoDB password must be at least 8 characters."
+  }
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -172,8 +180,12 @@ variable "node_postgres_user" {
 variable "node_postgres_password" {
   description = "Node PostgreSQL password"
   type        = string
-  default     = "node_secret_2024"
   sensitive   = true
+
+  validation {
+    condition     = length(var.node_postgres_password) >= 8
+    error_message = "Node PostgreSQL password must be at least 8 characters."
+  }
 }
 
 variable "node_postgres_db" {
@@ -195,8 +207,12 @@ variable "grafana_admin_user" {
 variable "grafana_admin_password" {
   description = "Grafana admin password"
   type        = string
-  default     = "admin123"
   sensitive   = true
+
+  validation {
+    condition     = length(var.grafana_admin_password) >= 8
+    error_message = "Grafana admin password must be at least 8 characters."
+  }
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -206,13 +222,13 @@ variable "grafana_admin_password" {
 variable "teams_bot_port" {
   description = "Host port for Teams Bot"
   type        = number
-  default     = 3978
+  default     = 5175
 }
 
 variable "teams_tabs_port" {
   description = "Host port for Teams Tabs"
   type        = number
-  default     = 5175
+  default     = 5176
 }
 
 variable "teams_bot_id" {

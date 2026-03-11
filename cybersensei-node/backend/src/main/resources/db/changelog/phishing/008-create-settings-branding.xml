@@ -6,8 +6,11 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
     <changeSet id="phishing-008-create-settings-branding" author="cybersensei">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="settings_branding"/></not>
+        </preConditions>
         <comment>Create settings_branding table for company branding</comment>
-        
+
         <createTable tableName="settings_branding">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>

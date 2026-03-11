@@ -5,16 +5,18 @@ import Link from "next/link";
 
 const footerLinks = {
   product: [
-    { label: "Fonctionnalités", href: "#fonctionnalites" },
-    { label: "Tarifs", href: "#tarifs" },
-    { label: "FAQ", href: "#faq" },
-    { label: "Démo", href: "#contact" },
+    { label: "Fonctionnalités", href: "/#fonctionnalites" },
+    { label: "Protection DLP", href: "/#dlp" },
+    { label: "Outils Gratuits", href: "/outils-gratuits" },
+    { label: "Tarifs", href: "/#tarifs" },
+    { label: "FAQ", href: "/#faq" },
+    { label: "Démo", href: "/#contact" },
   ],
   company: [
     { label: "À propos", href: "#" },
     { label: "Blog", href: "#" },
     { label: "Carrières", href: "#" },
-    { label: "Contact", href: "#contact" },
+    { label: "Contact", href: "/#contact" },
   ],
   legal: [
     { label: "Confidentialité", href: "/privacy" },
@@ -48,8 +50,9 @@ export function Footer() {
                 </span>
               </Link>
               <p className="text-gray-400 text-sm mb-6 max-w-sm">
-                Le coach cybersécurité IA qui forme vos équipes au quotidien.
-                Simple, efficace, souverain.
+                Le coach cybersécurité IA qui forme vos équipes et protège vos
+                données sensibles contre les fuites vers les outils IA. Simple,
+                efficace, souverain.
               </p>
               <div className="flex items-center gap-4">
                 <a

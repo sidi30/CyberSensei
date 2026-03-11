@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Journal d'audit RGPD : trace chaque accès/effacement/export -->
+    <changeSet id="006-1-create-rgpd-audit-log" author="cybersensei">
+        <createTable tableName="rgpd_audit_log">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <!-- Qui a fait la demande -->
+            <column name="requested_by_user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Utilisateur concerné par la demande -->
+            <column name="target_user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Type d'opération RGPD -->
+            <column name="operation" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Détails : nombre de records affectés, etc. -->
+            <column name="details" type="VARCHAR(2000)"/>
+            <column name="status" type="VARCHAR(20)" defaultValue="COMPLETED">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="rgpd_audit_log" indexName="idx_rgpd_audit_company">
+            <column name="company_id"/>
+        </createIndex>
+        <createIndex tableName="rgpd_audit_log" indexName="idx_rgpd_audit_target">
+            <column name="target_user_id"/>
+        </createIndex>
+        <createIndex tableName="rgpd_audit_log" indexName="idx_rgpd_audit_created">
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
