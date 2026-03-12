@@ -380,7 +380,7 @@ services:
       context: ./cybersensei-teams-app/tabs
       dockerfile: Dockerfile
       args:
-        VITE_BACKEND_URL: https://node.${DOMAIN}/api
+        VITE_BACKEND_URL: https://node.${DOMAIN}
     container_name: cs-teams-tabs
     restart: unless-stopped
     profiles:
