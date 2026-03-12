@@ -19,6 +19,8 @@ RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 COPY . .
 
 # Build the Next.js application
+ARG NEXT_PUBLIC_DOMAIN=""
+ENV NEXT_PUBLIC_DOMAIN=${NEXT_PUBLIC_DOMAIN}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

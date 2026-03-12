@@ -47,14 +47,30 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/sections/Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONFIG - Change NEXT_PUBLIC_PLATFORM_URL to update all links at once
-// Example: NEXT_PUBLIC_PLATFORM_URL=https://cybersensei.example.com
+// CONFIG - Set NEXT_PUBLIC_DOMAIN for production subdomain-based URLs
+// Example: NEXT_PUBLIC_DOMAIN=cybersensei.gwani.fr
+// Falls back to localhost with ports for local development
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PLATFORM_URL = process.env.NEXT_PUBLIC_PLATFORM_URL || "http://localhost";
+const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || "";
+
+const SUBDOMAIN_MAP: Record<string, string> = {
+  "8080": DOMAIN ? `https://node.${DOMAIN}/api` : "",
+  "3005": DOMAIN ? `https://node.${DOMAIN}` : "",
+  "3006": DOMAIN ? `https://api.${DOMAIN}` : "",
+  "5173": DOMAIN ? `https://app.${DOMAIN}` : "",
+  "5174": DOMAIN ? `https://m365.${DOMAIN}` : "",
+  "3300": DOMAIN ? `https://monitoring.${DOMAIN}` : "",
+  "9090": DOMAIN ? `https://monitoring.${DOMAIN}` : "",
+  "5175": DOMAIN ? `https://bot.${DOMAIN}` : "",
+  "5050": "",
+};
 
 function buildUrl(port: string, path = ""): string {
-  return `${PLATFORM_URL}:${port}${path}`;
+  if (DOMAIN && SUBDOMAIN_MAP[port]) {
+    return SUBDOMAIN_MAP[port] + path;
+  }
+  return `http://localhost:${port}${path}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -541,7 +557,7 @@ const credentials = [
     creds: [
       { role: "Admin", user: "admin@cybersensei.io", pass: "Demo123!" },
     ],
-    note: "Mode dev avec SECURITY_BYPASS=true pour les tests",
+    note: "Interface de gestion on-premise",
   },
   {
     service: "Central Dashboard (Admin SaaS)",
@@ -550,7 +566,7 @@ const credentials = [
     color: "#8B5CF6",
     clickable: true,
     creds: [
-      { role: "SuperAdmin", user: "admin@cybersensei.com", pass: "Admin@123456" },
+      { role: "SuperAdmin", user: "admin@cybersensei.com", pass: "CyberAdmin2026" },
     ],
     note: "Acces complet a la gestion des tenants et licences",
   },
@@ -564,15 +580,44 @@ const credentials = [
     note: "Necessaire : OAuth M365 avec Tenant ID Microsoft configure",
   },
   {
-    service: "PgAdmin",
-    url: buildUrl("5050"),
-    icon: <Database className="w-5 h-5" />,
-    color: "#336791",
+    service: "API Central (Swagger)",
+    url: DOMAIN ? `https://api.${DOMAIN}/docs` : buildUrl("3006", "/docs"),
+    icon: <FileText className="w-5 h-5" />,
+    color: "#E0234E",
     clickable: true,
     creds: [
-      { role: "Admin", user: "admin@cybersensei.io", pass: "admin123" },
+      { role: "Admin", user: "admin@cybersensei.com", pass: "CyberAdmin2026" },
     ],
-    note: "Interface web pour gerer PostgreSQL",
+    note: "Documentation Swagger de l'API. Authentifiez-vous via POST /admin/auth/login",
+  },
+  {
+    service: "Node Backend (Swagger)",
+    url: buildUrl("8080", "/swagger-ui.html"),
+    icon: <FileText className="w-5 h-5" />,
+    color: "#6DB33F",
+    clickable: true,
+    creds: [
+      { role: "Admin", user: "admin@cybersensei.io", pass: "Demo123!" },
+    ],
+    note: "Documentation Swagger Spring Boot",
+  },
+  {
+    service: "Tabs Employee (QCM)",
+    url: DOMAIN ? `https://tabs.${DOMAIN}/tabs/employee/` : buildUrl("5176", "/tabs/employee/"),
+    icon: <GraduationCap className="w-5 h-5" />,
+    color: "#6366F1",
+    clickable: true,
+    creds: [],
+    note: "QCM cybersecurite accessible depuis le navigateur",
+  },
+  {
+    service: "Tabs Manager",
+    url: DOMAIN ? `https://tabs.${DOMAIN}/tabs/manager/` : buildUrl("5176", "/tabs/manager/"),
+    icon: <Users className="w-5 h-5" />,
+    color: "#8B5CF6",
+    clickable: true,
+    creds: [],
+    note: "Dashboard manager accessible depuis le navigateur",
   },
   {
     service: "Grafana",
@@ -581,29 +626,29 @@ const credentials = [
     color: "#F46800",
     clickable: true,
     creds: [
-      { role: "Admin", user: "admin", pass: "changeme" },
+      { role: "Admin", user: "admin", pass: "GrafAdmin2026" },
     ],
     note: "Dashboards de monitoring",
   },
   {
-    service: "PostgreSQL (direct)",
-    url: `${PLATFORM_URL.replace(/^https?:\/\//, "")}:5432`,
+    service: "PostgreSQL (interne)",
+    url: DOMAIN ? `${DOMAIN}:5432 (non expose)` : "localhost:5432",
     icon: <Database className="w-5 h-5" />,
     color: "#336791",
     clickable: false,
     creds: [
-      { role: "DB User", user: "cybersensei", pass: "cybersensei123" },
+      { role: "DB User", user: "cybersensei", pass: "(voir .env.prod)" },
     ],
     note: "Bases : cybersensei_db, cybersensei_central, cybersensei_ai_security",
   },
   {
-    service: "MongoDB (direct)",
-    url: `${PLATFORM_URL.replace(/^https?:\/\//, "")}:27017`,
+    service: "MongoDB (interne)",
+    url: DOMAIN ? `${DOMAIN}:27017 (non expose)` : "localhost:27017",
     icon: <HardDrive className="w-5 h-5" />,
     color: "#47A248",
     clickable: false,
     creds: [
-      { role: "Root", user: "cybersensei", pass: "cybersensei123" },
+      { role: "Root", user: "cybersensei", pass: "(voir .env.prod)" },
     ],
     note: "Base : cybersensei_central",
   },
