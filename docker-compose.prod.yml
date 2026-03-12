@@ -92,7 +92,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       SECURITY_BYPASS: "false"
       DEV_MODE: "false"
-      CORS_ORIGINS: https://node.${DOMAIN},https://app.${DOMAIN},https://${DOMAIN}
+      CORS_ORIGINS: https://node.${DOMAIN},https://app.${DOMAIN},https://${DOMAIN},https://tabs.${DOMAIN}
       SERVER_PORT: 8080
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     depends_on:
