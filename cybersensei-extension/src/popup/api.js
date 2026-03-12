@@ -102,7 +102,7 @@ class CyberSenseiAPI {
     return this.request('POST', `/api/extension/exercise/${exerciseId}/submit`, {
       userId: this.userId,
       tenantId: this.tenantId,
-      detailsJSON: { answers },
+      answers,
     });
   }
 

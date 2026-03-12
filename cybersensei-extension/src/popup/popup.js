@@ -49,6 +49,8 @@ let gamification = {
 };
 
 let currentQuiz = null;
+let currentQuestionIndex = 0;
+let currentAnswers = [];
 let chatContext = null;
 
 // Glossaire local
@@ -408,7 +410,13 @@ function renderQuiz(exercise) {
   };
   const emoji = topicEmojis[exercise.topic?.toLowerCase()] || '🛡️';
 
-  let html = `
+  // Reset state for step-by-step quiz
+  currentQuestionIndex = 0;
+  currentAnswers = [];
+
+  // Show intro first, then step through questions one by one
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = `
     <div class="quiz-card">
       <div class="quiz-card-header">
         <div class="quiz-card-emoji">${emoji}</div>
@@ -421,68 +429,120 @@ function renderQuiz(exercise) {
         </div>
       </div>
     </div>
-    <div class="quiz-intro-text">${courseIntro}</div>`;
-
-  questions.forEach((q, idx) => {
-    html += `<div class="question-block">`;
-    html += `<div class="question-number">Question ${idx + 1}</div>`;
-    if (q.context) {
-      html += `<div class="question-context">📋 ${q.context}</div>`;
-    }
-    html += `<div class="question-text">${q.text}</div>`;
-    q.options.forEach((opt, optIdx) => {
-      html += `
-        <label class="option-label" id="opt-${q.id}-${optIdx}">
-          <input type="radio" name="q_${q.id}" value="${optIdx}" />
-          <span>${opt}</span>
-        </label>`;
-    });
-    html += `</div>`;
-  });
-
-  html += `
+    <div class="quiz-intro-text">${courseIntro}</div>
     <div class="quiz-submit">
-      <button id="btn-submit-quiz" class="btn-primary">Valider mes réponses</button>
+      <button id="btn-start-quiz" class="btn-primary">Commencer le défi</button>
     </div>`;
 
-  const container = document.getElementById('quiz-container');
-  container.innerHTML = html;
+  document.getElementById('btn-start-quiz').addEventListener('click', () => {
+    renderQuestion(exercise, questions, 0);
+  });
+}
 
-  // Highlight selected options
-  container.querySelectorAll('.option-label').forEach((label) => {
-    label.addEventListener('click', () => {
-      const name = label.querySelector('input').name;
-      container.querySelectorAll(`[name="${name}"]`).forEach((r) => {
-        r.closest('.option-label').classList.remove('selected');
+function renderQuestion(exercise, questions, index) {
+  const q = questions[index];
+  const total = questions.length;
+  const container = document.getElementById('quiz-container');
+  const progressPct = Math.round(((index) / total) * 100);
+
+  container.innerHTML = `
+    <div class="quiz-progress-bar">
+      <div class="quiz-progress-fill" style="width: ${progressPct}%"></div>
+    </div>
+    <div class="quiz-progress-text">Question ${index + 1} / ${total}</div>
+    <div class="question-block">
+      ${q.context ? `<div class="question-context">📋 ${q.context}</div>` : ''}
+      <div class="question-text">${q.text}</div>
+      <div id="options-container">
+        ${q.options.map((opt, optIdx) => `
+          <button class="option-btn" data-idx="${optIdx}">
+            <span class="option-letter">${String.fromCharCode(65 + optIdx)}</span>
+            <span class="option-text">${opt}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>`;
+
+  // Handle option selection
+  const optionBtns = container.querySelectorAll('.option-btn');
+  optionBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const selectedIdx = parseInt(btn.dataset.idx, 10);
+      const correctIdx = q.correctAnswer ?? -1;
+
+      // Disable all buttons
+      optionBtns.forEach((b) => {
+        b.disabled = true;
+        b.classList.add('disabled');
       });
-      label.classList.add('selected');
+
+      // Show correct/incorrect
+      if (selectedIdx === correctIdx) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('incorrect');
+        // Highlight the correct answer
+        optionBtns.forEach((b) => {
+          if (parseInt(b.dataset.idx, 10) === correctIdx) {
+            b.classList.add('correct');
+          }
+        });
+      }
+
+      // Save answer
+      currentAnswers.push({ questionId: q.id, answer: selectedIdx });
+
+      // Show feedback if available
+      const payload = exercise.payloadJSON || {};
+      const originalQ = (payload.questions || [])[index] || {};
+      let feedbackHtml = '';
+      if (selectedIdx === correctIdx && originalQ.feedbackCorrect) {
+        feedbackHtml = `<div class="question-feedback correct-feedback">✅ ${originalQ.feedbackCorrect}</div>`;
+      } else if (selectedIdx !== correctIdx && originalQ.feedbackIncorrect) {
+        feedbackHtml = `<div class="question-feedback incorrect-feedback">❌ ${originalQ.feedbackIncorrect}</div>`;
+      }
+
+      // Show key takeaway
+      if (originalQ.keyTakeaway) {
+        feedbackHtml += `<div class="question-takeaway">💡 ${originalQ.keyTakeaway}</div>`;
+      }
+
+      // Add next button
+      const isLast = index === total - 1;
+      const nextHtml = `
+        ${feedbackHtml}
+        <div class="quiz-submit" style="margin-top: 12px;">
+          <button id="btn-next-question" class="btn-primary">
+            ${isLast ? 'Voir mes résultats' : 'Question suivante →'}
+          </button>
+        </div>`;
+
+      container.querySelector('.question-block').insertAdjacentHTML('beforeend', nextHtml);
+
+      document.getElementById('btn-next-question').addEventListener('click', () => {
+        if (isLast) {
+          submitQuiz();
+        } else {
+          renderQuestion(exercise, questions, index + 1);
+        }
+      });
     });
   });
-
-  document.getElementById('btn-submit-quiz').addEventListener('click', submitQuiz);
 }
 
 async function submitQuiz() {
   if (!currentQuiz) return;
 
   const questions = extractQuestions(currentQuiz);
-  const answers = [];
-
-  for (const q of questions) {
-    const selected = document.querySelector(`input[name="q_${q.id}"]:checked`);
-    if (!selected) {
-      alert('Veuillez répondre à toutes les questions.');
-      return;
-    }
-    answers.push({ questionId: q.id, answer: parseInt(selected.value, 10) });
-  }
-
-  const btn = document.getElementById('btn-submit-quiz');
-  btn.disabled = true;
-  btn.textContent = 'Envoi...';
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = `
+    <div class="center-state">
+      <div class="loader"></div>
+      <p>Calcul de ton score...</p>
+    </div>`;
 
   try {
-    const result = await api.submitExercise(String(currentQuiz.id), answers);
+    const result = await api.submitExercise(String(currentQuiz.id), currentAnswers);
     renderResult(result, questions.length);
 
     // Gamification
@@ -517,9 +577,14 @@ async function submitQuiz() {
     await chrome.storage.local.set({ lastQuizDate: today });
   } catch (err) {
     console.error('Submit error:', err);
-    btn.disabled = false;
-    btn.textContent = 'Valider mes réponses';
-    alert('Erreur : ' + err.message);
+    container.innerHTML = `
+      <div class="center-state">
+        <div class="state-emoji">😕</div>
+        <h3>Erreur</h3>
+        <p>${escapeHtml(err.message)}</p>
+        <button id="btn-retry-submit" class="btn-primary">Réessayer</button>
+      </div>`;
+    document.getElementById('btn-retry-submit')?.addEventListener('click', submitQuiz);
   }
 }
 

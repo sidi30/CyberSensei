@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsObject, Allow } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ActivateExtensionDto {
@@ -17,8 +17,14 @@ export class SubmitExerciseDto {
   @IsString()
   tenantId: string;
 
-  @ApiProperty()
-  detailsJSON: Record<string, any>;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsObject()
+  detailsJSON?: Record<string, any>;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  answers?: any[];
 }
 
 export class ChatDto {
@@ -28,11 +34,17 @@ export class ChatDto {
   message: string;
 
   @ApiProperty({ required: false })
+  @IsOptional()
+  @Allow()
   context?: any;
 
   @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   userId?: string;
 
   @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   tenantId?: string;
 }

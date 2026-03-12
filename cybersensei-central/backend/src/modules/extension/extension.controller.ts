@@ -40,9 +40,10 @@ export class ExtensionController {
     @Param('id') exerciseId: string,
     @Body() dto: SubmitExerciseDto,
   ) {
+    const answers = dto.answers || dto.detailsJSON?.answers || [];
     return this.extensionService.submitExercise(
       exerciseId,
-      dto.detailsJSON?.answers || [],
+      answers,
       dto.userId,
     );
   }
