@@ -55,7 +55,7 @@ import { Footer } from "@/components/sections/Footer";
 const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || "";
 
 const SUBDOMAIN_MAP: Record<string, string> = {
-  "8080": DOMAIN ? `https://node.${DOMAIN}/api` : "",
+  "8080": DOMAIN ? `https://node.${DOMAIN}` : "",
   "3005": DOMAIN ? `https://node.${DOMAIN}` : "",
   "3006": DOMAIN ? `https://api.${DOMAIN}` : "",
   "5173": DOMAIN ? `https://app.${DOMAIN}` : "",
@@ -592,7 +592,7 @@ const credentials = [
   },
   {
     service: "Node Backend (Swagger)",
-    url: buildUrl("8080", "/swagger-ui.html"),
+    url: DOMAIN ? `https://node.${DOMAIN}/swagger-ui/index.html` : buildUrl("8080", "/swagger-ui.html"),
     icon: <FileText className="w-5 h-5" />,
     color: "#6DB33F",
     clickable: true,
