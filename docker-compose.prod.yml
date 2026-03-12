@@ -53,6 +53,8 @@ services:
       resources:
         limits:
           memory: 512M
+    security_opt:
+      - no-new-privileges:true
 
   mongo:
     image: mongo:6-jammy
@@ -70,6 +72,8 @@ services:
       resources:
         limits:
           memory: 512M
+    security_opt:
+      - no-new-privileges:true
 
   # ===========================================================================
   # NODE - On-Premise Stack
@@ -110,6 +114,12 @@ services:
       resources:
         limits:
           memory: 2G
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/logs
 
   node-dashboard:
     build:
@@ -149,6 +159,13 @@ services:
       resources:
         limits:
           memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
 
   # ===========================================================================
   # CENTRAL - SaaS Stack
@@ -219,6 +236,12 @@ services:
       resources:
         limits:
           memory: 1G
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/logs
 
   central-dashboard:
     build:
@@ -256,6 +279,13 @@ services:
       resources:
         limits:
           memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
 
   m365-dashboard:
     build:
@@ -293,6 +323,13 @@ services:
       resources:
         limits:
           memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
 
   # ===========================================================================
   # WEBSITE
@@ -338,6 +375,8 @@ services:
       resources:
         limits:
           memory: 512M
+    security_opt:
+      - no-new-privileges:true
 
   # ===========================================================================
   # TEAMS (optionnel)
@@ -414,6 +453,13 @@ services:
       resources:
         limits:
           memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
 
   # ===========================================================================
   # AI SECURITY (optionnel - nécessite ~8GB RAM)
@@ -430,7 +476,7 @@ services:
       - all
     environment:
       MODEL_PATH: /app/models/mistral-7b-instruct.Q4_K_M.gguf
-      LLAMA_HOST: 0.0.0.0
+      LLAMA_HOST: 127.0.0.1
       LLAMA_PORT: 8001
       API_PORT: 8000
       SEMANTIC_THRESHOLD: ${SEMANTIC_THRESHOLD:-40}
@@ -451,6 +497,8 @@ services:
           memory: 8G
         reservations:
           memory: 4G
+    security_opt:
+      - no-new-privileges:true
 
   ai-security-backend:
     build:
@@ -492,6 +540,12 @@ services:
       resources:
         limits:
           memory: 1G
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/logs
 
   # ===========================================================================
   # MONITORING (optionnel)
@@ -518,6 +572,8 @@ services:
       resources:
         limits:
           memory: 512M
+    security_opt:
+      - no-new-privileges:true
 
   grafana:
     image: grafana/grafana:latest
@@ -530,6 +586,13 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_SERVER_ROOT_URL: https://monitoring.${DOMAIN}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_ALLOW_ORG_CREATE: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_SECURITY_COOKIE_SECURE: "true"
+      GF_SECURITY_STRICT_TRANSPORT_SECURITY: "true"
+      GF_SECURITY_CONTENT_SECURITY_POLICY: "true"
     volumes:
       - grafana-data:/var/lib/grafana
     labels:
@@ -552,6 +615,8 @@ services:
       resources:
         limits:
           memory: 256M
+    security_opt:
+      - no-new-privileges:true
 
 # ===========================================================================
 # NETWORKS

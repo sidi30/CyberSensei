@@ -5,12 +5,14 @@
   "version": "1.0.0",
   "description": "Votre assistant cybersécurité : quiz quotidiens, glossaire, chat IA et suivi de progression.",
   "permissions": [
-    "storage",
-    "alarms",
-    "notifications",
-    "sidePanel"
+    "storage"
   ],
-  "host_permissions": [],
+  "host_permissions": [
+    "https://api.cybersensei.gwani.fr/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https://api.cybersensei.gwani.fr"
+  },
   "action": {
     "default_icon": {
       "16": "src/assets/icon-16.png",

@@ -16,8 +16,30 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 
-  // Security headers
-  app.use(helmet());
+  // Security headers — hardened
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+          upgradeInsecureRequests: [],
+        },
+      },
+      hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      frameguard: { action: 'deny' },
+      noSniff: true,
+      xssFilter: false, // Deprecated header — modern browsers don't need it
+      hidePoweredBy: true,
+    }),
+  );
 
   // CORS configuration
   const corsOrigins = configService.get<string>('CORS_ORIGINS', '');
@@ -54,37 +76,41 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger configuration (enabled in all environments)
+  // Swagger — disabled in production for security
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
-  const config = new DocumentBuilder()
-    .setTitle('CyberSensei Central Backend')
-    .setDescription('Multi-tenant SaaS platform for CyberSensei node management')
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
-      },
-      'JWT-auth',
-    )
-    .addApiKey(
-      {
-        type: 'apiKey',
-        name: 'X-License-Key',
-        in: 'header',
-        description: 'License key for tenant authentication',
-      },
-      'license-key',
-    )
-    .build();
+  if (nodeEnv !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('CyberSensei Central Backend')
+      .setDescription('Multi-tenant SaaS platform for CyberSensei node management')
+      .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'JWT',
+          description: 'Enter JWT token',
+          in: 'header',
+        },
+        'JWT-auth',
+      )
+      .addApiKey(
+        {
+          type: 'apiKey',
+          name: 'X-License-Key',
+          in: 'header',
+          description: 'License key for tenant authentication',
+        },
+        'license-key',
+      )
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
-  logger.log('Swagger documentation available at /docs');
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+    logger.log('Swagger documentation available at /docs');
+  } else {
+    logger.log('Swagger disabled in production');
+  }
 
   const port = configService.get<number>('PORT', 3000);
   await app.listen(port);

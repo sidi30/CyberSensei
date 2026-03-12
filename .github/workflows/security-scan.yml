@@ -1,0 +1,112 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run weekly on Monday at 6:00 UTC
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # =========================================================================
+  # Secret Detection — prevent accidental credential commits
+  # =========================================================================
+  secret-detection:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+  # =========================================================================
+  # Dependency Audit — check for known CVEs
+  # =========================================================================
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - path: cybersensei-central/backend
+            name: central-backend
+          - path: cybersensei-website
+            name: website
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.project.path }}
+        run: npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+
+      - name: NPM Audit (${{ matrix.project.name }})
+        working-directory: ${{ matrix.project.path }}
+        run: npm audit --audit-level=high --omit=dev || true
+
+  # =========================================================================
+  # Container Image Scan — scan Docker images for CVEs
+  # =========================================================================
+  container-scan:
+    name: Container Image Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    strategy:
+      matrix:
+        image:
+          - context: cybersensei-central/backend
+            name: central-backend
+          - context: cybersensei-website
+            name: website
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t cybersensei-${{ matrix.image.name }}:scan ${{ matrix.image.context }}
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: cybersensei-${{ matrix.image.name }}:scan
+          format: 'sarif'
+          output: 'trivy-${{ matrix.image.name }}.sarif'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '0'
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-${{ matrix.image.name }}.sarif'
+
+  # =========================================================================
+  # CodeQL SAST — static analysis for security issues
+  # =========================================================================
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
