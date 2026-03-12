@@ -43,7 +43,7 @@ const TOPIC_EMOJIS = {
 
 const ENCOURAGEMENT = {
   correct: [
-    "Parfait ! Tu as l'œil ! 👁️✨",
+    "Parfait ! Tu as l'oeil ! 👁️",
     "Exactement ! Tu es sur la bonne voie ! 🎯",
     "Bravo ! C'est le bon réflexe ! 💪",
     "Super ! Tu deviens un pro ! 🏆",
@@ -59,10 +59,44 @@ const ENCOURAGEMENT = {
   completion: [
     "🎉 Bravo ! Tu as terminé ce module !",
     "🏆 Champion ! Un module de plus dans la poche !",
-    "⭐ Génial ! Tu progresses à vue d'œil !",
+    "⭐ Génial ! Tu progresses à vue d'oeil !",
     "🚀 Super ! Prêt pour le niveau suivant ?",
     "💪 Excellent travail ! Continue sur ta lancée !",
   ],
+};
+
+// Explications par défaut quand le backend n'en fournit pas
+const DEFAULT_EXPLANATIONS = {
+  phishing: {
+    correct: "Tu as bien identifié la bonne pratique ! En matière de phishing, il faut toujours vérifier l'adresse de l'expéditeur, ne jamais cliquer sur un lien suspect et signaler les emails douteux à ton équipe IT.",
+    incorrect: "Attention ! Face à un email suspect, il ne faut jamais cliquer directement sur un lien. Vérifie toujours l'adresse de l'expéditeur, regarde si le contexte est cohérent et préviens ton responsable en cas de doute.",
+    advice: ["Vérifier l'adresse email de l'expéditeur (domaine exact)", "Ne jamais cliquer sur un lien sans vérifier l'URL", "Signaler immédiatement les emails suspects au service IT", "En cas de doute, contacter directement l'expéditeur par un autre canal"],
+  },
+  ransomware: {
+    correct: "Bien joué ! La prévention du ransomware passe par des sauvegardes régulières, la mise à jour des logiciels et la vigilance face aux pièces jointes suspectes.",
+    incorrect: "Le ransomware est un logiciel malveillant qui chiffre vos fichiers. Ne payez jamais la rançon ! La clé est la prévention : sauvegardes régulières, mises à jour et vigilance.",
+    advice: ["Faire des sauvegardes régulières et les stocker hors-ligne", "Maintenir tous les logiciels à jour", "Ne jamais ouvrir de pièces jointes d'expéditeurs inconnus", "Ne jamais payer la rançon en cas d'attaque"],
+  },
+  'mots de passe': {
+    correct: "Excellent réflexe ! Un bon mot de passe est long (12+ caractères), unique pour chaque service et idéalement géré par un gestionnaire de mots de passe.",
+    incorrect: "Un mot de passe robuste doit être long (12+ caractères), mélanger lettres, chiffres et symboles, et être unique pour chaque compte. Utilise un gestionnaire de mots de passe !",
+    advice: ["Utiliser un mot de passe de 12 caractères minimum", "Ne jamais réutiliser le même mot de passe", "Activer l'authentification à deux facteurs (2FA)", "Utiliser un gestionnaire de mots de passe"],
+  },
+  'ingénierie sociale': {
+    correct: "Bien vu ! L'ingénierie sociale repose sur la manipulation psychologique. Il faut toujours vérifier l'identité de son interlocuteur et ne jamais communiquer d'informations sensibles sans vérification.",
+    incorrect: "L'ingénierie sociale est une technique de manipulation. Quelqu'un peut se faire passer pour le support IT ou un collègue. Ne communique jamais tes identifiants par téléphone ou email !",
+    advice: ["Ne jamais communiquer ses mots de passe par téléphone ou email", "Vérifier l'identité de toute personne demandant des informations", "Se méfier des demandes urgentes ou inhabituelles", "En cas de doute, contacter directement la personne par un canal connu"],
+  },
+  vpn: {
+    correct: "Bien ! Le VPN crée un tunnel chiffré qui protège tes données, surtout en Wi-Fi public. C'est indispensable en télétravail.",
+    incorrect: "Le VPN est essentiel pour protéger ta connexion. En Wi-Fi public, sans VPN, tes données peuvent être interceptées. Active toujours le VPN de ton entreprise !",
+    advice: ["Toujours activer le VPN en Wi-Fi public", "Utiliser le VPN fourni par l'entreprise", "Vérifier que le VPN est connecté avant d'accéder à des données sensibles"],
+  },
+  default: {
+    correct: "Bien joué ! Tu maîtrises bien ce sujet. Continue à appliquer ces bonnes pratiques au quotidien.",
+    incorrect: "Ce n'est pas la bonne réponse, mais c'est en se trompant qu'on apprend. Voici ce qu'il faut retenir pour la prochaine fois.",
+    advice: ["Rester vigilant face aux menaces en ligne", "Appliquer les bonnes pratiques de sécurité au quotidien", "En cas de doute, toujours demander conseil à l'équipe IT", "Se former régulièrement aux nouvelles menaces"],
+  },
 };
 
 // ============================================
@@ -301,6 +335,27 @@ async function loadSettingsValues() {
 const chatContainer = () => document.getElementById('quiz-container');
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+/** Get topic-specific explanations */
+function getTopicExplanations(topic) {
+  const key = (topic || '').toLowerCase();
+  return DEFAULT_EXPLANATIONS[key] || DEFAULT_EXPLANATIONS.default;
+}
+
+/** Scroll to the last message smoothly */
+function scrollChat() {
+  const container = chatContainer();
+  if (!container) return;
+  // Use double rAF to ensure DOM has rendered
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const lastMsg = container.lastElementChild;
+      if (lastMsg) {
+        lastMsg.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    });
+  });
+}
+
 function addBotMsg(text, style = '', options = null, delay = 0) {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -355,11 +410,6 @@ function addUserMsg(text) {
   scrollChat();
 }
 
-function scrollChat() {
-  const container = chatContainer();
-  requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
-}
-
 async function loadQuiz() {
   const loading = document.getElementById('quiz-loading');
   const container = document.getElementById('quiz-container');
@@ -388,14 +438,14 @@ async function loadQuiz() {
     const courseIntro = exercise.payloadJSON?.courseIntro || exercise.description || `Aujourd'hui on va parler de : ${exercise.topic}`;
 
     // Intro du bot
-    await addBotMsg(`${topicEmoji} **${exercise.topic}**\n\n${courseIntro}`, '', null, 400);
+    await addBotMsg(`${topicEmoji} **${exercise.topic}**\n\n${courseIntro}`, '', null, 300);
 
     // Bouton pour commencer
     const startMsg = await addBotMsg(
       `Tu es prêt ? ${quizQuestions.length} questions t'attendent !`,
       '',
       ["C'est compris, on y va ! 🚀"],
-      800
+      600
     );
 
     startMsg.querySelector('.chat-option-btn').addEventListener('click', () => {
@@ -419,16 +469,16 @@ async function handleUserAction(optionIndex, optionText) {
   // Session terminée → recommencer ou quitter
   if (sessionComplete) {
     if (optionText?.includes('demain')) {
-      await addBotMsg("Parfait ! 📅 À demain pour la suite de ta formation. Tu fais du super boulot ! 💪", '', null, 500);
+      await addBotMsg("Parfait ! A demain pour la suite de ta formation. Tu fais du super boulot ! 💪", '', null, 400);
       sessionComplete = false;
     } else {
-      await addBotMsg("Super motivation ! 🔥 Je te prépare un nouveau module...", '', null, 500);
+      await addBotMsg("Super motivation ! 🔥 Je te prépare un nouveau module...", '', null, 400);
       setTimeout(() => {
         sessionComplete = false;
         stepIndex = -1;
         chatContainer().innerHTML = '';
         loadQuiz();
-      }, 1500);
+      }, 1200);
     }
     return;
   }
@@ -438,48 +488,64 @@ async function handleUserAction(optionIndex, optionText) {
   if (stepIndex === -1) {
     // Démarrer les questions
     stepIndex = 0;
-    await addBotMsg("C'est parti ! 🎯 Je vais te poser quelques questions.", '', null, 400);
-    setTimeout(() => showBotQuestion(questions[0]), 800);
+    await addBotMsg("C'est parti ! 🎯", '', null, 300);
+    setTimeout(() => showBotQuestion(questions[0]), 500);
 
   } else if (stepIndex < questions.length) {
     // Traiter la réponse
     const q = questions[stepIndex];
     const originalQ = (currentQuiz.payloadJSON?.questions || [])[stepIndex] || {};
     const isCorrect = optionIndex === (originalQ.correctAnswer ?? q.correctAnswer);
+    const topic = (currentQuiz.topic || '').toLowerCase();
+    const topicExpl = getTopicExplanations(topic);
 
     quizScore.correct += isCorrect ? 1 : 0;
     quizScore.total += 1;
 
-    // Réaction
+    // Réaction du bot
     const reaction = pick(isCorrect ? ENCOURAGEMENT.correct : ENCOURAGEMENT.incorrect);
-    await addBotMsg(reaction, isCorrect ? 'success' : 'danger', null, 400);
+    await addBotMsg(reaction, isCorrect ? 'success' : 'danger', null, 300);
 
-    // Feedback
-    const feedback = isCorrect
-      ? (originalQ.feedbackCorrect || "Bravo, c'est la bonne réponse !")
-      : (originalQ.feedbackIncorrect || "Ce n'est pas la bonne réponse. Voyons pourquoi ensemble.");
-    await addBotMsg(feedback, '', null, 800);
+    // Explication détaillée — always show why
+    if (isCorrect) {
+      const feedback = originalQ.feedbackCorrect || topicExpl.correct;
+      await addBotMsg(`✅ ${feedback}`, 'success', null, 500);
+    } else {
+      // Show the correct answer
+      const correctIdx = originalQ.correctAnswer ?? q.correctAnswer;
+      const correctText = q.options[correctIdx];
+      const feedback = originalQ.feedbackIncorrect || topicExpl.incorrect;
+      let explanationHtml = `❌ ${feedback}`;
+      if (correctText) {
+        explanationHtml += `\n\n**La bonne réponse était :** ${correctText}`;
+      }
+      await addBotMsg(explanationHtml, 'danger', null, 500);
+    }
 
-    // Conseil / key takeaway
+    // Conseil pratique — always show advice
     if (originalQ.advice) {
-      let adviceHtml = `💡 **En résumé :** ${originalQ.advice.concept || ''}`;
+      let adviceHtml = `💡 **Conseil :** ${originalQ.advice.concept || ''}`;
       if (originalQ.advice.example) adviceHtml += `\n\n📌 *"${originalQ.advice.example}"*`;
       if (originalQ.advice.advice?.length) {
         adviceHtml += `\n\n✅ **Les bons réflexes :**\n${originalQ.advice.advice.map((a) => `• ${a}`).join('\n')}`;
       }
-      await addBotMsg(adviceHtml, 'advice', null, 600);
+      await addBotMsg(adviceHtml, 'advice', null, 400);
     } else if (originalQ.keyTakeaway) {
-      await addBotMsg(`💡 **À retenir :** ${originalQ.keyTakeaway}`, 'info', null, 600);
+      await addBotMsg(`💡 **A retenir :** ${originalQ.keyTakeaway}`, 'advice', null, 400);
+    } else {
+      // Fallback: always show topic-based advice
+      const adviceList = topicExpl.advice;
+      let adviceHtml = `💡 **Les bons réflexes :**\n${adviceList.map((a) => `• ${a}`).join('\n')}`;
+      await addBotMsg(adviceHtml, 'advice', null, 400);
     }
 
     // Question suivante ou fin
     const nextIndex = stepIndex + 1;
     if (nextIndex < questions.length) {
       stepIndex = nextIndex;
-      await addBotMsg("Allez, question suivante ! ➡️", '', null, 800);
-      setTimeout(() => showBotQuestion(questions[nextIndex]), 600);
+      await addBotMsg("Question suivante ➡️", '', null, 600);
+      setTimeout(() => showBotQuestion(questions[nextIndex]), 400);
     } else {
-      // Fin du quiz
       await finishQuizModule();
     }
   }
@@ -490,11 +556,11 @@ async function showBotQuestion(q) {
 
   // Contexte si disponible
   if (originalQ.context || q.context) {
-    await addBotMsg(`📋 **Situation :**\n${originalQ.context || q.context}`, 'info', null, 300);
+    await addBotMsg(`📋 **Situation :**\n${originalQ.context || q.context}`, 'info', null, 200);
   }
 
   // La question avec options
-  const questionMsg = await addBotMsg(q.text, '', q.options, 600);
+  const questionMsg = await addBotMsg(q.text, '', q.options, 400);
 
   // Attacher les handlers
   questionMsg.querySelectorAll('.chat-option-btn').forEach((btn) => {
@@ -509,15 +575,16 @@ async function finishQuizModule() {
   const pct = quizScore.total > 0 ? Math.round((quizScore.correct / quizScore.total) * 100) : 0;
   const isGood = pct >= 70;
 
-  await addBotMsg(pick(ENCOURAGEMENT.completion), 'success', null, 600);
+  await addBotMsg(pick(ENCOURAGEMENT.completion), 'success', null, 500);
 
+  const scoreEmoji = pct === 100 ? '💯' : pct >= 70 ? '🏆' : pct >= 40 ? '📈' : '💪';
   await addBotMsg(
-    `📊 **Ton score :** ${quizScore.correct}/${quizScore.total} (${pct}%)\n\n${
-      isGood ? "🏆 Excellent ! Tu maîtrises bien ce sujet !" : "📚 Continue de t'entraîner, tu progresses !"
+    `${scoreEmoji} **Ton score : ${quizScore.correct}/${quizScore.total} (${pct}%)**\n\n${
+      isGood ? "Tu maîtrises bien ce sujet !" : "Continue de t'entraîner, tu progresses !"
     }`,
-    isGood ? 'success' : '',
+    isGood ? 'success' : 'info',
     null,
-    800
+    600
   );
 
   // Gamification
@@ -552,7 +619,7 @@ async function finishQuizModule() {
     "Tu veux continuer avec un autre module ou on reprend demain ? 🤔",
     '',
     ["Encore un module ! 🚀", "On reprend demain 📅"],
-    1200
+    800
   );
 
   endMsg.querySelectorAll('.chat-option-btn').forEach((btn) => {
@@ -679,8 +746,8 @@ function renderProgress(serverData) {
   document.getElementById('progress-content').innerHTML = `
     <div class="progress-card full-width" style="text-align:center;">
       <div class="level-badge">🎖️ Niveau ${info.level} - ${info.title}</div>
-      <div class="progress-bar-track" style="margin-top:12px;"><div class="progress-bar-fill" style="width:${info.pct}%;"></div></div>
-      <div class="progress-card-sub" style="margin-top:6px;">
+      <div class="progress-bar-track" style="margin-top:10px;"><div class="progress-bar-fill" style="width:${info.pct}%;"></div></div>
+      <div class="progress-card-sub" style="margin-top:4px;">
         ${info.next ? `${info.xpInLevel} / ${info.xpForNext} XP pour niveau ${info.next.level}` : 'Niveau maximum atteint !'}
       </div>
     </div>
@@ -697,7 +764,7 @@ function renderProgress(serverData) {
         ${lockedBadges.map((b) => `<div class="badge-item locked"><span class="badge-emoji">🔒</span><span class="badge-name">${b.name}</span></div>`).join('')}
       </div>
     </div>
-    <div style="text-align:center;margin-top:16px;">
+    <div style="text-align:center;margin-top:12px;">
       <button id="btn-progress-quiz" class="btn-primary">Continuer ma formation</button>
     </div>`;
 
@@ -726,10 +793,6 @@ function extractQuestions(exercise) {
   }
   if (payload.question) return [{ id: 'q1', text: payload.question, options: payload.options || [] }];
   return [];
-}
-
-function translateLevel(level) {
-  return { BEGINNER: 'Débutant', INTERMEDIATE: 'Intermédiaire', ADVANCED: 'Avancé', EXPERT: 'Expert' }[level] || level || 'Débutant';
 }
 
 function escapeHtml(text) {
