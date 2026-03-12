@@ -1,6 +1,6 @@
 /**
  * CyberSensei Extension v2 - Popup Controller
- * Gamified dark theme with XP, streaks, levels, badges
+ * Bot conversationnel gamifié - même UX que /tabs/employee
  */
 
 import api from './api.js';
@@ -35,100 +35,66 @@ const BADGES = [
   { id: 'xp_1000', emoji: '🏆', name: '1000 XP', condition: (g) => g.xp >= 1000 },
 ];
 
+const TOPIC_EMOJIS = {
+  phishing: '🎣', 'mots de passe': '🔐', ransomware: '💀',
+  'ingénierie sociale': '🎭', vpn: '🔒', malware: '🦠',
+  dlp: '🛡️', rgpd: '📋', 'shadow it': '👻', 'vpn & wi-fi': '🔒',
+};
+
+const ENCOURAGEMENT = {
+  correct: [
+    "Parfait ! Tu as l'œil ! 👁️✨",
+    "Exactement ! Tu es sur la bonne voie ! 🎯",
+    "Bravo ! C'est le bon réflexe ! 💪",
+    "Super ! Tu deviens un pro ! 🏆",
+    "Excellent ! Continue comme ça ! 🌟",
+  ],
+  incorrect: [
+    "Pas de panique, c'est comme ça qu'on apprend ! 📚",
+    "Oups ! Voyons ensemble pourquoi... 🤔",
+    "Presque ! Regardons ça de plus près... 🔍",
+    "C'est le piège classique ! Voyons la solution... 💡",
+    "Normal de se tromper, l'important c'est de comprendre ! 🧠",
+  ],
+  completion: [
+    "🎉 Bravo ! Tu as terminé ce module !",
+    "🏆 Champion ! Un module de plus dans la poche !",
+    "⭐ Génial ! Tu progresses à vue d'œil !",
+    "🚀 Super ! Prêt pour le niveau suivant ?",
+    "💪 Excellent travail ! Continue sur ta lancée !",
+  ],
+};
+
 // ============================================
 // STATE
 // ============================================
 let gamification = {
-  xp: 0,
-  level: 1,
-  streak: 0,
-  bestStreak: 0,
-  totalCompleted: 0,
-  perfectScores: 0,
-  lastPlayDate: null,
+  xp: 0, level: 1, streak: 0, bestStreak: 0,
+  totalCompleted: 0, perfectScores: 0, lastPlayDate: null,
 };
 
 let currentQuiz = null;
-let currentQuestionIndex = 0;
-let currentAnswers = [];
+let quizQuestions = [];
+let stepIndex = -1;
+let quizScore = { correct: 0, total: 0 };
+let sessionComplete = false;
 let chatContext = null;
 
 // Glossaire local
 const GLOSSARY = {
-  phishing: {
-    term: 'Phishing (Hameçonnage)',
-    definition: "Technique de fraude consistant à usurper l'identité d'un organisme de confiance pour inciter la victime à révéler des informations sensibles.",
-    example: "Un email imitant votre banque vous demandant de 'vérifier' vos identifiants via un lien.",
-    tips: ["Vérifiez toujours l'adresse de l'expéditeur", 'Ne cliquez jamais sur un lien suspect', 'Signalez les emails douteux à votre équipe IT'],
-  },
-  ransomware: {
-    term: 'Ransomware (Rançongiciel)',
-    definition: 'Logiciel malveillant qui chiffre vos fichiers et exige une rançon pour les débloquer.',
-    example: 'Un fichier joint dans un email déclenche le chiffrement de tous vos documents.',
-    tips: ['Faites des sauvegardes régulières', 'Ne payez jamais la rançon', 'Maintenez vos logiciels à jour'],
-  },
-  vpn: {
-    term: 'VPN (Virtual Private Network)',
-    definition: 'Réseau privé virtuel qui crée un tunnel chiffré entre votre appareil et Internet.',
-    example: "En télétravail depuis un café, le VPN chiffre votre connexion pour empêcher l'interception.",
-    tips: ['Activez toujours le VPN en Wi-Fi public', 'Utilisez le VPN de votre entreprise'],
-  },
-  malware: {
-    term: 'Malware (Logiciel malveillant)',
-    definition: "Terme générique désignant tout logiciel conçu pour endommager ou accéder de manière non autorisée à un système.",
-    example: 'Un programme depuis un site non officiel installe un keylogger enregistrant vos frappes.',
-    tips: ['Téléchargez uniquement depuis des sources officielles', 'Gardez votre antivirus actif'],
-  },
-  '2fa': {
-    term: 'Authentification à deux facteurs (2FA)',
-    definition: "Méthode de sécurité qui requiert deux formes d'identification pour accéder à un compte.",
-    example: 'Après votre mot de passe, une app génère un code temporaire à 6 chiffres.',
-    tips: ['Activez le 2FA sur tous vos comptes', "Préférez une app authenticator aux SMS"],
-  },
-  social_engineering: {
-    term: 'Ingénierie sociale',
-    definition: 'Technique de manipulation psychologique pour obtenir des informations confidentielles.',
-    example: "Quelqu'un se fait passer pour le support IT et demande votre mot de passe.",
-    tips: ['Ne communiquez jamais vos mots de passe par téléphone', "Vérifiez l'identité de votre interlocuteur"],
-  },
-  rgpd: {
-    term: 'RGPD',
-    definition: 'Réglementation européenne encadrant la collecte et le traitement des données personnelles.',
-    example: 'Un site web doit obtenir votre consentement avant de placer des cookies de suivi.',
-    tips: ['Collectez uniquement les données nécessaires', "Informez les utilisateurs de l'usage de leurs données"],
-  },
-  shadow_it: {
-    term: 'Shadow IT',
-    definition: "Utilisation de logiciels ou services non approuvés par le service informatique de l'entreprise.",
-    example: "Un employé utilise Dropbox personnel pour partager des documents d'entreprise.",
-    tips: ['Utilisez uniquement les outils approuvés', 'Signalez vos besoins au service IT'],
-  },
-  firewall: {
-    term: 'Firewall (Pare-feu)',
-    definition: 'Système de sécurité réseau qui surveille et contrôle le trafic selon des règles prédéfinies.',
-    example: "Le pare-feu bloque les connexions provenant d'adresses IP suspectes.",
-    tips: ['Ne désactivez jamais votre pare-feu', 'Gardez-le à jour'],
-  },
-  zero_trust: {
-    term: 'Zero Trust',
-    definition: "Modèle de sécurité : ne jamais faire confiance, toujours vérifier. Chaque accès est authentifié.",
-    example: "Même sur le réseau interne, un employé doit s'authentifier pour chaque application.",
-    tips: ['Adoptez le principe du moindre privilège', 'Vérifiez chaque accès'],
-  },
-  dlp: {
-    term: 'DLP (Data Loss Prevention)',
-    definition: "Ensemble de technologies empêchant la fuite de données sensibles hors de l'organisation.",
-    example: "Un email contenant un numéro de carte bancaire est bloqué automatiquement avant l'envoi.",
-    tips: ['Classifiez vos données sensibles', 'Formez vos employés aux bonnes pratiques'],
-  },
-  siem: {
-    term: 'SIEM (Security Information and Event Management)',
-    definition: "Solution centralisant les logs de sécurité pour détecter les menaces en temps réel.",
-    example: "Le SIEM détecte 50 tentatives de connexion échouées en 2 minutes sur un même compte.",
-    tips: ['Centralisez tous vos logs', 'Configurez des alertes intelligentes'],
-  },
+  phishing: { term: 'Phishing (Hameçonnage)', definition: "Technique de fraude consistant à usurper l'identité d'un organisme de confiance pour inciter la victime à révéler des informations sensibles.", example: "Un email imitant votre banque vous demandant de 'vérifier' vos identifiants via un lien.", tips: ["Vérifiez toujours l'adresse de l'expéditeur", 'Ne cliquez jamais sur un lien suspect', 'Signalez les emails douteux à votre équipe IT'] },
+  ransomware: { term: 'Ransomware (Rançongiciel)', definition: 'Logiciel malveillant qui chiffre vos fichiers et exige une rançon pour les débloquer.', example: 'Un fichier joint dans un email déclenche le chiffrement de tous vos documents.', tips: ['Faites des sauvegardes régulières', 'Ne payez jamais la rançon', 'Maintenez vos logiciels à jour'] },
+  vpn: { term: 'VPN (Virtual Private Network)', definition: 'Réseau privé virtuel qui crée un tunnel chiffré entre votre appareil et Internet.', example: "En télétravail depuis un café, le VPN chiffre votre connexion pour empêcher l'interception.", tips: ['Activez toujours le VPN en Wi-Fi public', 'Utilisez le VPN de votre entreprise'] },
+  malware: { term: 'Malware (Logiciel malveillant)', definition: "Terme générique désignant tout logiciel conçu pour endommager ou accéder de manière non autorisée à un système.", example: 'Un programme depuis un site non officiel installe un keylogger enregistrant vos frappes.', tips: ['Téléchargez uniquement depuis des sources officielles', 'Gardez votre antivirus actif'] },
+  '2fa': { term: 'Authentification à deux facteurs (2FA)', definition: "Méthode de sécurité qui requiert deux formes d'identification pour accéder à un compte.", example: 'Après votre mot de passe, une app génère un code temporaire à 6 chiffres.', tips: ['Activez le 2FA sur tous vos comptes', "Préférez une app authenticator aux SMS"] },
+  social_engineering: { term: 'Ingénierie sociale', definition: 'Technique de manipulation psychologique pour obtenir des informations confidentielles.', example: "Quelqu'un se fait passer pour le support IT et demande votre mot de passe.", tips: ['Ne communiquez jamais vos mots de passe par téléphone', "Vérifiez l'identité de votre interlocuteur"] },
+  rgpd: { term: 'RGPD', definition: 'Réglementation européenne encadrant la collecte et le traitement des données personnelles.', example: 'Un site web doit obtenir votre consentement avant de placer des cookies de suivi.', tips: ['Collectez uniquement les données nécessaires', "Informez les utilisateurs de l'usage de leurs données"] },
+  shadow_it: { term: 'Shadow IT', definition: "Utilisation de logiciels ou services non approuvés par le service informatique de l'entreprise.", example: "Un employé utilise Dropbox personnel pour partager des documents d'entreprise.", tips: ['Utilisez uniquement les outils approuvés', 'Signalez vos besoins au service IT'] },
+  firewall: { term: 'Firewall (Pare-feu)', definition: 'Système de sécurité réseau qui surveille et contrôle le trafic selon des règles prédéfinies.', example: "Le pare-feu bloque les connexions provenant d'adresses IP suspectes.", tips: ['Ne désactivez jamais votre pare-feu', 'Gardez-le à jour'] },
+  zero_trust: { term: 'Zero Trust', definition: "Modèle de sécurité : ne jamais faire confiance, toujours vérifier. Chaque accès est authentifié.", example: "Même sur le réseau interne, un employé doit s'authentifier pour chaque application.", tips: ['Adoptez le principe du moindre privilège', 'Vérifiez chaque accès'] },
+  dlp: { term: 'DLP (Data Loss Prevention)', definition: "Ensemble de technologies empêchant la fuite de données sensibles hors de l'organisation.", example: "Un email contenant un numéro de carte bancaire est bloqué automatiquement avant l'envoi.", tips: ['Classifiez vos données sensibles', 'Formez vos employés aux bonnes pratiques'] },
+  siem: { term: 'SIEM (Security Information and Event Management)', definition: "Solution centralisant les logs de sécurité pour détecter les menaces en temps réel.", example: "Le SIEM détecte 50 tentatives de connexion échouées en 2 minutes sur un même compte.", tips: ['Centralisez tous vos logs', 'Configurez des alertes intelligentes'] },
 };
-
 const GLOSSARY_TERMS_LIST = Object.keys(GLOSSARY);
 
 // ============================================
@@ -170,12 +136,8 @@ async function saveGamification() {
 function updateStreak() {
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-
   if (gamification.lastPlayDate === today) return;
-  if (gamification.lastPlayDate === yesterday) {
-    // Streak continues (will be incremented on quiz complete)
-  } else if (gamification.lastPlayDate && gamification.lastPlayDate !== today) {
-    // Streak broken
+  if (gamification.lastPlayDate && gamification.lastPlayDate !== today && gamification.lastPlayDate !== yesterday) {
     gamification.streak = 0;
   }
 }
@@ -191,7 +153,6 @@ function getLevelInfo(xp) {
   const xpInLevel = xp - current.xpRequired;
   const xpForNext = next ? next.xpRequired - current.xpRequired : 0;
   const pct = next ? Math.min(100, Math.round((xpInLevel / xpForNext) * 100)) : 100;
-
   return { ...current, next, xpInLevel, xpForNext, pct };
 }
 
@@ -200,14 +161,9 @@ function addXP(amount) {
   gamification.xp += amount;
   gamification.level = getLevelInfo(gamification.xp).level;
   const newLevel = gamification.level;
-
   updateStatsDisplay();
   showXPPopup(amount);
-
-  if (newLevel > oldLevel) {
-    setTimeout(() => showLevelUp(newLevel), 800);
-  }
-
+  if (newLevel > oldLevel) setTimeout(() => showLevelUp(newLevel), 800);
   saveGamification();
 }
 
@@ -216,7 +172,7 @@ function showXPPopup(amount) {
   popup.querySelector('.xp-popup-text').textContent = `+${amount} XP`;
   popup.classList.remove('hidden');
   popup.classList.remove('show');
-  void popup.offsetWidth; // reflow
+  void popup.offsetWidth;
   popup.classList.add('show');
   setTimeout(() => popup.classList.add('hidden'), 1600);
 }
@@ -225,12 +181,7 @@ function showLevelUp(level) {
   const info = LEVELS.find((l) => l.level === level);
   const overlay = document.createElement('div');
   overlay.className = 'level-up-overlay';
-  overlay.innerHTML = `
-    <div class="level-up-content">
-      <div class="level-emoji">🎖️</div>
-      <h2>Niveau ${level} !</h2>
-      <p>${info?.title || ''}</p>
-    </div>`;
+  overlay.innerHTML = `<div class="level-up-content"><div class="level-emoji">🎖️</div><h2>Niveau ${level} !</h2><p>${info?.title || ''}</p></div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', () => overlay.remove());
   setTimeout(() => overlay.remove(), 3000);
@@ -247,11 +198,9 @@ function setupOnboarding() {
   btn.addEventListener('click', async () => {
     const code = input.value.trim();
     if (!code) return;
-
     btn.disabled = true;
     btn.querySelector('span').textContent = 'Activation...';
     error.classList.add('hidden');
-
     try {
       await api.activate(code);
       showScreen('main');
@@ -264,13 +213,11 @@ function setupOnboarding() {
     }
   });
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') btn.click();
-  });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') btn.click(); });
 }
 
 // ============================================
-// MAIN SCREEN INIT
+// MAIN SCREEN
 // ============================================
 function initMainScreen() {
   updateStatsDisplay();
@@ -283,37 +230,27 @@ function initMainScreen() {
 
 function updateStatsDisplay() {
   const info = getLevelInfo(gamification.xp);
-
   document.getElementById('stat-xp').textContent = gamification.xp;
   document.getElementById('stat-streak').textContent = gamification.streak;
   document.getElementById('stat-level').textContent = info.level;
   document.getElementById('stat-completed').textContent = gamification.totalCompleted;
-
   const fill = document.getElementById('xp-bar-fill');
   fill.style.width = `${info.pct}%`;
-
   const label = document.getElementById('xp-bar-label');
-  if (info.next) {
-    label.textContent = `${info.xpInLevel} / ${info.xpForNext} XP`;
-  } else {
-    label.textContent = 'MAX';
-  }
+  label.textContent = info.next ? `${info.xpInLevel} / ${info.xpForNext} XP` : 'MAX';
 }
 
 // ============================================
-// TABS
+// TABS NAVIGATION
 // ============================================
 function setupTabs() {
   document.querySelectorAll('.nav-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.nav-tab').forEach((t) => t.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach((p) => p.classList.add('hidden'));
-
       tab.classList.add('active');
-      const target = tab.dataset.tab;
-      document.getElementById(`tab-${target}`).classList.remove('hidden');
-
-      if (target === 'progress') loadProgress();
+      document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+      if (tab.dataset.tab === 'progress') loadProgress();
     });
   });
 }
@@ -326,33 +263,22 @@ function setupSettings() {
     document.getElementById('modal-settings').classList.remove('hidden');
     loadSettingsValues();
   });
-
   document.getElementById('btn-close-settings').addEventListener('click', () => {
     document.getElementById('modal-settings').classList.add('hidden');
   });
-
   document.querySelector('.modal-backdrop')?.addEventListener('click', () => {
     document.getElementById('modal-settings').classList.add('hidden');
   });
-
   document.getElementById('btn-save-settings').addEventListener('click', async () => {
     const url = document.getElementById('setting-url').value.replace(/\/$/, '');
     const code = document.getElementById('setting-code').value.trim();
-
     await chrome.storage.local.set({
-      config: {
-        ...((await chrome.storage.local.get('config')).config || {}),
-        backendUrl: url,
-        activationCode: code,
-      },
+      config: { ...((await chrome.storage.local.get('config')).config || {}), backendUrl: url, activationCode: code },
     });
-
     api.baseUrl = url;
     api.activationCode = code;
-
     document.getElementById('modal-settings').classList.add('hidden');
   });
-
   document.getElementById('btn-logout').addEventListener('click', async () => {
     await api.logout();
     gamification = { xp: 0, level: 1, streak: 0, bestStreak: 0, totalCompleted: 0, perfectScores: 0, lastPlayDate: null };
@@ -370,8 +296,70 @@ async function loadSettingsValues() {
 }
 
 // ============================================
-// QUIZ
+// QUIZ - BOT CONVERSATIONNEL
 // ============================================
+const chatContainer = () => document.getElementById('quiz-container');
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+function addBotMsg(text, style = '', options = null, delay = 0) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const container = chatContainer();
+      const msgEl = document.createElement('div');
+      msgEl.className = 'chat-msg bot-msg animate-in';
+
+      let html = `<div class="chat-avatar bot-avatar">🛡️</div><div class="chat-bubble-wrap">`;
+
+      if (text) {
+        const styleClass = style === 'success' ? 'bubble-success'
+          : style === 'danger' ? 'bubble-danger'
+          : style === 'warning' ? 'bubble-warning'
+          : style === 'info' ? 'bubble-info'
+          : style === 'advice' ? 'bubble-advice'
+          : '';
+        html += `<div class="chat-bubble bot-bubble ${styleClass}">${formatText(text)}</div>`;
+      }
+
+      if (options) {
+        html += `<div class="chat-options">`;
+        options.forEach((opt, i) => {
+          html += `<button class="chat-option-btn" data-idx="${i}">${escapeHtml(opt)}</button>`;
+        });
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+      msgEl.innerHTML = html;
+      container.appendChild(msgEl);
+      scrollChat();
+      resolve(msgEl);
+    }, delay);
+  });
+}
+
+function addUserMsg(text) {
+  const container = chatContainer();
+  const msgEl = document.createElement('div');
+  msgEl.className = 'chat-msg user-msg animate-in';
+  msgEl.innerHTML = `<div class="chat-bubble-wrap"><div class="chat-bubble user-bubble">${escapeHtml(text)}</div></div><div class="chat-avatar user-avatar">👤</div>`;
+  container.appendChild(msgEl);
+
+  // Désactiver les boutons précédents
+  container.querySelectorAll('.chat-options').forEach((opts) => {
+    opts.querySelectorAll('.chat-option-btn').forEach((btn) => {
+      btn.disabled = true;
+      btn.classList.add('disabled');
+    });
+  });
+
+  scrollChat();
+}
+
+function scrollChat() {
+  const container = chatContainer();
+  requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
+}
+
 async function loadQuiz() {
   const loading = document.getElementById('quiz-loading');
   const container = document.getElementById('quiz-container');
@@ -380,15 +368,40 @@ async function loadQuiz() {
 
   loading.classList.remove('hidden');
   container.classList.add('hidden');
+  container.innerHTML = '';
   error.classList.add('hidden');
   result.classList.add('hidden');
+
+  stepIndex = -1;
+  quizScore = { correct: 0, total: 0 };
+  sessionComplete = false;
 
   try {
     const exercise = await api.getTodayQuiz();
     currentQuiz = exercise;
-    renderQuiz(exercise);
+    quizQuestions = extractQuestions(exercise);
+
     loading.classList.add('hidden');
     container.classList.remove('hidden');
+
+    const topicEmoji = TOPIC_EMOJIS[exercise.topic?.toLowerCase()] || '🛡️';
+    const courseIntro = exercise.payloadJSON?.courseIntro || exercise.description || `Aujourd'hui on va parler de : ${exercise.topic}`;
+
+    // Intro du bot
+    await addBotMsg(`${topicEmoji} **${exercise.topic}**\n\n${courseIntro}`, '', null, 400);
+
+    // Bouton pour commencer
+    const startMsg = await addBotMsg(
+      `Tu es prêt ? ${quizQuestions.length} questions t'attendent !`,
+      '',
+      ["C'est compris, on y va ! 🚀"],
+      800
+    );
+
+    startMsg.querySelector('.chat-option-btn').addEventListener('click', () => {
+      handleUserAction(undefined, "C'est compris, on y va ! 🚀");
+    });
+
   } catch (err) {
     console.error('Quiz load error:', err);
     loading.classList.add('hidden');
@@ -398,251 +411,154 @@ async function loadQuiz() {
   document.getElementById('btn-retry-quiz')?.addEventListener('click', loadQuiz, { once: true });
 }
 
-function renderQuiz(exercise) {
-  const payload = exercise.payloadJSON || {};
-  const questions = extractQuestions(exercise);
-  const courseIntro = payload.courseIntro || exercise.description || `Formation : ${exercise.topic}`;
-
-  const topicEmojis = {
-    phishing: '🎣', 'mots de passe': '🔐', ransomware: '💀',
-    'ingénierie sociale': '🎭', vpn: '🔒', malware: '🦠',
-    dlp: '🛡️', rgpd: '📋', 'shadow it': '👻',
-  };
-  const emoji = topicEmojis[exercise.topic?.toLowerCase()] || '🛡️';
-
-  // Reset state for step-by-step quiz
-  currentQuestionIndex = 0;
-  currentAnswers = [];
-
-  // Show intro first, then step through questions one by one
-  const container = document.getElementById('quiz-container');
-  container.innerHTML = `
-    <div class="quiz-card">
-      <div class="quiz-card-header">
-        <div class="quiz-card-emoji">${emoji}</div>
-        <div class="quiz-card-info">
-          <h3>${exercise.topic || 'Défi du jour'}</h3>
-          <div class="quiz-card-meta">
-            <span>📚 ${questions.length} question${questions.length > 1 ? 's' : ''}</span>
-            <span>⚡ ${translateLevel(exercise.difficulty)}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="quiz-intro-text">${courseIntro}</div>
-    <div class="quiz-submit">
-      <button id="btn-start-quiz" class="btn-primary">Commencer le défi</button>
-    </div>`;
-
-  document.getElementById('btn-start-quiz').addEventListener('click', () => {
-    renderQuestion(exercise, questions, 0);
-  });
-}
-
-function renderQuestion(exercise, questions, index) {
-  const q = questions[index];
-  const total = questions.length;
-  const container = document.getElementById('quiz-container');
-  const progressPct = Math.round(((index) / total) * 100);
-
-  container.innerHTML = `
-    <div class="quiz-progress-bar">
-      <div class="quiz-progress-fill" style="width: ${progressPct}%"></div>
-    </div>
-    <div class="quiz-progress-text">Question ${index + 1} / ${total}</div>
-    <div class="question-block">
-      ${q.context ? `<div class="question-context">📋 ${q.context}</div>` : ''}
-      <div class="question-text">${q.text}</div>
-      <div id="options-container">
-        ${q.options.map((opt, optIdx) => `
-          <button class="option-btn" data-idx="${optIdx}">
-            <span class="option-letter">${String.fromCharCode(65 + optIdx)}</span>
-            <span class="option-text">${opt}</span>
-          </button>
-        `).join('')}
-      </div>
-    </div>`;
-
-  // Handle option selection
-  const optionBtns = container.querySelectorAll('.option-btn');
-  optionBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const selectedIdx = parseInt(btn.dataset.idx, 10);
-      const correctIdx = q.correctAnswer ?? -1;
-
-      // Disable all buttons
-      optionBtns.forEach((b) => {
-        b.disabled = true;
-        b.classList.add('disabled');
-      });
-
-      // Show correct/incorrect
-      if (selectedIdx === correctIdx) {
-        btn.classList.add('correct');
-      } else {
-        btn.classList.add('incorrect');
-        // Highlight the correct answer
-        optionBtns.forEach((b) => {
-          if (parseInt(b.dataset.idx, 10) === correctIdx) {
-            b.classList.add('correct');
-          }
-        });
-      }
-
-      // Save answer
-      currentAnswers.push({ questionId: q.id, answer: selectedIdx });
-
-      // Show feedback if available
-      const payload = exercise.payloadJSON || {};
-      const originalQ = (payload.questions || [])[index] || {};
-      let feedbackHtml = '';
-      if (selectedIdx === correctIdx && originalQ.feedbackCorrect) {
-        feedbackHtml = `<div class="question-feedback correct-feedback">✅ ${originalQ.feedbackCorrect}</div>`;
-      } else if (selectedIdx !== correctIdx && originalQ.feedbackIncorrect) {
-        feedbackHtml = `<div class="question-feedback incorrect-feedback">❌ ${originalQ.feedbackIncorrect}</div>`;
-      }
-
-      // Show key takeaway
-      if (originalQ.keyTakeaway) {
-        feedbackHtml += `<div class="question-takeaway">💡 ${originalQ.keyTakeaway}</div>`;
-      }
-
-      // Add next button
-      const isLast = index === total - 1;
-      const nextHtml = `
-        ${feedbackHtml}
-        <div class="quiz-submit" style="margin-top: 12px;">
-          <button id="btn-next-question" class="btn-primary">
-            ${isLast ? 'Voir mes résultats' : 'Question suivante →'}
-          </button>
-        </div>`;
-
-      container.querySelector('.question-block').insertAdjacentHTML('beforeend', nextHtml);
-
-      document.getElementById('btn-next-question').addEventListener('click', () => {
-        if (isLast) {
-          submitQuiz();
-        } else {
-          renderQuestion(exercise, questions, index + 1);
-        }
-      });
-    });
-  });
-}
-
-async function submitQuiz() {
+async function handleUserAction(optionIndex, optionText) {
   if (!currentQuiz) return;
 
-  const questions = extractQuestions(currentQuiz);
-  const container = document.getElementById('quiz-container');
-  container.innerHTML = `
-    <div class="center-state">
-      <div class="loader"></div>
-      <p>Calcul de ton score...</p>
-    </div>`;
+  addUserMsg(optionText || 'Option sélectionnée');
 
-  try {
-    const result = await api.submitExercise(String(currentQuiz.id), currentAnswers);
-    renderResult(result, questions.length);
+  // Session terminée → recommencer ou quitter
+  if (sessionComplete) {
+    if (optionText?.includes('demain')) {
+      await addBotMsg("Parfait ! 📅 À demain pour la suite de ta formation. Tu fais du super boulot ! 💪", '', null, 500);
+      sessionComplete = false;
+    } else {
+      await addBotMsg("Super motivation ! 🔥 Je te prépare un nouveau module...", '', null, 500);
+      setTimeout(() => {
+        sessionComplete = false;
+        stepIndex = -1;
+        chatContainer().innerHTML = '';
+        loadQuiz();
+      }, 1500);
+    }
+    return;
+  }
 
-    // Gamification
-    const score = result.score ?? 0;
-    const maxScore = result.maxScore ?? questions.length;
-    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  const questions = quizQuestions;
 
-    let xpEarned = XP_PER_QUIZ + (score * XP_PER_CORRECT);
+  if (stepIndex === -1) {
+    // Démarrer les questions
+    stepIndex = 0;
+    await addBotMsg("C'est parti ! 🎯 Je vais te poser quelques questions.", '', null, 400);
+    setTimeout(() => showBotQuestion(questions[0]), 800);
 
-    // Streak
-    const today = new Date().toISOString().split('T')[0];
-    if (gamification.lastPlayDate !== today) {
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      if (gamification.lastPlayDate === yesterday) {
-        gamification.streak += 1;
-      } else {
-        gamification.streak = 1;
+  } else if (stepIndex < questions.length) {
+    // Traiter la réponse
+    const q = questions[stepIndex];
+    const originalQ = (currentQuiz.payloadJSON?.questions || [])[stepIndex] || {};
+    const isCorrect = optionIndex === (originalQ.correctAnswer ?? q.correctAnswer);
+
+    quizScore.correct += isCorrect ? 1 : 0;
+    quizScore.total += 1;
+
+    // Réaction
+    const reaction = pick(isCorrect ? ENCOURAGEMENT.correct : ENCOURAGEMENT.incorrect);
+    await addBotMsg(reaction, isCorrect ? 'success' : 'danger', null, 400);
+
+    // Feedback
+    const feedback = isCorrect
+      ? (originalQ.feedbackCorrect || "Bravo, c'est la bonne réponse !")
+      : (originalQ.feedbackIncorrect || "Ce n'est pas la bonne réponse. Voyons pourquoi ensemble.");
+    await addBotMsg(feedback, '', null, 800);
+
+    // Conseil / key takeaway
+    if (originalQ.advice) {
+      let adviceHtml = `💡 **En résumé :** ${originalQ.advice.concept || ''}`;
+      if (originalQ.advice.example) adviceHtml += `\n\n📌 *"${originalQ.advice.example}"*`;
+      if (originalQ.advice.advice?.length) {
+        adviceHtml += `\n\n✅ **Les bons réflexes :**\n${originalQ.advice.advice.map((a) => `• ${a}`).join('\n')}`;
       }
-      gamification.lastPlayDate = today;
-      xpEarned += XP_STREAK_BONUS;
+      await addBotMsg(adviceHtml, 'advice', null, 600);
+    } else if (originalQ.keyTakeaway) {
+      await addBotMsg(`💡 **À retenir :** ${originalQ.keyTakeaway}`, 'info', null, 600);
     }
 
-    if (gamification.streak > gamification.bestStreak) {
-      gamification.bestStreak = gamification.streak;
+    // Question suivante ou fin
+    const nextIndex = stepIndex + 1;
+    if (nextIndex < questions.length) {
+      stepIndex = nextIndex;
+      await addBotMsg("Allez, question suivante ! ➡️", '', null, 800);
+      setTimeout(() => showBotQuestion(questions[nextIndex]), 600);
+    } else {
+      // Fin du quiz
+      await finishQuizModule();
     }
-
-    gamification.totalCompleted += 1;
-    if (pct === 100) gamification.perfectScores += 1;
-
-    addXP(xpEarned);
-
-    await chrome.storage.local.set({ lastQuizDate: today });
-  } catch (err) {
-    console.error('Submit error:', err);
-    container.innerHTML = `
-      <div class="center-state">
-        <div class="state-emoji">😕</div>
-        <h3>Erreur</h3>
-        <p>${escapeHtml(err.message)}</p>
-        <button id="btn-retry-submit" class="btn-primary">Réessayer</button>
-      </div>`;
-    document.getElementById('btn-retry-submit')?.addEventListener('click', submitQuiz);
   }
 }
 
-function renderResult(result, totalQuestions) {
-  const score = result.score ?? 0;
-  const maxScore = result.maxScore ?? totalQuestions;
-  const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+async function showBotQuestion(q) {
+  const originalQ = (currentQuiz.payloadJSON?.questions || [])[quizQuestions.indexOf(q)] || q;
 
-  let scoreClass = 'poor';
-  let emoji = '📚';
-  let title = 'Courage !';
-  if (pct >= 90) { scoreClass = 'excellent'; emoji = '🏆'; title = 'Excellent !'; }
-  else if (pct >= 70) { scoreClass = 'good'; emoji = '🎉'; title = 'Bravo !'; }
-  else if (pct >= 50) { scoreClass = 'average'; emoji = '💪'; title = 'Bien joué !'; }
+  // Contexte si disponible
+  if (originalQ.context || q.context) {
+    await addBotMsg(`📋 **Situation :**\n${originalQ.context || q.context}`, 'info', null, 300);
+  }
 
-  const barColor = pct >= 70 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
-  const xpEarned = XP_PER_QUIZ + (score * XP_PER_CORRECT) + (gamification.streak > 0 ? XP_STREAK_BONUS : 0);
+  // La question avec options
+  const questionMsg = await addBotMsg(q.text, '', q.options, 600);
 
-  document.getElementById('quiz-container').classList.add('hidden');
-  const el = document.getElementById('quiz-result');
-  el.classList.remove('hidden');
-
-  el.innerHTML = `
-    <div class="result-card">
-      <div class="result-emoji">${emoji}</div>
-      <div class="result-title">${title}</div>
-      <div class="result-score ${scoreClass}">${pct}%</div>
-      <div class="result-bar">
-        <div class="result-bar-fill" style="width: 0%; background: ${barColor};"></div>
-      </div>
-      <div class="result-detail">${score}/${maxScore} bonnes réponses</div>
-      <div class="result-xp-badge">⚡ +${xpEarned} XP</div>
-      ${gamification.streak > 1 ? `<div class="result-detail">🔥 Série de ${gamification.streak} jours !</div>` : ''}
-      ${result.feedback ? `<div class="result-feedback">${result.feedback}</div>` : ''}
-      <div class="result-actions">
-        <button id="btn-new-quiz" class="btn-primary">Nouveau défi</button>
-        <button id="btn-see-progress" class="btn-secondary">Progrès</button>
-      </div>
-    </div>`;
-
-  // Animate the bar
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      el.querySelector('.result-bar-fill').style.width = `${pct}%`;
+  // Attacher les handlers
+  questionMsg.querySelectorAll('.chat-option-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      handleUserAction(idx, q.options[idx]);
     });
   });
+}
 
-  document.getElementById('btn-new-quiz').addEventListener('click', () => {
-    el.classList.add('hidden');
-    loadQuiz();
-  });
+async function finishQuizModule() {
+  const pct = quizScore.total > 0 ? Math.round((quizScore.correct / quizScore.total) * 100) : 0;
+  const isGood = pct >= 70;
 
-  document.getElementById('btn-see-progress').addEventListener('click', () => {
-    document.querySelectorAll('.nav-tab').forEach((t) => t.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach((p) => p.classList.add('hidden'));
-    document.querySelector('[data-tab="progress"]').classList.add('active');
-    document.getElementById('tab-progress').classList.remove('hidden');
-    loadProgress();
+  await addBotMsg(pick(ENCOURAGEMENT.completion), 'success', null, 600);
+
+  await addBotMsg(
+    `📊 **Ton score :** ${quizScore.correct}/${quizScore.total} (${pct}%)\n\n${
+      isGood ? "🏆 Excellent ! Tu maîtrises bien ce sujet !" : "📚 Continue de t'entraîner, tu progresses !"
+    }`,
+    isGood ? 'success' : '',
+    null,
+    800
+  );
+
+  // Gamification
+  let xpEarned = XP_PER_QUIZ + (quizScore.correct * XP_PER_CORRECT);
+  const today = new Date().toISOString().split('T')[0];
+  if (gamification.lastPlayDate !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    gamification.streak = gamification.lastPlayDate === yesterday ? gamification.streak + 1 : 1;
+    gamification.lastPlayDate = today;
+    xpEarned += XP_STREAK_BONUS;
+  }
+  if (gamification.streak > gamification.bestStreak) gamification.bestStreak = gamification.streak;
+  gamification.totalCompleted += 1;
+  if (pct === 100) gamification.perfectScores += 1;
+  addXP(xpEarned);
+  await chrome.storage.local.set({ lastQuizDate: today });
+
+  // Soumettre au backend
+  try {
+    const answers = quizQuestions.map((q, i) => ({
+      questionId: q.id,
+      answer: (currentQuiz.payloadJSON?.questions || [])[i]?.correctAnswer ?? 0,
+    }));
+    await api.submitExercise(String(currentQuiz.id), answers);
+  } catch (e) {
+    console.error('Submit error:', e);
+  }
+
+  // Proposer de continuer
+  sessionComplete = true;
+  const endMsg = await addBotMsg(
+    "Tu veux continuer avec un autre module ou on reprend demain ? 🤔",
+    '',
+    ["Encore un module ! 🚀", "On reprend demain 📅"],
+    1200
+  );
+
+  endMsg.querySelectorAll('.chat-option-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      handleUserAction(undefined, btn.textContent);
+    });
   });
 }
 
@@ -668,21 +584,14 @@ function setupGlossary() {
       document.getElementById('glossary-terms').classList.remove('hidden');
       return;
     }
-
     const match = GLOSSARY_TERMS_LIST.find((t) => {
       const entry = GLOSSARY[t];
       return t.includes(q) || entry.term.toLowerCase().includes(q) || entry.definition.toLowerCase().includes(q);
     });
-
     if (match) {
       showGlossaryTerm(match);
     } else {
-      document.getElementById('glossary-result').innerHTML = `
-        <div class="center-state">
-          <div class="state-emoji">🔍</div>
-          <h3>Aucun résultat</h3>
-          <p>Essayez un autre terme</p>
-        </div>`;
+      document.getElementById('glossary-result').innerHTML = `<div class="center-state"><div class="state-emoji">🔍</div><h3>Aucun résultat</h3><p>Essayez un autre terme</p></div>`;
       document.getElementById('glossary-result').classList.remove('hidden');
       document.getElementById('glossary-terms').classList.add('hidden');
     }
@@ -692,24 +601,16 @@ function setupGlossary() {
 function showGlossaryTerm(key) {
   const entry = GLOSSARY[key];
   if (!entry) return;
-
   const el = document.getElementById('glossary-result');
   el.innerHTML = `
     <div class="glossary-card">
-      <h4>${entry.term}</h4>
-      <p>${entry.definition}</p>
+      <h4>${entry.term}</h4><p>${entry.definition}</p>
       <div class="glossary-example">💡 ${entry.example}</div>
-      ${entry.tips ? `
-        <div class="glossary-tips">
-          <strong>Conseils pratiques</strong>
-          <ul>${entry.tips.map((t) => `<li>${t}</li>`).join('')}</ul>
-        </div>` : ''}
+      ${entry.tips ? `<div class="glossary-tips"><strong>Conseils pratiques</strong><ul>${entry.tips.map((t) => `<li>${t}</li>`).join('')}</ul></div>` : ''}
     </div>
     <button class="btn-back" id="btn-glossary-back">← Tous les termes</button>`;
-
   el.classList.remove('hidden');
   document.getElementById('glossary-terms').classList.add('hidden');
-
   document.getElementById('btn-glossary-back').addEventListener('click', () => {
     el.classList.add('hidden');
     document.getElementById('glossary-terms').classList.remove('hidden');
@@ -723,58 +624,27 @@ function showGlossaryTerm(key) {
 function setupChat() {
   const input = document.getElementById('chat-input');
   const btn = document.getElementById('btn-send');
-
-  const send = () => {
-    const msg = input.value.trim();
-    if (!msg) return;
-    input.value = '';
-    sendChatMessage(msg);
-  };
-
+  const send = () => { const msg = input.value.trim(); if (!msg) return; input.value = ''; sendChatMessage(msg); };
   btn.addEventListener('click', send);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') send();
-  });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
 }
 
 async function sendChatMessage(message) {
   const container = document.getElementById('chat-messages');
-
-  // User message
-  container.innerHTML += `
-    <div class="msg msg-user">
-      <div class="msg-avatar">👤</div>
-      <div class="msg-content"><p>${escapeHtml(message)}</p></div>
-    </div>`;
+  container.innerHTML += `<div class="msg msg-user"><div class="msg-avatar">👤</div><div class="msg-content"><p>${escapeHtml(message)}</p></div></div>`;
   container.scrollTop = container.scrollHeight;
-
-  // Loading
   const loadingId = 'chat-loading-' + Date.now();
-  container.innerHTML += `
-    <div class="msg msg-bot" id="${loadingId}">
-      <div class="msg-avatar">🤖</div>
-      <div class="msg-content">
-        <div class="typing-indicator">
-          <span></span><span></span><span></span>
-        </div>
-      </div>
-    </div>`;
+  container.innerHTML += `<div class="msg msg-bot" id="${loadingId}"><div class="msg-avatar">🤖</div><div class="msg-content"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
   container.scrollTop = container.scrollHeight;
-
   try {
     const res = await api.chatWithAI(message, chatContext);
     const loadingEl = document.getElementById(loadingId);
-    if (loadingEl) {
-      loadingEl.querySelector('.msg-content').innerHTML = `<p>${formatChatResponse(res.response)}</p>`;
-    }
+    if (loadingEl) loadingEl.querySelector('.msg-content').innerHTML = `<p>${formatChatResponse(res.response)}</p>`;
     if (res.context) chatContext = res.context;
   } catch (err) {
     const loadingEl = document.getElementById(loadingId);
-    if (loadingEl) {
-      loadingEl.querySelector('.msg-content').innerHTML = `<p style="color:var(--danger)">Erreur : ${escapeHtml(err.message)}</p>`;
-    }
+    if (loadingEl) loadingEl.querySelector('.msg-content').innerHTML = `<p style="color:var(--danger)">Erreur : ${escapeHtml(err.message)}</p>`;
   }
-
   container.scrollTop = container.scrollHeight;
 }
 
@@ -785,19 +655,16 @@ async function loadProgress() {
   const loading = document.getElementById('progress-loading');
   const content = document.getElementById('progress-content');
   const error = document.getElementById('progress-error');
-
   loading.classList.remove('hidden');
   content.classList.add('hidden');
   error.classList.add('hidden');
-
   try {
     const progress = await api.getUserProgress();
     renderProgress(progress);
     loading.classList.add('hidden');
     content.classList.remove('hidden');
   } catch {
-    // Fallback: show local gamification data
-    renderLocalProgress();
+    renderProgress({ averageScore: 0 });
     loading.classList.add('hidden');
     content.classList.remove('hidden');
   }
@@ -806,57 +673,30 @@ async function loadProgress() {
 function renderProgress(serverData) {
   const info = getLevelInfo(gamification.xp);
   const avgScore = Math.round(serverData?.averageScore || 0);
-
   const earnedBadges = BADGES.filter((b) => b.condition(gamification));
   const lockedBadges = BADGES.filter((b) => !b.condition(gamification));
 
   document.getElementById('progress-content').innerHTML = `
     <div class="progress-card full-width" style="text-align:center;">
       <div class="level-badge">🎖️ Niveau ${info.level} - ${info.title}</div>
-      <div class="progress-bar-track" style="margin-top:12px;">
-        <div class="progress-bar-fill" style="width:${info.pct}%;"></div>
-      </div>
+      <div class="progress-bar-track" style="margin-top:12px;"><div class="progress-bar-fill" style="width:${info.pct}%;"></div></div>
       <div class="progress-card-sub" style="margin-top:6px;">
         ${info.next ? `${info.xpInLevel} / ${info.xpForNext} XP pour niveau ${info.next.level}` : 'Niveau maximum atteint !'}
       </div>
     </div>
-
     <div class="progress-grid">
-      <div class="progress-card">
-        <div class="progress-card-label">XP Total</div>
-        <div class="progress-card-value">${gamification.xp}</div>
-      </div>
-      <div class="progress-card">
-        <div class="progress-card-label">Série actuelle</div>
-        <div class="progress-card-value" style="color:var(--warning)">🔥 ${gamification.streak}</div>
-        <div class="progress-card-sub">Record : ${gamification.bestStreak} jours</div>
-      </div>
-      <div class="progress-card">
-        <div class="progress-card-label">Défis terminés</div>
-        <div class="progress-card-value">${gamification.totalCompleted}</div>
-      </div>
-      <div class="progress-card">
-        <div class="progress-card-label">Score moyen</div>
-        <div class="progress-card-value ${avgScore >= 70 ? 'success' : 'warning'}">${avgScore}%</div>
-      </div>
+      <div class="progress-card"><div class="progress-card-label">XP Total</div><div class="progress-card-value">${gamification.xp}</div></div>
+      <div class="progress-card"><div class="progress-card-label">Série actuelle</div><div class="progress-card-value" style="color:var(--warning)">🔥 ${gamification.streak}</div><div class="progress-card-sub">Record : ${gamification.bestStreak} jours</div></div>
+      <div class="progress-card"><div class="progress-card-label">Défis terminés</div><div class="progress-card-value">${gamification.totalCompleted}</div></div>
+      <div class="progress-card"><div class="progress-card-label">Score moyen</div><div class="progress-card-value ${avgScore >= 70 ? 'success' : 'warning'}">${avgScore}%</div></div>
     </div>
-
     <div class="badges-section">
       <h4>Badges (${earnedBadges.length}/${BADGES.length})</h4>
       <div class="badges-grid">
-        ${earnedBadges.map((b) => `
-          <div class="badge-item earned">
-            <span class="badge-emoji">${b.emoji}</span>
-            <span class="badge-name">${b.name}</span>
-          </div>`).join('')}
-        ${lockedBadges.map((b) => `
-          <div class="badge-item locked">
-            <span class="badge-emoji">🔒</span>
-            <span class="badge-name">${b.name}</span>
-          </div>`).join('')}
+        ${earnedBadges.map((b) => `<div class="badge-item earned"><span class="badge-emoji">${b.emoji}</span><span class="badge-name">${b.name}</span></div>`).join('')}
+        ${lockedBadges.map((b) => `<div class="badge-item locked"><span class="badge-emoji">🔒</span><span class="badge-name">${b.name}</span></div>`).join('')}
       </div>
     </div>
-
     <div style="text-align:center;margin-top:16px;">
       <button id="btn-progress-quiz" class="btn-primary">Continuer ma formation</button>
     </div>`;
@@ -870,10 +710,6 @@ function renderProgress(serverData) {
   });
 }
 
-function renderLocalProgress() {
-  renderProgress({ averageScore: 0 });
-}
-
 // ============================================
 // HELPERS
 // ============================================
@@ -885,20 +721,15 @@ function extractQuestions(exercise) {
       text: q.text || q.question || '',
       options: q.options || [],
       context: q.context,
+      correctAnswer: q.correctAnswer,
     }));
   }
-  if (payload.question) {
-    return [{ id: 'q1', text: payload.question, options: payload.options || [] }];
-  }
+  if (payload.question) return [{ id: 'q1', text: payload.question, options: payload.options || [] }];
   return [];
 }
 
 function translateLevel(level) {
-  const map = {
-    BEGINNER: 'Débutant', INTERMEDIATE: 'Intermédiaire',
-    ADVANCED: 'Avancé', EXPERT: 'Expert',
-  };
-  return map[level] || level || 'Débutant';
+  return { BEGINNER: 'Débutant', INTERMEDIATE: 'Intermédiaire', ADVANCED: 'Avancé', EXPERT: 'Expert' }[level] || level || 'Débutant';
 }
 
 function escapeHtml(text) {
@@ -907,8 +738,13 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-function formatChatResponse(text) {
+function formatText(text) {
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br>');
+}
+
+function formatChatResponse(text) {
+  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 }

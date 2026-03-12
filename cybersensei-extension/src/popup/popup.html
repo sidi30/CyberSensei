@@ -101,13 +101,13 @@
       <!-- Content area -->
       <main class="main-content">
 
-        <!-- QUIZ TAB -->
+        <!-- QUIZ TAB - Bot conversationnel -->
         <section id="tab-quiz" class="tab-panel active">
           <div id="quiz-loading" class="center-state">
             <div class="loader"></div>
-            <p>Chargement de ton défi...</p>
+            <p>Préparation de ton coaching...</p>
           </div>
-          <div id="quiz-container" class="hidden"></div>
+          <div id="quiz-container" class="chat-container hidden"></div>
           <div id="quiz-result" class="hidden"></div>
           <div id="quiz-error" class="hidden">
             <div class="center-state">
@@ -115,6 +115,11 @@
               <h3>Pas de défi disponible</h3>
               <p>Reviens plus tard pour un nouveau challenge !</p>
               <button id="btn-retry-quiz" class="btn-primary">Réessayer</button>
+            </div>
+          </div>
+          <div class="chat-footer">
+            <div class="chat-footer-hint">
+              <span>👆</span> Clique sur une option ci-dessus pour répondre
             </div>
           </div>
         </section>
