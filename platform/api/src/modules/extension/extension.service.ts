@@ -11,9 +11,16 @@ import { Tenant } from '../../entities/tenant.entity';
 import { License, LicenseStatus } from '../../entities/license.entity';
 import { Exercise } from '../../entities/exercise.entity';
 
+// Topics de cybersecurite pour la generation IA
+const CYBER_TOPICS = [
+  'phishing', 'ransomware', 'mots de passe', 'ingenierie sociale',
+  'vpn', 'shadow it', 'rgpd', 'malware', 'dlp', 'sauvegarde',
+];
+
 @Injectable()
 export class ExtensionService {
   private readonly logger = new Logger(ExtensionService.name);
+  private readonly openaiKey: string;
 
   constructor(
     @InjectRepository(Tenant)
@@ -23,7 +30,9 @@ export class ExtensionService {
     @InjectRepository(Exercise)
     private exerciseRepo: Repository<Exercise>,
     private configService: ConfigService,
-  ) {}
+  ) {
+    this.openaiKey = this.configService.get<string>('OPENAI_API_KEY', '');
+  }
 
   /**
    * Activation par code court (CS-XXXXXXXX) ou licenseKey
@@ -31,19 +40,16 @@ export class ExtensionService {
   async activate(code: string) {
     const normalizedCode = code.trim().toUpperCase();
 
-    // 1. Chercher par activationCode (format CS-XXXXXXXX)
     let tenant = await this.tenantRepo.findOne({
       where: { activationCode: normalizedCode, active: true },
     });
 
-    // 2. Fallback: chercher par licenseKey
     if (!tenant) {
       tenant = await this.tenantRepo.findOne({
         where: { licenseKey: normalizedCode, active: true },
       });
     }
 
-    // 3. Fallback: chercher dans les licences
     if (!tenant) {
       const license = await this.licenseRepo.findOne({
         where: { key: normalizedCode, status: LicenseStatus.ACTIVE },
@@ -52,13 +58,13 @@ export class ExtensionService {
 
       if (license) {
         if (license.expiresAt && new Date(license.expiresAt) < new Date()) {
-          throw new BadRequestException("Ce code d'activation a expiré");
+          throw new BadRequestException("Ce code d'activation a expire");
         }
         if (license.maxUsageCount && license.usageCount >= license.maxUsageCount) {
           throw new BadRequestException("Ce code a atteint sa limite d'utilisation");
         }
         if (!license.tenant?.active) {
-          throw new BadRequestException('Le tenant associé est inactif');
+          throw new BadRequestException('Le tenant associe est inactif');
         }
         license.usageCount += 1;
         await this.licenseRepo.save(license);
@@ -67,14 +73,14 @@ export class ExtensionService {
     }
 
     if (!tenant) {
-      throw new BadRequestException("Code d'activation invalide. Vérifiez le code et réessayez.");
+      throw new BadRequestException("Code d'activation invalide.");
     }
 
     const backendUrl = this.configService.get<string>('PUBLIC_BACKEND_URL')
       || this.configService.get<string>('BACKEND_URL')
       || 'http://localhost:3006';
 
-    this.logger.log(`Extension activée pour le tenant: ${tenant.name} (code: ${normalizedCode})`);
+    this.logger.log(`Extension activee pour: ${tenant.name} (code: ${normalizedCode})`);
 
     return {
       backendUrl,
@@ -86,17 +92,34 @@ export class ExtensionService {
   }
 
   /**
-   * Récupérer le quiz du jour pour un tenant
+   * Recuperer le quiz du jour.
+   * Si aucun exercice en base, genere automatiquement via OpenAI.
    */
   async getTodayQuiz(tenantId: string) {
-    // Chercher un exercice actif pour ce tenant (tenantId est uuid en DB)
-    let exercises = await this.exerciseRepo
-      .createQueryBuilder('e')
-      .where('e."tenantId" = :tenantId AND e.active = true', { tenantId })
-      .orderBy('e."createdAt"', 'DESC')
-      .getMany();
+    let exercises: Exercise[] = [];
 
-    // Si pas d'exercices spécifiques au tenant, prendre les exercices globaux
+    // 1. Chercher les exercices du tenant (si tenantId valide)
+    if (tenantId && tenantId !== 'undefined' && tenantId.length > 10) {
+      try {
+        exercises = await this.exerciseRepo
+          .createQueryBuilder('e')
+          .where('e."tenantId" = :tenantId AND e.active = true', { tenantId })
+          .orderBy('e."createdAt"', 'DESC')
+          .getMany();
+      } catch {
+        // tenantId invalide (pas un UUID) — on ignore
+      }
+    }
+
+    // 2. Fallback : exercices globaux (tenantId null)
+    if (exercises.length === 0) {
+      exercises = await this.exerciseRepo.find({
+        where: { active: true, tenantId: null as any },
+        order: { createdAt: 'DESC' },
+      });
+    }
+
+    // 3. Fallback : tous les exercices actifs
     if (exercises.length === 0) {
       exercises = await this.exerciseRepo.find({
         where: { active: true },
@@ -104,11 +127,17 @@ export class ExtensionService {
       });
     }
 
+    // 4. Aucun exercice en base → generer via OpenAI
     if (exercises.length === 0) {
-      throw new NotFoundException('Aucun exercice disponible pour le moment');
+      this.logger.warn('Aucun exercice en base — generation IA...');
+      const generated = await this.generateExerciseWithAI();
+      if (generated) {
+        return generated;
+      }
+      throw new NotFoundException('Aucun exercice disponible');
     }
 
-    // Sélectionner un exercice basé sur le jour (rotation quotidienne)
+    // Rotation quotidienne
     const dayOfYear = Math.floor(
       (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000,
     );
@@ -118,53 +147,152 @@ export class ExtensionService {
   }
 
   /**
-   * Soumettre les réponses d'un exercice
+   * Genere un exercice via OpenAI et le sauvegarde en base.
+   */
+  private async generateExerciseWithAI(): Promise<Exercise | null> {
+    if (!this.openaiKey) {
+      this.logger.warn('OPENAI_API_KEY non configuree — generation impossible');
+      return null;
+    }
+
+    const topic = CYBER_TOPICS[Math.floor(Math.random() * CYBER_TOPICS.length)];
+
+    const prompt = `Tu es un formateur en cybersecurite pour PME francaises. Genere un exercice QCM en JSON.
+
+Le sujet est : "${topic}"
+
+Retourne UNIQUEMENT du JSON valide, sans markdown, sans explication, avec cette structure exacte :
+{
+  "topic": "${topic}",
+  "description": "description courte du module en 1 phrase",
+  "courseIntro": "introduction de 2-3 phrases expliquant le sujet simplement",
+  "questions": [
+    {
+      "id": "q1",
+      "context": "mise en situation concrete (1-2 phrases)",
+      "text": "la question",
+      "options": ["option A", "option B", "option C", "option D"],
+      "correctAnswer": 0,
+      "feedbackCorrect": "explication si bonne reponse",
+      "feedbackIncorrect": "explication si mauvaise reponse",
+      "keyTakeaway": "le point cle a retenir"
+    }
+  ]
+}
+
+Genere exactement 4 questions. Les questions doivent etre pratiques avec des mises en situation reelles. Difficulte : debutant a intermediaire. Langue : francais.`;
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.openaiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.8,
+          max_tokens: 2000,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        this.logger.error(`OpenAI API error: ${res.status}`);
+        return null;
+      }
+
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content || '';
+
+      // Extraire le JSON de la reponse (gerer les blocs ```json```)
+      let jsonStr = content.trim();
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/^```json?\s*/, '').replace(/```\s*$/, '');
+      }
+
+      const payload = JSON.parse(jsonStr);
+
+      // Sauvegarder en base pour ne pas regenerer
+      const exercise = this.exerciseRepo.create({
+        topic: payload.topic || topic,
+        type: 'QUIZ' as any,
+        difficulty: 'BEGINNER' as any,
+        payloadJSON: payload,
+        description: payload.description || `Exercice ${topic}`,
+        active: true,
+        generatedByAi: true,
+        tenantId: null,
+        version: '1.0.0',
+      });
+
+      const saved = await this.exerciseRepo.save(exercise);
+      this.logger.log(`Exercice IA genere et sauvegarde: ${saved.id} (${topic})`);
+
+      return saved;
+    } catch (err) {
+      this.logger.error(`Generation IA echouee: ${err.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Soumettre les reponses d'un exercice
    */
   async submitExercise(exerciseId: string, answers: any[], userId: string) {
     const exercise = await this.exerciseRepo.findOne({ where: { id: exerciseId } });
     if (!exercise) {
-      throw new NotFoundException('Exercice non trouvé');
+      throw new NotFoundException('Exercice non trouve');
     }
 
     const payload = exercise.payloadJSON || {};
     const questions = payload.questions || [];
     let score = 0;
-    const maxScore = questions.length;
 
     for (const ans of answers) {
-      const question = questions.find((q: any) => (q.id || `q${questions.indexOf(q) + 1}`) === ans.questionId);
+      const question = questions.find(
+        (q: any) => (q.id || `q${questions.indexOf(q) + 1}`) === ans.questionId,
+      );
       if (question && question.correctAnswer === ans.answer) {
         score++;
       }
     }
 
-    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
-    let feedback = '';
-    if (pct === 100) feedback = 'Parfait ! Tu maîtrises ce sujet à la perfection ! 🏆';
-    else if (pct >= 70) feedback = 'Très bien ! Tu as de solides connaissances. Continue comme ça ! 💪';
-    else if (pct >= 50) feedback = 'Pas mal ! Revois les points manqués pour progresser. 📚';
-    else feedback = 'Il y a du travail, mais chaque erreur est une occasion d\'apprendre ! 🌱';
+    const pct = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
+
+    // Si l'utilisateur a epuise tous les exercices, generer un nouveau en arriere-plan
+    const totalExercises = await this.exerciseRepo.count({ where: { active: true } });
+    if (totalExercises < 20 && this.openaiKey) {
+      this.generateExerciseWithAI().catch(() => {});
+    }
 
     return {
       score,
-      maxScore,
+      maxScore: questions.length,
       percentage: pct,
-      feedback,
+      feedback: pct === 100
+        ? 'Parfait ! Tu maitrises ce sujet ! 🏆'
+        : pct >= 70
+          ? 'Tres bien ! Continue comme ca ! 💪'
+          : pct >= 50
+            ? 'Pas mal ! Revois les points manques. 📚'
+            : 'Chaque erreur est une occasion d\'apprendre ! 🌱',
       exerciseId,
       userId,
     };
   }
 
   /**
-   * Progression utilisateur (basique - stockée côté extension)
+   * Progression utilisateur
    */
   async getUserProgress(userId: string, tenantId: string) {
-    const totalExercises = await this.exerciseRepo.count({
-      where: [
-        { tenantId, active: true },
-        { active: true },
-      ],
-    });
+    const totalExercises = await this.exerciseRepo.count({ where: { active: true } });
 
     return {
       totalExercises,
@@ -176,19 +304,76 @@ export class ExtensionService {
   }
 
   /**
-   * Chat IA - coach cybersécurité
+   * Chat IA - coach cybersecurite
+   * Utilise OpenAI si disponible, sinon fallback local
    */
   async chat(message: string, context?: any) {
-    // Réponse basique sans API IA (fallback)
-    // En production, utiliser le AiService d'Anthropic
+    // Essayer OpenAI d'abord
+    if (this.openaiKey) {
+      try {
+        return await this.chatWithOpenAI(message, context);
+      } catch (err) {
+        this.logger.warn(`OpenAI chat fallback: ${err.message}`);
+      }
+    }
+
+    // Fallback local
+    return this.chatLocal(message, context);
+  }
+
+  private async chatWithOpenAI(message: string, context?: any) {
+    const systemPrompt = `Tu es un coach cybersecurite bienveillant pour des employes de PME francaises.
+Tu reponds en francais, de maniere simple et pratique. Utilise des emojis avec moderation.
+Tu donnes des conseils concrets et actionnables. Tu es encourage et positif.
+Si la question n'est pas liee a la cybersecurite, redirige poliment vers le sujet.
+Formate tes reponses en markdown (gras, listes a puces).`;
+
+    const messages: any[] = [{ role: 'system', content: systemPrompt }];
+
+    if (context?.history) {
+      messages.push(...context.history.slice(-6));
+    }
+    messages.push({ role: 'user', content: message });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.openaiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages,
+        temperature: 0.7,
+        max_tokens: 800,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error(`OpenAI ${res.status}`);
+
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || 'Desole, je n\'ai pas pu repondre.';
+
+    const history = [...(context?.history || []), { role: 'user', content: message }, { role: 'assistant', content: reply }].slice(-10);
+
+    return { response: reply, context: { history, lastTopic: context?.lastTopic } };
+  }
+
+  private chatLocal(message: string, context?: any) {
     const lowerMsg = message.toLowerCase();
 
     const responses: Record<string, string> = {
-      phishing: "Le **phishing** est une technique de fraude par email ou message qui imite des organismes de confiance pour voler vos informations.\n\n**Comment s'en protéger :**\n- Vérifiez l'adresse de l'expéditeur\n- Ne cliquez jamais sur un lien suspect\n- En cas de doute, contactez directement l'organisme",
-      ransomware: "Un **ransomware** chiffre vos fichiers et demande une rançon.\n\n**Protection :**\n- Sauvegardes régulières (3-2-1)\n- Ne jamais payer la rançon\n- Maintenir les logiciels à jour\n- Former les employés aux emails suspects",
-      mot_de_passe: "**Bonnes pratiques mots de passe :**\n- Minimum 12 caractères\n- Mélangez majuscules, minuscules, chiffres, symboles\n- Un mot de passe unique par service\n- Utilisez un gestionnaire de mots de passe\n- Activez le 2FA partout",
-      vpn: "Un **VPN** crée un tunnel chiffré entre votre appareil et Internet.\n\n**Quand l'utiliser :**\n- En Wi-Fi public (café, hôtel, aéroport)\n- En télétravail\n- Pour accéder aux ressources de l'entreprise à distance",
-      rgpd: "Le **RGPD** protège les données personnelles des citoyens européens.\n\n**Principes clés :**\n- Consentement explicite\n- Droit à l'oubli\n- Minimisation des données\n- Notification sous 72h en cas de fuite",
+      phishing: "Le **phishing** est une technique de fraude par email ou message qui imite des organismes de confiance pour voler vos informations.\n\n**Comment s'en proteger :**\n- Verifiez l'adresse de l'expediteur\n- Ne cliquez jamais sur un lien suspect\n- En cas de doute, contactez directement l'organisme",
+      ransomware: "Un **ransomware** chiffre vos fichiers et demande une rancon.\n\n**Protection :**\n- Sauvegardes regulieres (3-2-1)\n- Ne jamais payer la rancon\n- Maintenir les logiciels a jour",
+      mot_de_passe: "**Bonnes pratiques mots de passe :**\n- Minimum 12 caracteres\n- Un mot de passe unique par service\n- Utilisez un gestionnaire de mots de passe\n- Activez le 2FA partout",
+      vpn: "Un **VPN** cree un tunnel chiffre entre votre appareil et Internet.\n\n**Quand l'utiliser :**\n- En Wi-Fi public\n- En teletravail\n- Pour acceder aux ressources de l'entreprise",
+      rgpd: "Le **RGPD** protege les donnees personnelles des citoyens europeens.\n\n**Principes cles :**\n- Consentement explicite\n- Droit a l'oubli\n- Notification sous 72h en cas de fuite",
     };
 
     for (const [key, response] of Object.entries(responses)) {
@@ -198,7 +383,7 @@ export class ExtensionService {
     }
 
     return {
-      response: "Je suis ton **coach cybersécurité** ! 🛡️\n\nJe peux t'aider sur :\n- **Phishing** - reconnaître les arnaques\n- **Ransomware** - se protéger\n- **Mots de passe** - bonnes pratiques\n- **VPN** - sécuriser sa connexion\n- **RGPD** - protection des données\n\nPose-moi ta question !",
+      response: "Je suis ton **coach cybersecurite** ! 🛡️\n\nJe peux t'aider sur :\n- **Phishing** - reconnaitre les arnaques\n- **Ransomware** - se proteger\n- **Mots de passe** - bonnes pratiques\n- **VPN** - securiser sa connexion\n- **RGPD** - protection des donnees\n\nPose-moi ta question !",
       context: context || {},
     };
   }
