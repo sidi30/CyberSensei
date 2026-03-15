@@ -5,6 +5,7 @@ import Link from "next/link";
 
 const footerLinks = {
   product: [
+    { label: "Solutions", href: "/solutions" },
     { label: "Fonctionnalités", href: "/#fonctionnalites" },
     { label: "Protection DLP", href: "/#dlp" },
     { label: "Outils Gratuits", href: "/outils-gratuits" },

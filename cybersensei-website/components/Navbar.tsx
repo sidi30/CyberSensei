@@ -7,7 +7,7 @@ import { Menu, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const navLinks = [
-  { href: "/#fonctionnement", label: "Comment ça marche" },
+  { href: "/solutions", label: "Solutions" },
   { href: "/#fonctionnalites", label: "Fonctionnalités" },
   { href: "/#dlp", label: "Protection DLP" },
   { href: "/outils-gratuits", label: "Outils Gratuits" },
