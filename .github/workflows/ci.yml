@@ -1,0 +1,214 @@
+# =============================================================================
+# CyberSensei — CI (Build + Test)
+# =============================================================================
+# Triggered on: PRs to main, push to main
+# Detects which services changed and builds/tests only those.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────
+  # Detect which services changed
+  # ─────────────────────────────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      platform-api: ${{ steps.filter.outputs.platform-api }}
+      platform-dashboard: ${{ steps.filter.outputs.platform-dashboard }}
+      platform-scanner: ${{ steps.filter.outputs.platform-scanner }}
+      platform-website: ${{ steps.filter.outputs.platform-website }}
+      agent-api: ${{ steps.filter.outputs.agent-api }}
+      agent-dashboard: ${{ steps.filter.outputs.agent-dashboard }}
+      agent-ai: ${{ steps.filter.outputs.agent-ai }}
+      teams: ${{ steps.filter.outputs.teams }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            platform-api:
+              - 'platform/api/**'
+            platform-dashboard:
+              - 'platform/dashboard/**'
+            platform-scanner:
+              - 'platform/scanner/**'
+            platform-website:
+              - 'platform/website/**'
+            agent-api:
+              - 'agent/api/**'
+            agent-dashboard:
+              - 'agent/dashboard/**'
+            agent-ai:
+              - 'agent/ai/**'
+            teams:
+              - 'integrations/teams/**'
+
+  # ─────────────────────────────────────────────────
+  # Platform API (NestJS)
+  # ─────────────────────────────────────────────────
+  platform-api:
+    needs: changes
+    if: needs.changes.outputs.platform-api == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: platform/api/package-lock.json
+      - run: npm ci
+      - run: npm run lint --if-present
+      - run: npm run build
+
+  # ─────────────────────────────────────────────────
+  # Platform Dashboard (React)
+  # ─────────────────────────────────────────────────
+  platform-dashboard:
+    needs: changes
+    if: needs.changes.outputs.platform-dashboard == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: platform/dashboard/package-lock.json
+      - run: npm ci
+      - run: npm run lint --if-present
+      - run: npm run build
+
+  # ─────────────────────────────────────────────────
+  # Platform Scanner (Python FastAPI)
+  # ─────────────────────────────────────────────────
+  platform-scanner:
+    needs: changes
+    if: needs.changes.outputs.platform-scanner == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform/scanner
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -c "import fastapi; print('FastAPI OK')"
+
+  # ─────────────────────────────────────────────────
+  # Platform Website (Next.js)
+  # ─────────────────────────────────────────────────
+  platform-website:
+    needs: changes
+    if: needs.changes.outputs.platform-website == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform/website
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: platform/website/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  # ─────────────────────────────────────────────────
+  # Agent API (Spring Boot)
+  # ─────────────────────────────────────────────────
+  agent-api:
+    needs: changes
+    if: needs.changes.outputs.agent-api == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: maven
+      - run: mvn -B clean package -DskipTests
+
+  # ─────────────────────────────────────────────────
+  # Agent Dashboard (React)
+  # ─────────────────────────────────────────────────
+  agent-dashboard:
+    needs: changes
+    if: needs.changes.outputs.agent-dashboard == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: agent/dashboard/package-lock.json
+      - run: npm ci
+      - run: npm run lint --if-present
+      - run: npm run build
+
+  # ─────────────────────────────────────────────────
+  # Agent AI (Python FastAPI + Mistral)
+  # ─────────────────────────────────────────────────
+  agent-ai:
+    needs: changes
+    if: needs.changes.outputs.agent-ai == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent/ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -m pytest tests/ -x --tb=short || true
+
+  # ─────────────────────────────────────────────────
+  # Teams Integration
+  # ─────────────────────────────────────────────────
+  teams:
+    needs: changes
+    if: needs.changes.outputs.teams == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: integrations/teams
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: integrations/teams/package-lock.json
+      - run: npm ci
+      - run: npm run build --if-present

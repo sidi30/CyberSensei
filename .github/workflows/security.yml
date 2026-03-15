@@ -1,0 +1,94 @@
+# =============================================================================
+# CyberSensei — Security Scans
+# =============================================================================
+# Runs weekly + on push to main
+# - Secret detection (TruffleHog)
+# - Dependency audit (npm/pip)
+# - Container image scan (Trivy)
+# =============================================================================
+
+name: Security
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"  # Every Monday at 6 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────
+  # Secret Detection
+  # ─────────────────────────────────────────────────
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+  # ─────────────────────────────────────────────────
+  # Dependency Audit
+  # ─────────────────────────────────────────────────
+  deps-audit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Platform API
+            path: platform/api
+            type: npm
+          - name: Platform Dashboard
+            path: platform/dashboard
+            type: npm
+          - name: Platform Website
+            path: platform/website
+            type: npm
+          - name: Agent Dashboard
+            path: agent/dashboard
+            type: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Audit ${{ matrix.name }}
+        working-directory: ${{ matrix.path }}
+        run: |
+          npm ci --ignore-scripts
+          npm audit --audit-level=high || true
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────
+  # Container Image Scan
+  # ─────────────────────────────────────────────────
+  trivy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Platform API
+            context: platform/api
+          - name: Platform Website
+            context: platform/website
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.name }}
+        run: docker build -t scan-target:latest ${{ matrix.context }}
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: scan-target:latest
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: 0  # Don't fail, just report

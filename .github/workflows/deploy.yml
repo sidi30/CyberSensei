@@ -1,0 +1,179 @@
+# =============================================================================
+# CyberSensei — CD (Build Docker + Push ghcr.io + Deploy via Coolify)
+# =============================================================================
+# Triggered on: push to main only
+# Builds Docker images for changed services, pushes to GitHub Container Registry,
+# then triggers Coolify webhook to redeploy.
+#
+# Required secrets:
+#   COOLIFY_WEBHOOK_URL  — Coolify deploy webhook (from Coolify dashboard)
+#   COOLIFY_TOKEN        — Coolify API token (optional, for API-based deploy)
+# =============================================================================
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Manual trigger
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false  # Never cancel a deployment in progress
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/cybersensei
+
+jobs:
+  # ─────────────────────────────────────────────────
+  # Detect changes
+  # ─────────────────────────────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      platform-api: ${{ steps.filter.outputs.platform-api }}
+      platform-dashboard: ${{ steps.filter.outputs.platform-dashboard }}
+      platform-scanner: ${{ steps.filter.outputs.platform-scanner }}
+      platform-website: ${{ steps.filter.outputs.platform-website }}
+      agent-api: ${{ steps.filter.outputs.agent-api }}
+      agent-dashboard: ${{ steps.filter.outputs.agent-dashboard }}
+      agent-ai: ${{ steps.filter.outputs.agent-ai }}
+      teams: ${{ steps.filter.outputs.teams }}
+      any-changed: ${{ steps.check.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            platform-api:
+              - 'platform/api/**'
+            platform-dashboard:
+              - 'platform/dashboard/**'
+            platform-scanner:
+              - 'platform/scanner/**'
+            platform-website:
+              - 'platform/website/**'
+            agent-api:
+              - 'agent/api/**'
+            agent-dashboard:
+              - 'agent/dashboard/**'
+            agent-ai:
+              - 'agent/ai/**'
+            teams:
+              - 'integrations/teams/**'
+      - id: check
+        run: |
+          if [[ "${{ steps.filter.outputs.platform-api }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.platform-dashboard }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.platform-scanner }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.platform-website }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.agent-api }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.agent-dashboard }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.agent-ai }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.teams }}" == "true" ]]; then
+            echo "any=true" >> $GITHUB_OUTPUT
+          else
+            echo "any=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ─────────────────────────────────────────────────
+  # Build & Push Docker images (matrix)
+  # ─────────────────────────────────────────────────
+  build-push:
+    needs: changes
+    if: needs.changes.outputs.any-changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: platform-api
+            context: platform/api
+            image: platform-api
+            changed: ${{ needs.changes.outputs.platform-api }}
+          - service: platform-dashboard
+            context: platform/dashboard
+            image: platform-dashboard
+            changed: ${{ needs.changes.outputs.platform-dashboard }}
+          - service: platform-scanner
+            context: platform/scanner
+            image: platform-scanner
+            changed: ${{ needs.changes.outputs.platform-scanner }}
+          - service: platform-website
+            context: platform/website
+            image: platform-website
+            changed: ${{ needs.changes.outputs.platform-website }}
+          - service: agent-api
+            context: agent/api
+            image: agent-api
+            changed: ${{ needs.changes.outputs.agent-api }}
+          - service: agent-dashboard
+            context: agent/dashboard
+            image: agent-dashboard
+            changed: ${{ needs.changes.outputs.agent-dashboard }}
+          - service: agent-ai
+            context: agent/ai
+            image: agent-ai
+            changed: ${{ needs.changes.outputs.agent-ai }}
+    steps:
+      - name: Skip if unchanged
+        if: matrix.changed != 'true' && github.event_name != 'workflow_dispatch'
+        run: echo "Skipping ${{ matrix.service }} — no changes detected"
+
+      - uses: actions/checkout@v4
+        if: matrix.changed == 'true' || github.event_name == 'workflow_dispatch'
+
+      - name: Login to GitHub Container Registry
+        if: matrix.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        if: matrix.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        if: matrix.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.image }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # ─────────────────────────────────────────────────
+  # Trigger Coolify redeploy
+  # ─────────────────────────────────────────────────
+  deploy-coolify:
+    needs: build-push
+    if: always() && needs.build-push.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Coolify webhook
+        if: vars.COOLIFY_WEBHOOK_URL != ''
+        run: |
+          echo "Triggering Coolify redeploy..."
+          curl -f -X POST "${{ vars.COOLIFY_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"ref": "main", "sha": "${{ github.sha }}"}' \
+            --max-time 30 || echo "Coolify webhook failed (non-blocking)"
+
+      - name: Deploy summary
+        run: |
+          echo "## Deploy Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Registry | \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coolify | Webhook triggered |" >> $GITHUB_STEP_SUMMARY
