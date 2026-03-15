@@ -15,7 +15,7 @@
         <div class="onboarding-logo">
           <div class="logo-shield">🛡️</div>
           <h1>CyberSensei</h1>
-          <p class="tagline">Devenez un expert en cybersécurité</p>
+          <p class="tagline">Cybersécurité & Protection IA</p>
         </div>
         <div class="onboarding-form">
           <div class="input-group">
@@ -42,6 +42,8 @@
             <span class="brand-name">CyberSensei</span>
           </div>
           <div class="header-actions">
+            <!-- DLP Status indicator -->
+            <span id="dlp-status-dot" class="dlp-dot dlp-dot-active" title="Protection DLP active"></span>
             <button id="btn-settings" class="icon-btn" title="Paramètres">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.73 12.73 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
             </button>
@@ -78,7 +80,7 @@
         </div>
       </header>
 
-      <!-- Navigation -->
+      <!-- Navigation — 5 onglets -->
       <nav class="nav-tabs">
         <button class="nav-tab active" data-tab="quiz">
           <span class="nav-icon">🎯</span>
@@ -90,11 +92,15 @@
         </button>
         <button class="nav-tab" data-tab="chat">
           <span class="nav-icon">🤖</span>
-          <span>Coach IA</span>
+          <span>Coach</span>
         </button>
         <button class="nav-tab" data-tab="progress">
           <span class="nav-icon">📊</span>
           <span>Progrès</span>
+        </button>
+        <button class="nav-tab" data-tab="protection">
+          <span class="nav-icon">🔒</span>
+          <span>DLP</span>
         </button>
       </nav>
 
@@ -167,6 +173,57 @@
           </div>
         </section>
 
+        <!-- PROTECTION DLP TAB -->
+        <section id="tab-protection" class="tab-panel hidden">
+          <div style="padding:12px;">
+            <!-- Status -->
+            <div id="dlp-status-card" class="dlp-card dlp-card-active">
+              <div class="dlp-card-header">
+                <div class="dlp-card-dot"></div>
+                <span id="dlp-status-text">Protection DLP active</span>
+              </div>
+              <p class="dlp-card-desc">L'extension analyse en temps réel ce que vous collez dans les outils IA et bloque les données sensibles.</p>
+              <div class="dlp-toggle-row">
+                <span>Activer la protection</span>
+                <label class="dlp-toggle">
+                  <input type="checkbox" id="dlp-toggle" checked>
+                  <span class="dlp-toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Sites surveilles -->
+            <div class="dlp-section">
+              <h4>Sites surveillés</h4>
+              <div class="dlp-sites">
+                <span class="dlp-site-tag">ChatGPT</span>
+                <span class="dlp-site-tag">Claude</span>
+                <span class="dlp-site-tag">Gemini</span>
+                <span class="dlp-site-tag">Copilot</span>
+                <span class="dlp-site-tag">Mistral</span>
+              </div>
+            </div>
+
+            <!-- Donnees detectees -->
+            <div class="dlp-section">
+              <h4>Données détectées</h4>
+              <div class="dlp-categories">
+                <div class="dlp-cat"><span class="dlp-cat-icon">👤</span> Noms, emails, téléphones</div>
+                <div class="dlp-cat"><span class="dlp-cat-icon">🏦</span> IBAN, cartes bancaires</div>
+                <div class="dlp-cat"><span class="dlp-cat-icon">🔑</span> Clés API, mots de passe</div>
+                <div class="dlp-cat"><span class="dlp-cat-icon">🏥</span> Données médicales</div>
+                <div class="dlp-cat"><span class="dlp-cat-icon">🇫🇷</span> NIR, SIREN, SIRET</div>
+                <div class="dlp-cat"><span class="dlp-cat-icon">⚖️</span> RGPD Article 9</div>
+              </div>
+            </div>
+
+            <!-- Info -->
+            <div class="dlp-info">
+              <p>💡 Quand une donnée sensible est détectée, l'envoi est bloqué et une version anonymisée est proposée.</p>
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
 
@@ -179,14 +236,54 @@
           <button id="btn-close-settings" class="icon-btn">✕</button>
         </div>
         <div class="modal-body">
+          <!-- Formation -->
+          <div class="settings-section-title">Formation</div>
           <div class="input-group">
             <label>URL du serveur</label>
-            <input type="url" id="setting-url" placeholder="https://..." />
+            <input type="url" id="setting-url" placeholder="https://cs-api.gwani.fr" />
           </div>
           <div class="input-group">
             <label>Code d'activation</label>
             <input type="text" id="setting-code" />
           </div>
+
+          <hr style="margin:14px 0;border-color:rgba(255,255,255,0.06)">
+
+          <!-- DLP -->
+          <div class="settings-section-title">Protection DLP</div>
+          <div class="input-group">
+            <label>URL serveur DLP</label>
+            <input type="url" id="setting-dlp-url" placeholder="https://cs-dlp.gwani.fr" />
+          </div>
+
+          <hr style="margin:14px 0;border-color:rgba(255,255,255,0.06)">
+
+          <!-- Apparence -->
+          <div class="settings-section-title">Apparence</div>
+          <div class="input-group">
+            <label>Mode d'affichage</label>
+            <div class="theme-toggle-row">
+              <button class="theme-btn active" data-mode="dark" title="Mode sombre">
+                <span>🌙</span> Sombre
+              </button>
+              <button class="theme-btn" data-mode="light" title="Mode clair">
+                <span>☀️</span> Clair
+              </button>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Couleur d'accentuation</label>
+            <div class="color-picker">
+              <button class="color-swatch active" data-color="default" style="background:#00e6b8" title="CyberSensei (défaut)"></button>
+              <button class="color-swatch" data-color="cyan" style="background:#00d4ff" title="Cyan"></button>
+              <button class="color-swatch" data-color="blue" style="background:#3b82f6" title="Bleu"></button>
+              <button class="color-swatch" data-color="purple" style="background:#a78bfa" title="Violet"></button>
+              <button class="color-swatch" data-color="orange" style="background:#ff9800" title="Orange"></button>
+              <button class="color-swatch" data-color="pink" style="background:#f472b6" title="Rose"></button>
+              <button class="color-swatch" data-color="red" style="background:#ef4444" title="Rouge"></button>
+            </div>
+          </div>
+
           <button id="btn-save-settings" class="btn-primary" style="width:100%;margin-top:12px">Enregistrer</button>
           <hr style="margin:16px 0;border-color:rgba(255,255,255,0.1)">
           <button id="btn-logout" class="btn-danger" style="width:100%">Déconnexion</button>

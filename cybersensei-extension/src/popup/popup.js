@@ -142,16 +142,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadGamification();
 
     if (!api.isConfigured) {
+      // Mode enterprise : code requis mais pas encore saisi
       showScreen('onboarding');
       setupOnboarding();
     } else {
+      // Mode community (defaut) ou enterprise active
       showScreen('main');
       initMainScreen();
+      api.track('session_start', { mode: api.hasBackend ? 'enterprise' : 'community' });
     }
   } catch (err) {
     console.error('Erreur initialisation CyberSensei:', err);
-    showScreen('onboarding');
-    setupOnboarding();
+    // Fallback : mode community sans backend
+    showScreen('main');
+    initMainScreen();
   }
 });
 
@@ -267,6 +271,8 @@ function initMainScreen() {
   setupSettings();
   setupChat();
   setupGlossary();
+  setupDLPTab();
+  loadTheme();
   loadQuiz();
 }
 
@@ -292,6 +298,7 @@ function setupTabs() {
       document.querySelectorAll('.tab-panel').forEach((p) => p.classList.add('hidden'));
       tab.classList.add('active');
       document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+      api.track('tab_switch', { tab: tab.dataset.tab });
       if (tab.dataset.tab === 'progress') loadProgress();
     });
   });
@@ -311,16 +318,49 @@ function setupSettings() {
   document.querySelector('.modal-backdrop')?.addEventListener('click', () => {
     document.getElementById('modal-settings').classList.add('hidden');
   });
-  document.getElementById('btn-save-settings').addEventListener('click', async () => {
-    const url = document.getElementById('setting-url').value.replace(/\/$/, '');
-    const code = document.getElementById('setting-code').value.trim();
-    await chrome.storage.local.set({
-      config: { ...((await chrome.storage.local.get('config')).config || {}), backendUrl: url, activationCode: code },
+
+  // Theme mode toggle (dark/light)
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.theme-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
     });
-    api.baseUrl = url;
-    api.activationCode = code;
+  });
+
+  // Accent color picker
+  document.querySelectorAll('.color-swatch').forEach((swatch) => {
+    swatch.addEventListener('click', () => {
+      document.querySelectorAll('.color-swatch').forEach((s) => s.classList.remove('active'));
+      swatch.classList.add('active');
+    });
+  });
+
+  document.getElementById('btn-save-settings').addEventListener('click', async () => {
+    const url = document.getElementById('setting-url').value.trim().replace(/\/+$/, '');
+    const code = document.getElementById('setting-code').value.trim();
+    const dlpUrl = document.getElementById('setting-dlp-url').value.trim().replace(/\/+$/, '');
+    const activeColor = document.querySelector('.color-swatch.active')?.dataset.color || 'default';
+    const activeMode = document.querySelector('.theme-btn.active')?.dataset.mode || 'dark';
+
+    const existing = (await chrome.storage.local.get('config')).config || {};
+    const newConfig = {
+      ...existing,
+      backendUrl: url || existing.backendUrl || '',
+      activationCode: code || existing.activationCode || '',
+      dlpUrl: dlpUrl || existing.dlpUrl || 'https://cs-dlp.gwani.fr',
+      dlpEnabled: existing.dlpEnabled !== false,
+      accentColor: activeColor,
+      themeMode: activeMode,
+    };
+
+    await chrome.storage.local.set({ config: newConfig });
+    api.baseUrl = newConfig.backendUrl;
+    api.activationCode = newConfig.activationCode;
+    api.tenantId = existing.tenantId || '';
+    applyTheme(activeMode, activeColor);
     document.getElementById('modal-settings').classList.add('hidden');
   });
+
   document.getElementById('btn-logout').addEventListener('click', async () => {
     await api.logout();
     gamification = { xp: 0, level: 1, streak: 0, bestStreak: 0, totalCompleted: 0, perfectScores: 0, lastPlayDate: null };
@@ -334,6 +374,87 @@ async function loadSettingsValues() {
   if (config) {
     document.getElementById('setting-url').value = config.backendUrl || '';
     document.getElementById('setting-code').value = config.activationCode || '';
+    document.getElementById('setting-dlp-url').value = config.dlpUrl || '';
+
+    // Mode d'affichage (dark/light)
+    const mode = config.themeMode || 'dark';
+    document.querySelectorAll('.theme-btn').forEach((b) => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+
+    // Couleur d'accentuation
+    const color = config.accentColor || 'default';
+    document.querySelectorAll('.color-swatch').forEach((s) => {
+      s.classList.toggle('active', s.dataset.color === color);
+    });
+  }
+}
+
+// ============================================
+// THEME (mode dark/light + accent color)
+// ============================================
+async function loadTheme() {
+  const { config } = await chrome.storage.local.get('config');
+  const mode = config?.themeMode || 'dark';
+  const color = config?.accentColor || 'default';
+  applyTheme(mode, color);
+}
+
+function applyTheme(mode, accentColor) {
+  const root = document.documentElement;
+
+  // Mode dark/light
+  if (mode === 'light') {
+    root.setAttribute('data-theme', 'light');
+  } else {
+    root.removeAttribute('data-theme');
+  }
+
+  // Accent color
+  if (accentColor && accentColor !== 'default') {
+    root.setAttribute('data-accent', accentColor);
+  } else {
+    root.removeAttribute('data-accent');
+  }
+}
+
+// ============================================
+// DLP PROTECTION TAB
+// ============================================
+function setupDLPTab() {
+  const toggle = document.getElementById('dlp-toggle');
+  const statusCard = document.getElementById('dlp-status-card');
+  const statusText = document.getElementById('dlp-status-text');
+  const headerDot = document.getElementById('dlp-status-dot');
+
+  // Charger l'etat actuel
+  chrome.storage.local.get('config', (result) => {
+    const enabled = result.config?.dlpEnabled !== false;
+    toggle.checked = enabled;
+    updateDLPDisplay(enabled);
+  });
+
+  toggle.addEventListener('change', async () => {
+    const enabled = toggle.checked;
+    const { config } = await chrome.storage.local.get('config');
+    await chrome.storage.local.set({
+      config: { ...(config || {}), dlpEnabled: enabled },
+    });
+    updateDLPDisplay(enabled);
+  });
+
+  function updateDLPDisplay(enabled) {
+    if (enabled) {
+      statusCard.className = 'dlp-card dlp-card-active';
+      statusText.textContent = 'Protection DLP active';
+      headerDot.className = 'dlp-dot dlp-dot-active';
+      headerDot.title = 'Protection DLP active';
+    } else {
+      statusCard.className = 'dlp-card dlp-card-inactive';
+      statusText.textContent = 'Protection DLP desactivee';
+      headerDot.className = 'dlp-dot dlp-dot-inactive';
+      headerDot.title = 'Protection DLP desactivee';
+    }
   }
 }
 
@@ -443,6 +564,10 @@ async function loadQuiz() {
     currentQuiz = exercise;
     quizQuestions = extractQuestions(exercise);
 
+    if (quizQuestions.length === 0) {
+      throw new Error('Aucune question dans cet exercice');
+    }
+
     loading.classList.add('hidden');
     container.classList.remove('hidden');
 
@@ -503,7 +628,11 @@ async function handleUserAction(optionIndex, optionText) {
     // Démarrer les questions
     stepIndex = 0;
     await addBotMsg("C'est parti ! 🎯", '', null, 300);
-    setTimeout(() => showBotQuestion(questions[0]), 500);
+    if (questions[0]) {
+      setTimeout(() => showBotQuestion(questions[0]), 500);
+    } else {
+      await addBotMsg("Oups, aucune question disponible. Reessaie plus tard !", 'warning');
+    }
 
   } else if (stepIndex < questions.length) {
     // Traiter la réponse
@@ -567,6 +696,11 @@ async function handleUserAction(optionIndex, optionText) {
 }
 
 async function showBotQuestion(q) {
+  if (!q || !q.options) {
+    await addBotMsg("Erreur : question invalide. Reessaie plus tard !", 'danger');
+    return;
+  }
+
   const originalQ = (currentQuiz.payloadJSON?.questions || [])[stepIndex] || q;
 
   // Contexte si disponible
@@ -616,6 +750,17 @@ async function finishQuizModule() {
   if (pct === 100) gamification.perfectScores += 1;
   addXP(xpEarned);
   await chrome.storage.local.set({ lastQuizDate: today });
+
+  // Telemetrie quiz
+  api.track('quiz_complete', {
+    score: pct,
+    correct: quizScore.correct,
+    total: quizScore.total,
+    topic: currentQuiz.topic || 'unknown',
+    xpEarned,
+    streak: gamification.streak,
+    level: gamification.level,
+  });
 
   // Soumettre au backend avec les vraies reponses de l'utilisateur
   try {
@@ -683,6 +828,7 @@ function setupGlossary() {
 function showGlossaryTerm(key) {
   const entry = GLOSSARY[key];
   if (!entry) return;
+  api.track('glossary_view', { term: key });
   const el = document.getElementById('glossary-result');
   el.innerHTML = `
     <div class="glossary-card">
@@ -712,6 +858,7 @@ function setupChat() {
 }
 
 async function sendChatMessage(message) {
+  api.track('chat_message', { length: message.length });
   const container = document.getElementById('chat-messages');
   container.innerHTML += `<div class="msg msg-user"><div class="msg-avatar">👤</div><div class="msg-content"><p>${escapeHtml(message)}</p></div></div>`;
   container.scrollTop = container.scrollHeight;

@@ -30,6 +30,7 @@ import { StripeModule } from './modules/stripe/stripe.module';
 import { ExtensionModule } from './modules/extension/extension.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { ScanSchedulerModule } from './modules/scheduler/scheduler.module';
+import { ExtensionAnalyticsModule } from './modules/extension-analytics/extension-analytics.module';
 import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
 @Module({
@@ -110,6 +111,9 @@ import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
     // Scan Scheduler & Alert Pipeline
     ScanSchedulerModule,
+
+    // Extension Chrome Analytics
+    ExtensionAnalyticsModule,
 
     // Chrome/Edge Extension API
     ExtensionModule,

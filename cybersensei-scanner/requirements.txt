@@ -1,2 +1,6 @@
 requests>=2.31.0,<3.0.0
 dnstwist>=20231205
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+httpx>=0.28.0
+pydantic>=2.10.0

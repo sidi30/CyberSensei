@@ -1,20 +1,28 @@
 {
   "manifest_version": 3,
-  "name": "CyberSensei - Formation Cybersécurité",
+  "name": "CyberSensei - Cybersécurité & Protection IA",
   "short_name": "CyberSensei",
-  "version": "1.0.0",
-  "description": "Votre assistant cybersécurité : quiz quotidiens, glossaire, chat IA et suivi de progression.",
+  "version": "2.0.0",
+  "description": "Formation cybersécurité gamifiée + Protection DLP contre les fuites de données vers ChatGPT, Claude, Gemini, Copilot, Mistral.",
   "permissions": [
     "storage",
     "sidePanel",
     "alarms",
-    "notifications"
+    "notifications",
+    "activeTab"
   ],
   "host_permissions": [
-    "https://cs-api.gwani.fr/*"
+    "https://cs-api.gwani.fr/*",
+    "https://cs-dlp.gwani.fr/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://gemini.google.com/*",
+    "https://copilot.microsoft.com/*",
+    "https://claude.ai/*",
+    "https://chat.mistral.ai/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https://cs-api.gwani.fr"
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https://cs-api.gwani.fr https://cs-dlp.gwani.fr"
   },
   "action": {
     "default_icon": {
@@ -30,6 +38,21 @@
     "service_worker": "src/background/background.js",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://gemini.google.com/*",
+        "https://copilot.microsoft.com/*",
+        "https://claude.ai/*",
+        "https://chat.mistral.ai/*"
+      ],
+      "js": ["src/content/content.js"],
+      "css": ["src/content/overlay.css"],
+      "run_at": "document_idle"
+    }
+  ],
   "icons": {
     "16": "src/assets/icon-16.png",
     "48": "src/assets/icon-48.png",
