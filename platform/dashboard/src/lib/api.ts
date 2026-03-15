@@ -365,6 +365,77 @@ class ApiClient {
     );
     return data;
   }
+  // ============================================
+  // INFRASTRUCTURE SCAN
+  // ============================================
+
+  async launchInfraScan(tenantId: string, domain: string, emails: string[] = []) {
+    const { data } = await this.client.post('/infra-scan/launch', { tenantId, domain, emails });
+    return data;
+  }
+
+  async getInfraScanHistory(tenantId: string, limit = 20) {
+    const { data } = await this.client.get(`/infra-scan/history/${tenantId}`, { params: { limit } });
+    return data;
+  }
+
+  async getInfraScan(scanId: string) {
+    const { data } = await this.client.get(`/infra-scan/${scanId}`);
+    return data;
+  }
+
+  // ============================================
+  // DLP ANALYTICS
+  // ============================================
+
+  async getDlpStats(tenantId: string) {
+    const { data } = await this.client.get(`/dlp/stats/${tenantId}`);
+    return data;
+  }
+
+  async getDlpAlerts(tenantId: string, status?: string) {
+    const { data } = await this.client.get(`/dlp/alerts/${tenantId}`, { params: status ? { status } : {} });
+    return data;
+  }
+
+  async resolveDlpAlert(alertId: string) {
+    const { data } = await this.client.patch(`/dlp/alerts/${alertId}/resolve`);
+    return data;
+  }
+
+  async dismissDlpAlert(alertId: string) {
+    const { data } = await this.client.patch(`/dlp/alerts/${alertId}/dismiss`);
+    return data;
+  }
+
+  async getDlpEvents(tenantId: string, limit = 20) {
+    const { data } = await this.client.get(`/dlp/events/${tenantId}`, { params: { limit } });
+    return data;
+  }
+
+  // ============================================
+  // AI REPORTS
+  // ============================================
+
+  async getReportLevels() {
+    const { data } = await this.client.get('/reports/levels');
+    return data;
+  }
+
+  async generateReportFromScan(scanId: string, level: string) {
+    const { data } = await this.client.post(`/reports/generate/${scanId}`, { level });
+    return data;
+  }
+
+  async generateReportPdf(scanResults: Record<string, any>, level: string): Promise<Blob> {
+    const { data } = await this.client.post('/reports/pdf', { scanResults, level }, { responseType: 'blob' });
+    return data;
+  }
+
+  async emailReport(scanId: string, level: string, recipientEmail: string, companyName: string) {
+    const { data } = await this.client.post('/reports/email', { scanId, level, recipientEmail, companyName });
+    return data;
+  }
 }
 
 export const api = new ApiClient();

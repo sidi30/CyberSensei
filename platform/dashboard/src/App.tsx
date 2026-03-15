@@ -13,6 +13,9 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import ExercisesPage from './pages/ExercisesPage';
 import AiConfigPage from './pages/AiConfigPage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
+import InfraScanPage from './pages/InfraScanPage';
+import DlpPage from './pages/DlpPage';
+import ReportsPage from './pages/ReportsPage';
 
 function App() {
   return (
@@ -35,6 +38,9 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="tenants" element={<TenantsListPage />} />
             <Route path="tenants/:id" element={<TenantDetailsPage />} />
+            <Route path="infra-scan" element={<InfraScanPage />} />
+            <Route path="dlp" element={<DlpPage />} />
+            <Route path="reports" element={<ReportsPage />} />
             <Route path="updates" element={<UpdatesPage />} />
             <Route path="admins" element={<AdminUsersPage />} />
             <Route path="exercises" element={<ExercisesPage />} />

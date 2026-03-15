@@ -1,0 +1,239 @@
+# CyberSensei Platform — SaaS Deployment
+# Usage: docker compose -f docker/docker-compose.platform.yml up -d
+# Optional profiles: --profile monitoring --profile ai
+
+version: '3.8'
+
+services:
+  # ============================================
+  # DATABASES
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: cs-platform-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cybersensei_central}
+      POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+    volumes:
+      - platform-postgres-data:/var/lib/postgresql/data
+      - ../docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybersensei}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  mongo:
+    image: mongo:7
+    container_name: cs-platform-mongo
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-cybersensei_central}
+    volumes:
+      - platform-mongo-data:/data/db
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ============================================
+  # PLATFORM API (NestJS)
+  # ============================================
+  platform-api:
+    build:
+      context: ../platform/backend
+      dockerfile: Dockerfile
+    container_name: cs-platform-api
+    environment:
+      NODE_ENV: production
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-cybersensei_central}
+      MONGODB_URI: mongodb://mongo:27017/${MONGO_DATABASE:-cybersensei_central}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      M365_CLIENT_ID: ${M365_CLIENT_ID:-}
+      M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
+      M365_REDIRECT_URI: ${M365_REDIRECT_URI:-}
+      SCANNER_URL: http://platform-scanner:8003
+      AI_SECURITY_URL: ${AI_SECURITY_URL:-http://ai-service:8000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    ports:
+      - "${PLATFORM_API_PORT:-3006}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ============================================
+  # PLATFORM DASHBOARD (React)
+  # ============================================
+  platform-dashboard:
+    build:
+      context: ../platform/dashboard
+      dockerfile: Dockerfile
+    container_name: cs-platform-dashboard
+    environment:
+      VITE_API_URL: ${PLATFORM_API_URL:-http://localhost:3006}
+    ports:
+      - "${PLATFORM_DASHBOARD_PORT:-5173}:80"
+    depends_on:
+      platform-api:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ============================================
+  # PLATFORM SCANNER (FastAPI)
+  # ============================================
+  platform-scanner:
+    build:
+      context: ../platform/scanner
+      dockerfile: Dockerfile
+    container_name: cs-platform-scanner
+    environment:
+      HIBP_API_KEY: ${HIBP_API_KEY:-}
+      ABUSEIPDB_API_KEY: ${ABUSEIPDB_API_KEY:-}
+    ports:
+      - "${SCANNER_PORT:-8003}:8003"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8003/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ============================================
+  # WEBSITE (Next.js)
+  # ============================================
+  website:
+    build:
+      context: ../platform/website
+      dockerfile: Dockerfile
+    container_name: cs-website
+    ports:
+      - "${WEBSITE_PORT:-3002}:3000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ============================================
+  # AI SERVICE (optional, for SaaS DLP)
+  # ============================================
+  ai-service:
+    build:
+      context: ../agent/ai
+      dockerfile: Dockerfile
+    container_name: cs-ai-service
+    environment:
+      API_PORT: 8000
+      SEMANTIC_THRESHOLD: ${SEMANTIC_THRESHOLD:-30}
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    profiles:
+      - ai
+      - all
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+  # ============================================
+  # MONITORING (optional)
+  # ============================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cs-prometheus
+    volumes:
+      - ../platform/infrastructure/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    profiles:
+      - monitoring
+      - all
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cs-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../platform/infrastructure/grafana:/etc/grafana/provisioning
+    ports:
+      - "${GRAFANA_PORT:-3300}:3000"
+    profiles:
+      - monitoring
+      - all
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  platform-postgres-data:
+  platform-mongo-data:
+  prometheus-data:
+  grafana-data:

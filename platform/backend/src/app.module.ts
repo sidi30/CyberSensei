@@ -31,6 +31,9 @@ import { ExtensionModule } from './modules/extension/extension.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { ScanSchedulerModule } from './modules/scheduler/scheduler.module';
 import { ExtensionAnalyticsModule } from './modules/extension-analytics/extension-analytics.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { DlpModule } from './modules/dlp/dlp.module';
+import { InfraScanModule } from './modules/infra-scan/infra-scan.module';
 import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
 @Module({
@@ -117,6 +120,15 @@ import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
     // Chrome/Edge Extension API
     ExtensionModule,
+
+    // Infrastructure Scanning (nmap, nuclei, SSL, DNS...)
+    InfraScanModule,
+
+    // AI Reports (SOC1/SOC2/NIS2 PDF generation via Claude)
+    ReportsModule,
+
+    // DLP Analytics (prompt analysis, risk detection, alerts)
+    DlpModule,
   ],
   providers: [
     // Global rate limiting guard

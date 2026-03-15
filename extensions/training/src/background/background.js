@@ -1,9 +1,7 @@
 /**
  * CyberSensei Extension v2 - Background Service Worker
- * Gere : Side Panel, notifications quiz, analyse DLP, GA4
+ * Gere : Side Panel, notifications quiz, analyse DLP
  */
-
-import { sendGA4Event } from '../analytics/ga4.js';
 
 const ALARM_NAME = 'cybersensei-daily-quiz';
 const TELEMETRY_ALARM = 'cybersensei-telemetry';
@@ -25,7 +23,6 @@ chrome.runtime.onInstalled.addListener(() => {
     }
   });
   trackEvent('extension_installed', { version: '2.0.0' });
-  sendGA4Event('extension_installed', { version: '2.0.0' });
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -141,7 +138,6 @@ async function analyzePrompt({ prompt, aiTool, sourceUrl }) {
     const result = await response.json();
 
     // Tracker l'analyse DLP (anonymise — pas le contenu du prompt)
-    sendGA4Event('dlp_analyze', { ai_tool: aiTool, risk_level: result.riskLevel || 'UNKNOWN', blocked: String(result.blocked || false) });
     trackEvent('dlp_analyze', {
       aiTool,
       riskLevel: result.riskLevel,

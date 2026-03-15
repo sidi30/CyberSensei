@@ -8,6 +8,9 @@ import {
   BookOpen,
   Bot,
   CreditCard,
+  Radar,
+  ShieldAlert,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../lib/utils';
@@ -15,6 +18,9 @@ import { cn } from '../../lib/utils';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['SUPERADMIN', 'SUPPORT'] },
   { name: 'Tenants', href: '/tenants', icon: Server, roles: ['SUPERADMIN', 'SUPPORT'] },
+  { name: 'Infra Scan', href: '/infra-scan', icon: Radar, roles: ['SUPERADMIN', 'SUPPORT'] },
+  { name: 'DLP', href: '/dlp', icon: ShieldAlert, roles: ['SUPERADMIN', 'SUPPORT'] },
+  { name: 'Rapports', href: '/reports', icon: FileText, roles: ['SUPERADMIN', 'SUPPORT'] },
   { name: 'Exercices', href: '/exercises', icon: BookOpen, roles: ['SUPERADMIN', 'SUPPORT'] },
   { name: 'Abonnements', href: '/subscriptions', icon: CreditCard, roles: ['SUPERADMIN'] },
   { name: 'Config IA', href: '/ai-config', icon: Bot, roles: ['SUPERADMIN'] },

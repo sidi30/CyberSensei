@@ -4,7 +4,6 @@
  */
 
 import api from './api.js';
-import { ga4 } from '../analytics/ga4.js';
 
 // ============================================
 // GAMIFICATION CONFIG
@@ -150,9 +149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Mode community (defaut) ou enterprise active
       showScreen('main');
       initMainScreen();
-      const _mode = api.hasBackend ? 'enterprise' : 'community';
-      api.track('session_start', { mode: _mode });
-      ga4.sessionStart(_mode);
+      api.track('session_start', { mode: api.hasBackend ? 'enterprise' : 'community' });
     }
   } catch (err) {
     console.error('Erreur initialisation CyberSensei:', err);
@@ -302,7 +299,6 @@ function setupTabs() {
       tab.classList.add('active');
       document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
       api.track('tab_switch', { tab: tab.dataset.tab });
-      ga4.tabSwitch(tab.dataset.tab);
       if (tab.dataset.tab === 'progress') loadProgress();
     });
   });
@@ -343,8 +339,6 @@ function setupSettings() {
     const url = document.getElementById('setting-url').value.trim().replace(/\/+$/, '');
     const code = document.getElementById('setting-code').value.trim();
     const dlpUrl = document.getElementById('setting-dlp-url').value.trim().replace(/\/+$/, '');
-    const gaId = document.getElementById('setting-ga-id').value.trim();
-    const gaSecret = document.getElementById('setting-ga-secret').value.trim();
     const activeColor = document.querySelector('.color-swatch.active')?.dataset.color || 'default';
     const activeMode = document.querySelector('.theme-btn.active')?.dataset.mode || 'dark';
 
@@ -355,8 +349,6 @@ function setupSettings() {
       activationCode: code || existing.activationCode || '',
       dlpUrl: dlpUrl || existing.dlpUrl || 'https://cs-dlp.gwani.fr',
       dlpEnabled: existing.dlpEnabled !== false,
-      gaMeasurementId: gaId || existing.gaMeasurementId || '',
-      gaApiSecret: gaSecret || existing.gaApiSecret || '',
       accentColor: activeColor,
       themeMode: activeMode,
     };
@@ -383,8 +375,6 @@ async function loadSettingsValues() {
     document.getElementById('setting-url').value = config.backendUrl || '';
     document.getElementById('setting-code').value = config.activationCode || '';
     document.getElementById('setting-dlp-url').value = config.dlpUrl || '';
-    document.getElementById('setting-ga-id').value = config.gaMeasurementId || '';
-    document.getElementById('setting-ga-secret').value = config.gaApiSecret || '';
 
     // Mode d'affichage (dark/light)
     const mode = config.themeMode || 'dark';
@@ -762,7 +752,6 @@ async function finishQuizModule() {
   await chrome.storage.local.set({ lastQuizDate: today });
 
   // Telemetrie quiz
-  ga4.quizComplete(currentQuiz.topic || 'unknown', pct, gamification.level);
   api.track('quiz_complete', {
     score: pct,
     correct: quizScore.correct,
@@ -840,7 +829,6 @@ function showGlossaryTerm(key) {
   const entry = GLOSSARY[key];
   if (!entry) return;
   api.track('glossary_view', { term: key });
-  ga4.glossaryView(key);
   const el = document.getElementById('glossary-result');
   el.innerHTML = `
     <div class="glossary-card">
@@ -871,7 +859,6 @@ function setupChat() {
 
 async function sendChatMessage(message) {
   api.track('chat_message', { length: message.length });
-  ga4.chatMessage();
   const container = document.getElementById('chat-messages');
   container.innerHTML += `<div class="msg msg-user"><div class="msg-avatar">👤</div><div class="msg-content"><p>${escapeHtml(message)}</p></div></div>`;
   container.scrollTop = container.scrollHeight;
