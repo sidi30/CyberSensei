@@ -4,8 +4,8 @@
  */
 
 const DEFAULT_CONFIG = {
-  apiUrl: "http://localhost:8081",
-  trainingApiUrl: "http://localhost:8080",
+  apiUrl: "https://cs-dlp.gwani.fr",
+  trainingApiUrl: "https://cs-api.gwani.fr",
   companyId: 1,
   userId: 1,
   enabled: true,

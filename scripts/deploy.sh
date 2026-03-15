@@ -5,7 +5,7 @@
 # Usage: ./scripts/deploy.sh [--build] [--profile all|ai|monitoring|teams]
 #
 # Prérequis :
-#   1. DNS configuré (*.cybersensei.gwani.fr → IP serveur)
+#   1. DNS configuré (cs-*.gwani.fr → IP serveur)
 #   2. .env.prod rempli avec les vrais secrets (aucun CHANGE_ME)
 #   3. Docker + Docker Compose installés
 #   4. Firewall configuré (UFW : 22, 80, 443 uniquement)
@@ -105,12 +105,12 @@ log "Reseau Coolify trouve"
 
 # Charger le domaine
 source "$ENV_FILE"
-DOMAIN="${DOMAIN:-cybersensei.gwani.fr}"
+DOMAIN="${DOMAIN:-gwani.fr}"
 info "Domaine: $DOMAIN"
 
 # Vérifier DNS
 info "Verification DNS..."
-for sub in "" "app." "node." "m365." "api." "monitoring."; do
+for sub in "cybersensei." "cs-app." "cs-node." "cs-m365." "cs-api." "cs-tabs." "cs-monitoring."; do
   host="${sub}${DOMAIN}"
   if dig +short "$host" A 2>/dev/null | head -1 | grep -q '[0-9]'; then
     log "$host -> $(dig +short "$host" A 2>/dev/null | head -1)"
@@ -177,14 +177,14 @@ echo ""
 
 # Résumé
 info "=== URLs ==="
-log "Website:           https://${DOMAIN}"
-log "Central Dashboard: https://app.${DOMAIN}"
-log "Node Dashboard:    https://node.${DOMAIN}"
-log "M365 Dashboard:    https://m365.${DOMAIN}"
-log "API Central:       https://api.${DOMAIN}"
+log "Website:           https://cybersensei.${DOMAIN}"
+log "Central Dashboard: https://cs-app.${DOMAIN}"
+log "Node Dashboard:    https://cs-node.${DOMAIN}"
+log "M365 Dashboard:    https://cs-m365.${DOMAIN}"
+log "API Central:       https://cs-api.${DOMAIN}"
 
 if docker ps --filter "name=cs-grafana" --format "{{.Names}}" | grep -q "cs-grafana"; then
-  log "Grafana:           https://monitoring.${DOMAIN}"
+  log "Grafana:           https://cs-monitoring.${DOMAIN}"
 fi
 
 echo ""

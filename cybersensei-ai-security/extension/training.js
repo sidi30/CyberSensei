@@ -8,7 +8,7 @@
 
   // ── Config & API ────────────────────────────────────────────────
   const DEFAULT_CONFIG = {
-    trainingApiUrl: "http://localhost:8080",
+    trainingApiUrl: "https://cs-api.gwani.fr",
     userId: 1,
     companyId: 1,
   };

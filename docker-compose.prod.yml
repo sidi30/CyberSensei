@@ -10,13 +10,14 @@
 #   docker compose -f docker-compose.prod.yml --profile monitoring up -d  # + Grafana/Prometheus
 #   docker compose -f docker-compose.prod.yml --profile all up -d  # Tout
 #
-# PRÉREQUIS DNS (A records → IP du serveur) :
-#   cybersensei.gwan.fr       → Website
-#   app.cybersensei.gwan.fr   → Central Dashboard
-#   node.cybersensei.gwan.fr  → Node Dashboard
-#   m365.cybersensei.gwan.fr  → M365 Dashboard
-#   api.cybersensei.gwan.fr   → Central Backend API (direct)
-#   monitoring.cybersensei.gwan.fr → Grafana
+# PRÉREQUIS DNS (A records → IP du serveur, sous-domaines aplatis) :
+#   cybersensei.gwani.fr      → Website
+#   cs-app.gwani.fr            → Central Dashboard
+#   cs-node.gwani.fr           → Node Dashboard
+#   cs-m365.gwani.fr           → M365 Dashboard
+#   cs-api.gwani.fr            → Central Backend API (direct)
+#   cs-tabs.gwani.fr           → Teams Tabs
+#   cs-monitoring.gwani.fr     → Grafana
 # =============================================================================
 
 x-common-labels: &https-redirect
@@ -96,7 +97,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       SECURITY_BYPASS: "false"
       DEV_MODE: "false"
-      CORS_ORIGINS: https://node.${DOMAIN},https://app.${DOMAIN},https://${DOMAIN},https://tabs.${DOMAIN}
+      CORS_ORIGINS: https://cs-node.${DOMAIN},https://cs-app.${DOMAIN},https://cybersensei.${DOMAIN},https://cs-tabs.${DOMAIN}
       SERVER_PORT: 8080
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     depends_on:
@@ -143,13 +144,13 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
       # HTTPS
-      - "traefik.http.routers.cs-node.rule=Host(`node.${DOMAIN}`)"
+      - "traefik.http.routers.cs-node.rule=Host(`cs-node.${DOMAIN}`)"
       - "traefik.http.routers.cs-node.entrypoints=https"
       - "traefik.http.routers.cs-node.tls=true"
       - "traefik.http.routers.cs-node.tls.certresolver=letsencrypt"
       - "traefik.http.services.cs-node.loadbalancer.server.port=80"
       # HTTP → HTTPS redirect
-      - "traefik.http.routers.cs-node-http.rule=Host(`node.${DOMAIN}`)"
+      - "traefik.http.routers.cs-node-http.rule=Host(`cs-node.${DOMAIN}`)"
       - "traefik.http.routers.cs-node-http.entrypoints=http"
       - "traefik.http.routers.cs-node-http.middlewares=cs-https-redirect"
     networks:
@@ -191,7 +192,7 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
       M365_CLIENT_ID: ${M365_CLIENT_ID:-}
       M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
-      M365_REDIRECT_URI: https://m365.${DOMAIN}/m365/auth/callback
+      M365_REDIRECT_URI: https://cs-m365.${DOMAIN}/m365/auth/callback
       M365_TOKEN_ENCRYPTION_KEY: ${M365_TOKEN_ENCRYPTION_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       AI_KEY_ENCRYPTION_SECRET: ${AI_KEY_ENCRYPTION_SECRET:-}
@@ -206,8 +207,8 @@ services:
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_STARTER_PRICE_ID: ${STRIPE_STARTER_PRICE_ID:-}
       STRIPE_BUSINESS_PRICE_ID: ${STRIPE_BUSINESS_PRICE_ID:-}
-      CORS_ORIGINS: https://app.${DOMAIN},https://m365.${DOMAIN},https://${DOMAIN},https://tabs.${DOMAIN}
-      PUBLIC_BACKEND_URL: https://api.${DOMAIN}
+      CORS_ORIGINS: https://cs-app.${DOMAIN},https://cs-m365.${DOMAIN},https://cybersensei.${DOMAIN},https://cs-tabs.${DOMAIN}
+      PUBLIC_BACKEND_URL: https://cs-api.${DOMAIN}
     depends_on:
       postgres:
         condition: service_healthy
@@ -221,13 +222,13 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
       # HTTPS - API direct access
-      - "traefik.http.routers.cs-api.rule=Host(`api.${DOMAIN}`)"
+      - "traefik.http.routers.cs-api.rule=Host(`cs-api.${DOMAIN}`)"
       - "traefik.http.routers.cs-api.entrypoints=https"
       - "traefik.http.routers.cs-api.tls=true"
       - "traefik.http.routers.cs-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.cs-api.loadbalancer.server.port=3000"
       # HTTP → HTTPS redirect
-      - "traefik.http.routers.cs-api-http.rule=Host(`api.${DOMAIN}`)"
+      - "traefik.http.routers.cs-api-http.rule=Host(`cs-api.${DOMAIN}`)"
       - "traefik.http.routers.cs-api-http.entrypoints=http"
       - "traefik.http.routers.cs-api-http.middlewares=cs-https-redirect"
     networks:
@@ -264,13 +265,13 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
       # HTTPS
-      - "traefik.http.routers.cs-app.rule=Host(`app.${DOMAIN}`)"
+      - "traefik.http.routers.cs-app.rule=Host(`cs-app.${DOMAIN}`)"
       - "traefik.http.routers.cs-app.entrypoints=https"
       - "traefik.http.routers.cs-app.tls=true"
       - "traefik.http.routers.cs-app.tls.certresolver=letsencrypt"
       - "traefik.http.services.cs-app.loadbalancer.server.port=80"
       # HTTP → HTTPS redirect
-      - "traefik.http.routers.cs-app-http.rule=Host(`app.${DOMAIN}`)"
+      - "traefik.http.routers.cs-app-http.rule=Host(`cs-app.${DOMAIN}`)"
       - "traefik.http.routers.cs-app-http.entrypoints=http"
       - "traefik.http.routers.cs-app-http.middlewares=cs-https-redirect"
     networks:
@@ -309,13 +310,13 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
       # HTTPS
-      - "traefik.http.routers.cs-m365.rule=Host(`m365.${DOMAIN}`)"
+      - "traefik.http.routers.cs-m365.rule=Host(`cs-m365.${DOMAIN}`)"
       - "traefik.http.routers.cs-m365.entrypoints=https"
       - "traefik.http.routers.cs-m365.tls=true"
       - "traefik.http.routers.cs-m365.tls.certresolver=letsencrypt"
       - "traefik.http.services.cs-m365.loadbalancer.server.port=80"
       # HTTP → HTTPS redirect
-      - "traefik.http.routers.cs-m365-http.rule=Host(`m365.${DOMAIN}`)"
+      - "traefik.http.routers.cs-m365-http.rule=Host(`cs-m365.${DOMAIN}`)"
       - "traefik.http.routers.cs-m365-http.entrypoints=http"
       - "traefik.http.routers.cs-m365-http.middlewares=cs-https-redirect"
     networks:
@@ -362,13 +363,13 @@ services:
       - "traefik.http.middlewares.cs-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.cs-https-redirect.redirectscheme.permanent=true"
       # HTTPS
-      - "traefik.http.routers.cs-website.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.cs-website.rule=Host(`cybersensei.${DOMAIN}`)"
       - "traefik.http.routers.cs-website.entrypoints=https"
       - "traefik.http.routers.cs-website.tls=true"
       - "traefik.http.routers.cs-website.tls.certresolver=letsencrypt"
       - "traefik.http.services.cs-website.loadbalancer.server.port=3000"
       # HTTP → HTTPS redirect
-      - "traefik.http.routers.cs-website-http.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.cs-website-http.rule=Host(`cybersensei.${DOMAIN}`)"
       - "traefik.http.routers.cs-website-http.entrypoints=http"
       - "traefik.http.routers.cs-website-http.middlewares=cs-https-redirect"
     networks:
@@ -427,7 +428,7 @@ services:
       context: ./cybersensei-teams-app/tabs
       dockerfile: Dockerfile
       args:
-        VITE_BACKEND_URL: https://node.${DOMAIN}
+        VITE_BACKEND_URL: https://cs-node.${DOMAIN}
     container_name: cs-teams-tabs
     restart: unless-stopped
     profiles:
@@ -445,13 +446,13 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
       # HTTPS
-      - "traefik.http.routers.cs-tabs.rule=Host(`tabs.${DOMAIN}`)"
+      - "traefik.http.routers.cs-tabs.rule=Host(`cs-tabs.${DOMAIN}`)"
       - "traefik.http.routers.cs-tabs.entrypoints=https"
       - "traefik.http.routers.cs-tabs.tls=true"
       - "traefik.http.routers.cs-tabs.tls.certresolver=letsencrypt"
       - "traefik.http.services.cs-tabs.loadbalancer.server.port=80"
       # HTTP → HTTPS redirect
-      - "traefik.http.routers.cs-tabs-http.rule=Host(`tabs.${DOMAIN}`)"
+      - "traefik.http.routers.cs-tabs-http.rule=Host(`cs-tabs.${DOMAIN}`)"
       - "traefik.http.routers.cs-tabs-http.entrypoints=http"
       - "traefik.http.routers.cs-tabs-http.middlewares=cs-https-redirect"
     networks:
@@ -528,7 +529,7 @@ services:
       AI_SECURITY_SERVICE_URL: http://ai-security-ai:8000
       JWT_SECRET: ${JWT_SECRET}
       SECURITY_BYPASS: "false"
-      CORS_ORIGINS: https://node.${DOMAIN},https://app.${DOMAIN},https://${DOMAIN}
+      CORS_ORIGINS: https://cs-node.${DOMAIN},https://cs-app.${DOMAIN},https://cybersensei.${DOMAIN}
       NODE_BACKEND_URL: http://node-backend:8080
       SERVER_PORT: 8081
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
@@ -543,8 +544,22 @@ services:
       timeout: 10s
       retries: 5
       start_period: 90s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      # HTTPS
+      - "traefik.http.routers.cs-dlp-api.rule=Host(`cs-dlp.${DOMAIN}`)"
+      - "traefik.http.routers.cs-dlp-api.entrypoints=https"
+      - "traefik.http.routers.cs-dlp-api.tls=true"
+      - "traefik.http.routers.cs-dlp-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cs-dlp-api.loadbalancer.server.port=8081"
+      # HTTP → HTTPS redirect
+      - "traefik.http.routers.cs-dlp-api-http.rule=Host(`cs-dlp.${DOMAIN}`)"
+      - "traefik.http.routers.cs-dlp-api-http.entrypoints=http"
+      - "traefik.http.routers.cs-dlp-api-http.middlewares=cs-https-redirect"
     networks:
       - cs-internal
+      - coolify
     deploy:
       resources:
         limits:
@@ -594,7 +609,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
-      GF_SERVER_ROOT_URL: https://monitoring.${DOMAIN}
+      GF_SERVER_ROOT_URL: https://cs-monitoring.${DOMAIN}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_USERS_ALLOW_ORG_CREATE: "false"
       GF_AUTH_DISABLE_LOGIN_FORM: "false"
@@ -608,13 +623,13 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
       # HTTPS
-      - "traefik.http.routers.cs-grafana.rule=Host(`monitoring.${DOMAIN}`)"
+      - "traefik.http.routers.cs-grafana.rule=Host(`cs-monitoring.${DOMAIN}`)"
       - "traefik.http.routers.cs-grafana.entrypoints=https"
       - "traefik.http.routers.cs-grafana.tls=true"
       - "traefik.http.routers.cs-grafana.tls.certresolver=letsencrypt"
       - "traefik.http.services.cs-grafana.loadbalancer.server.port=3000"
       # HTTP → HTTPS redirect
-      - "traefik.http.routers.cs-grafana-http.rule=Host(`monitoring.${DOMAIN}`)"
+      - "traefik.http.routers.cs-grafana-http.rule=Host(`cs-monitoring.${DOMAIN}`)"
       - "traefik.http.routers.cs-grafana-http.entrypoints=http"
       - "traefik.http.routers.cs-grafana-http.middlewares=cs-https-redirect"
     networks:

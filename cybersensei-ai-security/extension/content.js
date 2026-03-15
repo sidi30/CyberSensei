@@ -186,13 +186,25 @@
       (response) => {
         if (chrome.runtime.lastError) {
           console.warn("[CyberSensei] Erreur de communication:", chrome.runtime.lastError.message);
-          isAnalyzing = false;
+          showOverlay({
+            riskLevel: "HIGH",
+            riskScore: 0,
+            blocked: true,
+            detections: [],
+            recommendation: "Le service d'analyse est injoignable. Par sécurité, l'envoi est bloqué. Vérifiez votre connexion ou contactez votre administrateur.",
+          });
           return;
         }
 
         if (!response || response.error) {
           console.warn("[CyberSensei] Erreur API:", response?.error || "pas de réponse");
-          isAnalyzing = false;
+          showOverlay({
+            riskLevel: "HIGH",
+            riskScore: 0,
+            blocked: true,
+            detections: [],
+            recommendation: "L'analyse du prompt a échoué. Par sécurité, l'envoi est bloqué. Réessayez ou contactez votre administrateur.",
+          });
           return;
         }
 

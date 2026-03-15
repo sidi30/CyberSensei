@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="024-create-scan-results-table" author="cybersensei">
+        <createTable tableName="scan_results">
+            <column name="id" type="bigserial" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="domain" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="score" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="scan_type" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="details_json" type="jsonb"/>
+            <column name="critical_ports_json" type="jsonb"/>
+            <column name="cve_ids_json" type="jsonb"/>
+            <column name="weak_tls" type="boolean" defaultValueBoolean="false"/>
+            <column name="cert_expired" type="boolean" defaultValueBoolean="false"/>
+            <column name="typosquats_json" type="jsonb"/>
+            <column name="breached_emails_json" type="jsonb"/>
+            <column name="abuse_score" type="integer" defaultValueNumeric="0"/>
+            <column name="scanned_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="scan_results" indexName="idx_scan_results_domain">
+            <column name="domain"/>
+        </createIndex>
+
+        <createIndex tableName="scan_results" indexName="idx_scan_results_scanned_at">
+            <column name="scanned_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

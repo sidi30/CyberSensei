@@ -30,6 +30,9 @@
     <!-- Exercise Sync Fields for Central Integration -->
     <include file="db/changelog/changes/023-add-exercise-sync-fields.xml"/>
 
+    <!-- Scan Results for Scheduler Pipeline -->
+    <include file="db/changelog/changes/024-create-scan-results-table.xml"/>
+
     <!-- Phishing Simulation Module (Enterprise) -->
     <include file="db/changelog/phishing/db.changelog-phishing-master.xml"/>
 

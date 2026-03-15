@@ -28,6 +28,8 @@ import { M365DiagnosticModule } from './modules/m365-diagnostic/m365-diagnostic.
 import { NIS2DiagnosticModule } from './modules/nis2-diagnostic/nis2-diagnostic.module';
 import { StripeModule } from './modules/stripe/stripe.module';
 import { ExtensionModule } from './modules/extension/extension.module';
+import { ComplianceModule } from './modules/compliance/compliance.module';
+import { ScanSchedulerModule } from './modules/scheduler/scheduler.module';
 import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
 @Module({
@@ -101,9 +103,13 @@ import { MetricsMiddleware } from './common/middleware/metrics.middleware';
     // Free diagnostic tools (public endpoints)
     M365DiagnosticModule,
     NIS2DiagnosticModule,
+    ComplianceModule,
 
     // Billing
     StripeModule,
+
+    // Scan Scheduler & Alert Pipeline
+    ScanSchedulerModule,
 
     // Chrome/Edge Extension API
     ExtensionModule,

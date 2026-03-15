@@ -7,6 +7,9 @@
     "storage",
     "activeTab"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https://cs-dlp.gwani.fr https://cs-api.gwani.fr"
+  },
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
@@ -14,8 +17,8 @@
     "https://copilot.microsoft.com/*",
     "https://claude.ai/*",
     "https://chat.mistral.ai/*",
-    "http://localhost:8080/*",
-    "http://localhost:8081/*"
+    "https://cs-dlp.gwani.fr/*",
+    "https://cs-api.gwani.fr/*"
   ],
   "background": {
     "service_worker": "background.js"

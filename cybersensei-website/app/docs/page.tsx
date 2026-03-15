@@ -48,21 +48,21 @@ import { Footer } from "@/components/sections/Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG - Set NEXT_PUBLIC_DOMAIN for production subdomain-based URLs
-// Example: NEXT_PUBLIC_DOMAIN=cybersensei.gwani.fr
+// Example: NEXT_PUBLIC_DOMAIN=gwani.fr
 // Falls back to localhost with ports for local development
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || "";
 
 const SUBDOMAIN_MAP: Record<string, string> = {
-  "8080": DOMAIN ? `https://node.${DOMAIN}` : "",
-  "3005": DOMAIN ? `https://node.${DOMAIN}` : "",
-  "3006": DOMAIN ? `https://api.${DOMAIN}` : "",
-  "5173": DOMAIN ? `https://app.${DOMAIN}` : "",
-  "5174": DOMAIN ? `https://m365.${DOMAIN}` : "",
-  "3300": DOMAIN ? `https://monitoring.${DOMAIN}` : "",
-  "9090": DOMAIN ? `https://monitoring.${DOMAIN}` : "",
-  "5175": DOMAIN ? `https://bot.${DOMAIN}` : "",
+  "8080": DOMAIN ? `https://cs-node.${DOMAIN}` : "",
+  "3005": DOMAIN ? `https://cs-node.${DOMAIN}` : "",
+  "3006": DOMAIN ? `https://cs-api.${DOMAIN}` : "",
+  "5173": DOMAIN ? `https://cs-app.${DOMAIN}` : "",
+  "5174": DOMAIN ? `https://cs-m365.${DOMAIN}` : "",
+  "3300": DOMAIN ? `https://cs-monitoring.${DOMAIN}` : "",
+  "9090": DOMAIN ? `https://cs-monitoring.${DOMAIN}` : "",
+  "5175": DOMAIN ? `https://cs-bot.${DOMAIN}` : "",
   "5050": "",
 };
 
@@ -581,7 +581,7 @@ const credentials = [
   },
   {
     service: "API Central (Swagger)",
-    url: DOMAIN ? `https://api.${DOMAIN}/docs` : buildUrl("3006", "/docs"),
+    url: DOMAIN ? `https://cs-api.${DOMAIN}/docs` : buildUrl("3006", "/docs"),
     icon: <FileText className="w-5 h-5" />,
     color: "#E0234E",
     clickable: true,
@@ -592,7 +592,7 @@ const credentials = [
   },
   {
     service: "Node Backend (Swagger)",
-    url: DOMAIN ? `https://node.${DOMAIN}/swagger-ui/index.html` : buildUrl("8080", "/swagger-ui.html"),
+    url: DOMAIN ? `https://cs-node.${DOMAIN}/swagger-ui/index.html` : buildUrl("8080", "/swagger-ui.html"),
     icon: <FileText className="w-5 h-5" />,
     color: "#6DB33F",
     clickable: true,
@@ -603,7 +603,7 @@ const credentials = [
   },
   {
     service: "Tabs Employee (QCM)",
-    url: DOMAIN ? `https://tabs.${DOMAIN}/tabs/employee/` : buildUrl("5176", "/tabs/employee/"),
+    url: DOMAIN ? `https://cs-tabs.${DOMAIN}/tabs/employee/` : buildUrl("5176", "/tabs/employee/"),
     icon: <GraduationCap className="w-5 h-5" />,
     color: "#6366F1",
     clickable: true,
@@ -612,7 +612,7 @@ const credentials = [
   },
   {
     service: "Tabs Manager",
-    url: DOMAIN ? `https://tabs.${DOMAIN}/tabs/manager/` : buildUrl("5176", "/tabs/manager/"),
+    url: DOMAIN ? `https://cs-tabs.${DOMAIN}/tabs/manager/` : buildUrl("5176", "/tabs/manager/"),
     icon: <Users className="w-5 h-5" />,
     color: "#8B5CF6",
     clickable: true,

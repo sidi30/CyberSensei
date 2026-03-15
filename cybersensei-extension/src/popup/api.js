@@ -56,8 +56,8 @@ class CyberSenseiAPI {
    */
   async activate(code) {
     // Résoudre via le backend central
-    // En prod: api.cybersensei.gwani.fr, en dev: localhost:3006
-    const resolveUrl = this.baseUrl || 'https://api.cybersensei.gwani.fr';
+    // En prod: cs-api.gwani.fr, en dev: localhost:3006
+    const resolveUrl = this.baseUrl || 'https://cs-api.gwani.fr';
 
     const res = await fetch(`${resolveUrl}/api/extension/activate`, {
       method: 'POST',

@@ -92,6 +92,14 @@ cybersensei:
     enabled: ${METRICS_ENABLED:true}
     calculation-cron: ${METRICS_CRON:0 0 1 * * *}  # 1:00 AM daily
 
+  # Scanner scheduler configuration
+  scanner:
+    domain: ${SCANNER_DOMAIN:}
+    emails: ${SCANNER_EMAILS:}
+    alert-email: ${SCANNER_ALERT_EMAIL:}
+    daily-cron: ${SCANNER_DAILY_CRON:0 0 2 * * *}    # 2:00 AM daily
+    weekly-cron: ${SCANNER_WEEKLY_CRON:0 0 3 * * MON} # 3:00 AM Monday
+
 # ====== SERVER CONFIGURATION ======
 server:
   port: ${SERVER_PORT:8080}

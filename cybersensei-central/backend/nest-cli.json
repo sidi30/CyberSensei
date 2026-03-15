@@ -3,7 +3,14 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [
+      {
+        "include": "modules/compliance/nis2_questionnaire.json",
+        "outDir": "dist"
+      }
+    ],
+    "watchAssets": true
   }
 }
 

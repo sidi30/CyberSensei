@@ -6,8 +6,8 @@
  */
 
 const DEFAULT_CONFIG = {
-  apiUrl: "http://localhost:8081",
-  trainingApiUrl: "http://localhost:8080",
+  apiUrl: "https://cs-dlp.gwani.fr",
+  trainingApiUrl: "https://cs-api.gwani.fr",
   companyId: 1,
   userId: 1,
   enabled: true,
@@ -27,7 +27,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "ANALYZE_PROMPT") {
     analyzePrompt(message.payload)
       .then(sendResponse)
-      .catch((err) => sendResponse({ error: err.message }));
+      .catch((err) => {
+        console.warn("[CyberSensei] Backend unavailable, fail-closed:", err.message);
+        sendResponse({
+          riskLevel: "HIGH",
+          riskScore: 0,
+          blocked: true,
+          detections: [],
+          recommendation: "Le service d'analyse est indisponible. Par sécurité, l'envoi est bloqué jusqu'à ce que le service soit rétabli.",
+        });
+      });
     return true; // keep channel open for async response
   }
 

@@ -1,0 +1,244 @@
+{
+  "version": "1.0.0",
+  "directive": "Directive (UE) 2022/2555 — NIS2",
+  "total_questions": 25,
+  "domaines": [
+    "gouvernance",
+    "gestion_risques",
+    "continuite",
+    "chaine_approvisionnement",
+    "gestion_incidents",
+    "cryptographie",
+    "securite_rh",
+    "controle_acces",
+    "securite_physique",
+    "audit"
+  ],
+  "questions": [
+    {
+      "id": "GOV-01",
+      "domaine": "gouvernance",
+      "texte": "Les organes de direction de votre entité approuvent-ils formellement les mesures de gestion des risques en matière de cybersécurité ?",
+      "type": "oui_non_partiel_na",
+      "poids": 5,
+      "article_nis2": "Article 20, paragraphe 1",
+      "recommandation_si_non": "Mettre en place une validation formelle des mesures cybersécurité par le comité de direction ou le conseil d'administration, avec procès-verbal de décision. La directive NIS2 impose que les organes de direction approuvent et supervisent la mise en œuvre des mesures."
+    },
+    {
+      "id": "GOV-02",
+      "domaine": "gouvernance",
+      "texte": "Les membres de la direction suivent-ils une formation en cybersécurité afin d'évaluer les risques et leur impact sur les services ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 20, paragraphe 2",
+      "recommandation_si_non": "Organiser une formation cybersécurité obligatoire pour tous les membres de la direction au moins une fois par an. NIS2 exige que les dirigeants acquièrent des connaissances suffisantes pour identifier les risques et évaluer les pratiques de gestion."
+    },
+    {
+      "id": "GOV-03",
+      "domaine": "gouvernance",
+      "texte": "Disposez-vous d'une politique de sécurité des systèmes d'information (PSSI) approuvée et diffusée à l'ensemble de l'organisation ?",
+      "type": "oui_non_partiel_na",
+      "poids": 5,
+      "article_nis2": "Article 21, paragraphe 2, point (a)",
+      "recommandation_si_non": "Rédiger et faire approuver une PSSI couvrant l'ensemble du périmètre SI, la diffuser à tous les collaborateurs et planifier sa révision annuelle. Ce document est le socle de la conformité NIS2."
+    },
+    {
+      "id": "RSK-01",
+      "domaine": "gestion_risques",
+      "texte": "Réalisez-vous une analyse de risques cybersécurité formelle couvrant l'ensemble de vos systèmes d'information, au moins annuellement ?",
+      "type": "oui_non_partiel_na",
+      "poids": 5,
+      "article_nis2": "Article 21, paragraphe 2, point (a)",
+      "recommandation_si_non": "Mettre en œuvre une méthodologie d'analyse de risques reconnue (EBIOS RM, ISO 27005, MEHARI) couvrant tous les actifs critiques, avec révision au moins annuelle et après tout changement significatif."
+    },
+    {
+      "id": "RSK-02",
+      "domaine": "gestion_risques",
+      "texte": "Maintenez-vous un registre des actifs informatiques critiques classifié par niveau de sensibilité ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 21, paragraphe 2, point (a)",
+      "recommandation_si_non": "Établir et maintenir un inventaire exhaustif des actifs (matériels, logiciels, données, services), classifié par criticité et sensibilité, avec un responsable identifié pour chaque actif."
+    },
+    {
+      "id": "RSK-03",
+      "domaine": "gestion_risques",
+      "texte": "Les risques identifiés font-ils l'objet d'un plan de traitement avec des mesures de réduction, transfert ou acceptation documentées ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 21, paragraphe 1",
+      "recommandation_si_non": "Formaliser un plan de traitement des risques pour chaque risque identifié avec une stratégie explicite (réduction, transfert, acceptation), un responsable désigné et une échéance de mise en œuvre."
+    },
+    {
+      "id": "CON-01",
+      "domaine": "continuite",
+      "texte": "Disposez-vous d'un plan de continuité d'activité (PCA) et d'un plan de reprise d'activité (PRA) couvrant les scénarios de cyberattaque ?",
+      "type": "oui_non_partiel_na",
+      "poids": 5,
+      "article_nis2": "Article 21, paragraphe 2, point (c)",
+      "recommandation_si_non": "Élaborer un PCA/PRA intégrant les scénarios cyber (ransomware, déni de service, compromission de données), définissant les RTO/RPO pour chaque service critique et les procédures de basculement."
+    },
+    {
+      "id": "CON-02",
+      "domaine": "continuite",
+      "texte": "Vos sauvegardes sont-elles chiffrées, stockées hors-ligne et testées régulièrement par des exercices de restauration ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 21, paragraphe 2, point (c)",
+      "recommandation_si_non": "Mettre en place une stratégie de sauvegarde 3-2-1 (3 copies, 2 supports différents, 1 hors-site), avec chiffrement AES-256, stockage hors-ligne et tests de restauration trimestriels documentés."
+    },
+    {
+      "id": "CON-03",
+      "domaine": "continuite",
+      "texte": "Réalisez-vous des exercices de gestion de crise cyber au moins une fois par an impliquant la direction ?",
+      "type": "oui_non_partiel_na",
+      "poids": 3,
+      "article_nis2": "Article 21, paragraphe 2, point (c)",
+      "recommandation_si_non": "Planifier un exercice de crise cyber annuel (table-top ou simulation) impliquant la direction, les équipes IT et les métiers, avec retour d'expérience documenté et plan d'amélioration."
+    },
+    {
+      "id": "SUP-01",
+      "domaine": "chaine_approvisionnement",
+      "texte": "Évaluez-vous systématiquement le niveau de sécurité de vos fournisseurs et prestataires IT avant contractualisation et pendant l'exécution du contrat ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 21, paragraphe 2, point (d)",
+      "recommandation_si_non": "Mettre en place un processus d'évaluation sécurité des fournisseurs (questionnaire, audit, certifications requises) avant signature et un suivi annuel pendant la durée du contrat."
+    },
+    {
+      "id": "SUP-02",
+      "domaine": "chaine_approvisionnement",
+      "texte": "Vos contrats avec les fournisseurs incluent-ils des clauses de cybersécurité couvrant la notification d'incidents, les audits et les niveaux de service sécurité ?",
+      "type": "oui_non_partiel_na",
+      "poids": 3,
+      "article_nis2": "Article 21, paragraphe 3",
+      "recommandation_si_non": "Intégrer dans tous les contrats fournisseurs des clauses imposant : notification d'incident sous 24h, droit d'audit, conformité aux standards de sécurité, PCA fournisseur et clause de réversibilité."
+    },
+    {
+      "id": "INC-01",
+      "domaine": "gestion_incidents",
+      "texte": "Disposez-vous d'un plan de réponse aux incidents documenté, testé et connu des équipes opérationnelles ?",
+      "type": "oui_non_partiel_na",
+      "poids": 5,
+      "article_nis2": "Article 21, paragraphe 2, point (b)",
+      "recommandation_si_non": "Rédiger un plan de réponse aux incidents (IRP) documentant les rôles, la classification des incidents, les procédures d'escalade, de confinement et de remédiation. Former les équipes et le tester par des exercices."
+    },
+    {
+      "id": "INC-02",
+      "domaine": "gestion_incidents",
+      "texte": "Êtes-vous en mesure de notifier un incident significatif à l'autorité compétente (ANSSI) dans les 24 heures suivant sa détection ?",
+      "type": "oui_non_partiel_na",
+      "poids": 5,
+      "article_nis2": "Article 23, paragraphes 1 et 4",
+      "recommandation_si_non": "Formaliser une procédure de notification incluant : critères de qualification d'un incident significatif, contacts ANSSI pré-identifiés, modèle d'alerte précoce (24h), modèle de notification complète (72h) et rapport final (1 mois)."
+    },
+    {
+      "id": "INC-03",
+      "domaine": "gestion_incidents",
+      "texte": "Disposez-vous d'outils de détection des incidents (SIEM, SOC, EDR) permettant d'identifier les compromissions en temps réel ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 21, paragraphe 2, point (b)",
+      "recommandation_si_non": "Déployer des outils de détection (SIEM pour la corrélation de logs, EDR/XDR sur les endpoints) avec un processus de monitoring actif, idéalement via un SOC interne ou externalisé."
+    },
+    {
+      "id": "CRY-01",
+      "domaine": "cryptographie",
+      "texte": "Vos données sensibles sont-elles chiffrées au repos (bases de données, stockage) et en transit (TLS 1.2+ systématique) ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 21, paragraphe 2, point (h)",
+      "recommandation_si_non": "Déployer le chiffrement systématique : TLS 1.2 minimum (TLS 1.3 recommandé) pour tous les flux réseau, chiffrement AES-256 des données sensibles au repos, et désactivation de tous les protocoles obsolètes (SSLv3, TLS 1.0/1.1)."
+    },
+    {
+      "id": "CRY-02",
+      "domaine": "cryptographie",
+      "texte": "Disposez-vous d'une politique de gestion des clés cryptographiques et des certificats avec renouvellement automatisé ?",
+      "type": "oui_non_partiel_na",
+      "poids": 3,
+      "article_nis2": "Article 21, paragraphe 2, point (h)",
+      "recommandation_si_non": "Mettre en place une gestion centralisée des clés et certificats (KMS/HSM), avec rotation automatique, inventaire exhaustif, alertes d'expiration et procédure de révocation documentée."
+    },
+    {
+      "id": "RH-01",
+      "domaine": "securite_rh",
+      "texte": "Vos collaborateurs reçoivent-ils une formation cybersécurité régulière incluant des simulations de phishing et un suivi individuel ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 21, paragraphe 2, point (g)",
+      "recommandation_si_non": "Déployer un programme de sensibilisation continue comprenant : formation initiale à l'embauche, modules trimestriels, simulations de phishing mensuelles, suivi des scores individuels et formation renforcée pour les profils à risque."
+    },
+    {
+      "id": "RH-02",
+      "domaine": "securite_rh",
+      "texte": "Existe-t-il une procédure formalisée de gestion des arrivées, mutations et départs garantissant la création, modification et suppression des accès dans les délais ?",
+      "type": "oui_non_partiel_na",
+      "poids": 3,
+      "article_nis2": "Article 21, paragraphe 2, point (i)",
+      "recommandation_si_non": "Formaliser un processus RH-IT de gestion du cycle de vie des identités : provisionnement automatisé à l'arrivée, revue des droits à chaque mutation, désactivation immédiate des comptes au départ avec checklist de restitution du matériel."
+    },
+    {
+      "id": "RH-03",
+      "domaine": "securite_rh",
+      "texte": "Les collaborateurs ayant accès à des données sensibles ou des systèmes critiques font-ils l'objet d'une vérification de leurs antécédents ?",
+      "type": "oui_non_partiel_na",
+      "poids": 2,
+      "article_nis2": "Article 21, paragraphe 2, point (i)",
+      "recommandation_si_non": "Mettre en place des vérifications proportionnées pour les postes à responsabilité IT/sécurité : vérification des références professionnelles, clause de confidentialité renforcée et engagement de responsabilité signé."
+    },
+    {
+      "id": "ACC-01",
+      "domaine": "controle_acces",
+      "texte": "Appliquez-vous le principe du moindre privilège avec un contrôle d'accès basé sur les rôles (RBAC) et des revues d'accès régulières ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 21, paragraphe 2, point (i)",
+      "recommandation_si_non": "Implémenter un modèle RBAC strict avec : matrice de droits par rôle métier, revue trimestrielle des accès, suppression automatique des accès inutilisés depuis 90 jours, et séparation des tâches pour les opérations critiques."
+    },
+    {
+      "id": "ACC-02",
+      "domaine": "controle_acces",
+      "texte": "L'authentification multi-facteur (MFA) est-elle déployée sur tous les accès critiques (VPN, administration, messagerie, applications métier sensibles) ?",
+      "type": "oui_non_partiel_na",
+      "poids": 5,
+      "article_nis2": "Article 21, paragraphe 2, point (j)",
+      "recommandation_si_non": "Déployer le MFA (TOTP, FIDO2 ou push notification) sur tous les accès critiques en priorité : comptes administrateurs, VPN, messagerie, applications SaaS, accès aux données sensibles. Proscrire le MFA par SMS seul."
+    },
+    {
+      "id": "PHY-01",
+      "domaine": "securite_physique",
+      "texte": "Les locaux hébergeant des équipements critiques (serveurs, baies réseau) sont-ils protégés par un contrôle d'accès physique et une surveillance ?",
+      "type": "oui_non_partiel_na",
+      "poids": 3,
+      "article_nis2": "Article 21, paragraphe 2, point (e)",
+      "recommandation_si_non": "Sécuriser les locaux techniques avec : contrôle d'accès par badge/biométrie, journalisation des accès, vidéosurveillance, détection d'intrusion, et procédure d'accompagnement des visiteurs."
+    },
+    {
+      "id": "PHY-02",
+      "domaine": "securite_physique",
+      "texte": "Disposez-vous de mesures de protection environnementale pour vos infrastructures critiques (alimentation redondante, climatisation, détection incendie) ?",
+      "type": "oui_non_partiel_na",
+      "poids": 2,
+      "article_nis2": "Article 21, paragraphe 2, point (e)",
+      "recommandation_si_non": "Mettre en place pour les salles serveurs : alimentation électrique secourue (onduleur + groupe électrogène), climatisation redondante avec monitoring de température, détection et extinction incendie adaptées aux équipements IT."
+    },
+    {
+      "id": "AUD-01",
+      "domaine": "audit",
+      "texte": "Réalisez-vous des audits de sécurité (tests d'intrusion, scans de vulnérabilités) au moins annuellement par un tiers qualifié ?",
+      "type": "oui_non_partiel_na",
+      "poids": 4,
+      "article_nis2": "Article 21, paragraphe 2, point (f)",
+      "recommandation_si_non": "Planifier au minimum un test d'intrusion annuel réalisé par un prestataire qualifié (PASSI en France), complété par des scans de vulnérabilités automatisés mensuels et une remédiation tracée des failles découvertes."
+    },
+    {
+      "id": "AUD-02",
+      "domaine": "audit",
+      "texte": "Disposez-vous d'indicateurs de performance sécurité (KPI) suivis régulièrement et présentés à la direction pour évaluer l'efficacité des mesures ?",
+      "type": "oui_non_partiel_na",
+      "poids": 3,
+      "article_nis2": "Article 21, paragraphe 2, point (f)",
+      "recommandation_si_non": "Définir et suivre des KPI sécurité : taux de patching, délai moyen de détection/remédiation des incidents, score de sensibilisation, couverture des scans, conformité des configurations. Présentation trimestrielle en comité de direction."
+    }
+  ]
+}
