@@ -10,12 +10,12 @@
 
   // ── Détection du site IA ──────────────────────────────────────────
   const AI_SITES = {
-    "chatgpt.com": { tool: "CHATGPT", inputSelector: "#prompt-textarea", buttonSelector: 'button[data-testid="send-button"]' },
-    "chat.openai.com": { tool: "CHATGPT", inputSelector: "#prompt-textarea", buttonSelector: 'button[data-testid="send-button"]' },
-    "gemini.google.com": { tool: "GEMINI", inputSelector: '.ql-editor, [contenteditable="true"]', buttonSelector: 'button[aria-label="Send message"], .send-button' },
-    "copilot.microsoft.com": { tool: "COPILOT", inputSelector: "#searchbox, textarea", buttonSelector: 'button[aria-label="Submit"]' },
-    "claude.ai": { tool: "CLAUDE", inputSelector: '[contenteditable="true"], .ProseMirror', buttonSelector: 'button[aria-label="Send Message"], button[aria-label="Envoyer le message"]' },
-    "chat.mistral.ai": { tool: "MISTRAL", inputSelector: "textarea", buttonSelector: 'button[type="submit"]' },
+    "chatgpt.com": { tool: "CHATGPT", inputSelector: "#prompt-textarea, [id='prompt-textarea']", buttonSelector: 'button[data-testid="send-button"], button[aria-label="Send prompt"]' },
+    "chat.openai.com": { tool: "CHATGPT", inputSelector: "#prompt-textarea, [id='prompt-textarea']", buttonSelector: 'button[data-testid="send-button"], button[aria-label="Send prompt"]' },
+    "gemini.google.com": { tool: "GEMINI", inputSelector: '.ql-editor, rich-textarea [contenteditable="true"], div[contenteditable="true"]', buttonSelector: 'button[aria-label="Send message"], button.send-button, button[aria-label="Envoyer"]' },
+    "copilot.microsoft.com": { tool: "COPILOT", inputSelector: '#searchbox, textarea[name="searchbox"], .cib-serp-main textarea', buttonSelector: 'button[aria-label="Submit"], button[aria-label="Envoyer"]' },
+    "claude.ai": { tool: "CLAUDE", inputSelector: 'div.ProseMirror[contenteditable="true"], fieldset [contenteditable="true"]', buttonSelector: 'button[aria-label="Send Message"], button[aria-label="Envoyer le message"], fieldset button[type="button"]:last-child' },
+    "chat.mistral.ai": { tool: "MISTRAL", inputSelector: 'textarea[placeholder], textarea:not([hidden])', buttonSelector: 'button[type="submit"], button[aria-label="Send"]' },
   };
 
   const hostname = window.location.hostname;
@@ -165,7 +165,7 @@
     if (isAnalyzing) return;
 
     const promptText = getPromptText().trim();
-    if (!promptText || promptText.length < 10) return; // Ignorer les prompts très courts
+    if (!promptText || promptText.trim().length < 10) return; // Ignorer les prompts vides ou tres courts
 
     // Bloquer l'envoi
     e.preventDefault();

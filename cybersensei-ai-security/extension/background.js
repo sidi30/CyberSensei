@@ -59,21 +59,29 @@ async function analyzePrompt({ prompt, aiTool, sourceUrl }) {
     return { riskLevel: "SAFE", riskScore: 0, blocked: false };
   }
 
-  const response = await fetch(`${cfg.apiUrl}/api/extension/analyze`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt,
-      aiTool,
-      companyId: cfg.companyId,
-      userId: cfg.userId,
-      sourceUrl,
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+  try {
+    const response = await fetch(`${cfg.apiUrl}/api/extension/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+        aiTool,
+        companyId: cfg.companyId,
+        userId: cfg.userId,
+        sourceUrl,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return response.json();
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return response.json();
 }

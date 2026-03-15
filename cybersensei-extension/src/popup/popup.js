@@ -668,7 +668,7 @@ function setupGlossary() {
     }
     const match = GLOSSARY_TERMS_LIST.find((t) => {
       const entry = GLOSSARY[t];
-      return t.includes(q) || entry.term.toLowerCase().includes(q) || entry.definition.toLowerCase().includes(q);
+      return t.toLowerCase().includes(q) || entry.term.toLowerCase().includes(q) || entry.definition.toLowerCase().includes(q);
     });
     if (match) {
       showGlossaryTerm(match);
@@ -721,8 +721,8 @@ async function sendChatMessage(message) {
   try {
     const res = await api.chatWithAI(message, chatContext);
     const loadingEl = document.getElementById(loadingId);
-    if (loadingEl) loadingEl.querySelector('.msg-content').innerHTML = `<p>${formatChatResponse(res.response)}</p>`;
-    if (res.context) chatContext = res.context;
+    if (loadingEl) loadingEl.querySelector('.msg-content').innerHTML = `<p>${formatChatResponse(res?.response || 'Reponse vide du serveur.')}</p>`;
+    if (res?.context) chatContext = res.context;
   } catch (err) {
     const loadingEl = document.getElementById(loadingId);
     if (loadingEl) loadingEl.querySelector('.msg-content').innerHTML = `<p style="color:var(--danger)">Erreur : ${escapeHtml(err.message)}</p>`;
