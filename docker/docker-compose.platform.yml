@@ -1,31 +1,65 @@
-# CyberSensei Platform — SaaS Deployment
-# Usage: docker compose -f docker/docker-compose.platform.yml up -d
-# Optional profiles: --profile monitoring --profile ai
+# =============================================================================
+# CyberSensei Platform — SaaS Deployment (Dev + Production)
+# =============================================================================
+#
+# DEV LOCAL :
+#   docker compose -f docker/docker-compose.platform.yml up -d
+#   docker compose -f docker/docker-compose.platform.yml --profile tools up -d
+#   docker compose -f docker/docker-compose.platform.yml --profile monitoring up -d
+#   docker compose -f docker/docker-compose.platform.yml --profile ai up -d
+#   docker compose -f docker/docker-compose.platform.yml --profile all up -d
+#
+# PRODUCTION (Coolify) :
+#   Copier docker/.env.platform → docker/.env
+#   Modifier les valeurs (POSTGRES_PASSWORD, JWT_SECRET, DOMAIN, etc.)
+#   docker compose -f docker/docker-compose.platform.yml --profile all up -d
+#
+# PRÉREQUIS DNS (production uniquement, A records → IP du serveur) :
+#   cybersensei.${DOMAIN}     → Website
+#   cs-app.${DOMAIN}          → Platform Dashboard
+#   cs-m365.${DOMAIN}         → M365 Dashboard
+#   cs-api.${DOMAIN}          → Platform API
+#   cs-tabs.${DOMAIN}         → Teams Tabs
+#   cs-monitoring.${DOMAIN}   → Grafana
+# =============================================================================
 
-version: '3.8'
+x-common-labels: &https-redirect
+  - "traefik.http.middlewares.cs-https-redirect.redirectscheme.scheme=https"
+  - "traefik.http.middlewares.cs-https-redirect.redirectscheme.permanent=true"
+
+x-security: &security-defaults
+  security_opt:
+    - no-new-privileges:true
+  restart: unless-stopped
 
 services:
-  # ============================================
+  # ===========================================================================
   # DATABASES
-  # ============================================
+  # ===========================================================================
+
   postgres:
     image: postgres:16-alpine
     container_name: cs-platform-postgres
+    <<: *security-defaults
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-cybersensei_central}
       POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
-    volumes:
-      - platform-postgres-data:/var/lib/postgresql/data
-      - ../docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Europe/Paris
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - platform-postgres-data:/var/lib/postgresql/data
+      - ./postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybersensei}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybersensei} -d ${POSTGRES_DB:-cybersensei_central}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+      start_period: 10s
+    networks:
+      - cs-internal
     deploy:
       resources:
         limits:
@@ -34,101 +68,201 @@ services:
   mongo:
     image: mongo:7
     container_name: cs-platform-mongo
+    <<: *security-defaults
     environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-cybersensei}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-cybersensei123}
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-cybersensei_central}
-    volumes:
-      - platform-mongo-data:/data/db
     ports:
       - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - platform-mongo-data:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    networks:
+      - cs-internal
     deploy:
       resources:
         limits:
           memory: 512M
 
-  # ============================================
+  # ===========================================================================
   # PLATFORM API (NestJS)
-  # ============================================
+  # ===========================================================================
+
   platform-api:
     build:
-      context: ../platform/backend
+      context: ../platform/api
       dockerfile: Dockerfile
     container_name: cs-platform-api
+    <<: *security-defaults
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/logs
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
       POSTGRES_DB: ${POSTGRES_DB:-cybersensei_central}
-      MONGODB_URI: mongodb://mongo:27017/${MONGO_DATABASE:-cybersensei_central}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      MONGODB_URI: mongodb://${MONGO_USER:-cybersensei}:${MONGO_PASSWORD:-cybersensei123}@mongo:27017/${MONGO_DATABASE:-cybersensei_central}?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@cybersensei.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123456}
+      # Microsoft 365
+      M365_CLIENT_ID: ${M365_CLIENT_ID:-}
+      M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
+      M365_REDIRECT_URI: ${M365_REDIRECT_URI:-}
+      M365_TOKEN_ENCRYPTION_KEY: ${M365_TOKEN_ENCRYPTION_KEY:-}
+      # AI
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_KEY_ENCRYPTION_SECRET: ${AI_KEY_ENCRYPTION_SECRET:-}
+      # Internal services
+      SCANNER_URL: http://platform-scanner:8003
+      AI_SECURITY_URL: ${AI_SECURITY_URL:-http://ai-service:8000}
+      # Email
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@cybersensei.io}
+      # Stripe
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
-      M365_CLIENT_ID: ${M365_CLIENT_ID:-}
-      M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
-      M365_REDIRECT_URI: ${M365_REDIRECT_URI:-}
-      SCANNER_URL: http://platform-scanner:8003
-      AI_SECURITY_URL: ${AI_SECURITY_URL:-http://ai-service:8000}
-      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      STRIPE_STARTER_PRICE_ID: ${STRIPE_STARTER_PRICE_ID:-}
+      STRIPE_BUSINESS_PRICE_ID: ${STRIPE_BUSINESS_PRICE_ID:-}
+      # Networking
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:5174,http://localhost:3002}
+      PUBLIC_BACKEND_URL: ${PUBLIC_BACKEND_URL:-http://localhost:3006}
     ports:
       - "${PLATFORM_API_PORT:-3006}:3000"
     depends_on:
       postgres:
         condition: service_healthy
-      mongo:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
       interval: 30s
       timeout: 10s
-      start_period: 30s
-      retries: 3
-    restart: unless-stopped
+      retries: 5
+      start_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-cs-internal}"
+      - "traefik.http.routers.cs-api.rule=Host(`cs-api.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.cs-api.entrypoints=${TRAEFIK_ENTRYPOINT:-web}"
+      - "traefik.http.routers.cs-api.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.cs-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cs-api.loadbalancer.server.port=3000"
+    networks:
+      - cs-internal
     deploy:
       resources:
         limits:
           memory: 1G
 
-  # ============================================
+  # ===========================================================================
   # PLATFORM DASHBOARD (React)
-  # ============================================
+  # ===========================================================================
+
   platform-dashboard:
     build:
       context: ../platform/dashboard
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_PLATFORM_API_URL:-/api}
     container_name: cs-platform-dashboard
-    environment:
-      VITE_API_URL: ${PLATFORM_API_URL:-http://localhost:3006}
+    <<: *security-defaults
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
+      - /run:uid=101,gid=101
+      - /tmp
     ports:
       - "${PLATFORM_DASHBOARD_PORT:-5173}:80"
     depends_on:
-      platform-api:
-        condition: service_healthy
-    restart: unless-stopped
+      - platform-api
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-cs-internal}"
+      - "traefik.http.routers.cs-app.rule=Host(`cs-app.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.cs-app.entrypoints=${TRAEFIK_ENTRYPOINT:-web}"
+      - "traefik.http.routers.cs-app.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.cs-app.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cs-app.loadbalancer.server.port=80"
+    networks:
+      - cs-internal
     deploy:
       resources:
         limits:
           memory: 128M
 
-  # ============================================
-  # PLATFORM SCANNER (FastAPI)
-  # ============================================
+  # ===========================================================================
+  # M365 DASHBOARD (React)
+  # ===========================================================================
+
+  m365-dashboard:
+    build:
+      context: ../platform/m365-dashboard
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_PLATFORM_API_URL:-/api}
+    container_name: cs-m365-dashboard
+    <<: *security-defaults
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
+      - /run:uid=101,gid=101
+      - /tmp
+    ports:
+      - "${M365_DASHBOARD_PORT:-5174}:80"
+    depends_on:
+      - platform-api
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-cs-internal}"
+      - "traefik.http.routers.cs-m365.rule=Host(`cs-m365.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.cs-m365.entrypoints=${TRAEFIK_ENTRYPOINT:-web}"
+      - "traefik.http.routers.cs-m365.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.cs-m365.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cs-m365.loadbalancer.server.port=80"
+    networks:
+      - cs-internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ===========================================================================
+  # PLATFORM SCANNER (FastAPI — nmap, nuclei, SSL, DNS, HIBP, AbuseIPDB)
+  # ===========================================================================
+
   platform-scanner:
     build:
       context: ../platform/scanner
       dockerfile: Dockerfile
     container_name: cs-platform-scanner
+    <<: *security-defaults
     environment:
       HIBP_API_KEY: ${HIBP_API_KEY:-}
       ABUSEIPDB_API_KEY: ${ABUSEIPDB_API_KEY:-}
@@ -140,51 +274,86 @@ services:
       timeout: 10s
       start_period: 10s
       retries: 3
-    restart: unless-stopped
+    networks:
+      - cs-internal
     deploy:
       resources:
         limits:
           memory: 1G
 
-  # ============================================
+  # ===========================================================================
   # WEBSITE (Next.js)
-  # ============================================
+  # ===========================================================================
+
   website:
     build:
       context: ../platform/website
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_DOMAIN: ${DOMAIN:-localhost}
     container_name: cs-website
+    <<: *security-defaults
+    environment:
+      NODE_ENV: production
+      PORT: 3000
     ports:
       - "${WEBSITE_PORT:-3002}:3000"
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-cs-internal}"
+      # Middleware HTTPS redirect (shared by all services)
+      - "traefik.http.middlewares.cs-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.cs-https-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.cs-website.rule=Host(`cybersensei.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.cs-website.entrypoints=${TRAEFIK_ENTRYPOINT:-web}"
+      - "traefik.http.routers.cs-website.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.cs-website.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cs-website.loadbalancer.server.port=3000"
+    networks:
+      - cs-internal
     deploy:
       resources:
         limits:
           memory: 512M
 
-  # ============================================
-  # AI SERVICE (optional, for SaaS DLP)
-  # ============================================
+  # ===========================================================================
+  # AI SERVICE (optionnel — Mistral 7B pour DLP SaaS, ~8GB RAM)
+  # ===========================================================================
+
   ai-service:
     build:
       context: ../agent/ai
       dockerfile: Dockerfile
     container_name: cs-ai-service
-    environment:
-      API_PORT: 8000
-      SEMANTIC_THRESHOLD: ${SEMANTIC_THRESHOLD:-30}
-    ports:
-      - "${AI_SERVICE_PORT:-8000}:8000"
+    <<: *security-defaults
     profiles:
       - ai
       - all
+    environment:
+      MODEL_PATH: /app/models/mistral-7b-instruct.Q4_K_M.gguf
+      LLAMA_HOST: 127.0.0.1
+      LLAMA_PORT: 8001
+      API_PORT: 8000
+      SEMANTIC_THRESHOLD: ${SEMANTIC_THRESHOLD:-40}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    volumes:
+      - ai-models:/app/models
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
-      interval: 30s
+      interval: 60s
       timeout: 10s
-      start_period: 180s
       retries: 3
-    restart: unless-stopped
+      start_period: 180s
+    networks:
+      - cs-internal
     deploy:
       resources:
         limits:
@@ -192,21 +361,138 @@ services:
         reservations:
           memory: 4G
 
-  # ============================================
-  # MONITORING (optional)
-  # ============================================
+  # ===========================================================================
+  # TEAMS INTEGRATION (optionnel)
+  # ===========================================================================
+
+  teams-bot:
+    build:
+      context: ../integrations/teams/bot
+      dockerfile: Dockerfile
+    container_name: cs-teams-bot
+    <<: *security-defaults
+    read_only: true
+    tmpfs:
+      - /tmp
+    profiles:
+      - teams
+      - all
+    environment:
+      BOT_ID: ${TEAMS_BOT_ID:-}
+      BOT_PASSWORD: ${TEAMS_BOT_PASSWORD:-}
+      MICROSOFT_APP_ID: ${TEAMS_APP_ID:-}
+      MICROSOFT_APP_PASSWORD: ${TEAMS_APP_PASSWORD:-}
+      MICROSOFT_APP_TENANT_ID: ${TEAMS_APP_TENANT_ID:-}
+      BACKEND_URL: http://platform-api:3000
+      BACKEND_BASE_URL: http://platform-api:3000
+      PORT: 5175
+      NODE_ENV: production
+    ports:
+      - "${TEAMS_BOT_PORT:-5175}:5175"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:5175/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - cs-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  teams-tabs:
+    build:
+      context: ../integrations/teams/tabs
+      dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8080}
+    container_name: cs-teams-tabs
+    <<: *security-defaults
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
+      - /run:uid=101,gid=101
+      - /tmp
+    profiles:
+      - teams
+      - all
+    ports:
+      - "${TEAMS_TABS_PORT:-5176}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/tabs/employee/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-cs-internal}"
+      - "traefik.http.routers.cs-tabs.rule=Host(`cs-tabs.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.cs-tabs.entrypoints=${TRAEFIK_ENTRYPOINT:-web}"
+      - "traefik.http.routers.cs-tabs.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.cs-tabs.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cs-tabs.loadbalancer.server.port=80"
+    networks:
+      - cs-internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ===========================================================================
+  # DEV TOOLS (optionnel)
+  # ===========================================================================
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cs-pgadmin
+    restart: unless-stopped
+    profiles:
+      - tools
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@cybersensei.io}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cs-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ===========================================================================
+  # MONITORING (optionnel)
+  # ===========================================================================
+
   prometheus:
     image: prom/prometheus:latest
     container_name: cs-prometheus
-    volumes:
-      - ../platform/infrastructure/prometheus:/etc/prometheus
-      - prometheus-data:/prometheus
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
+    <<: *security-defaults
     profiles:
       - monitoring
       - all
-    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - prometheus-data:/prometheus
+      - ../platform/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - cs-internal
     deploy:
       resources:
         limits:
@@ -215,25 +501,60 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: cs-grafana
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ../platform/infrastructure/grafana:/etc/grafana/provisioning
-    ports:
-      - "${GRAFANA_PORT:-3300}:3000"
+    <<: *security-defaults
     profiles:
       - monitoring
       - all
-    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3300}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_ALLOW_ORG_CREATE: "false"
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+    ports:
+      - "${GRAFANA_PORT:-3300}:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-cs-internal}"
+      - "traefik.http.routers.cs-grafana.rule=Host(`cs-monitoring.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.cs-grafana.entrypoints=${TRAEFIK_ENTRYPOINT:-web}"
+      - "traefik.http.routers.cs-grafana.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.cs-grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cs-grafana.loadbalancer.server.port=3000"
+    networks:
+      - cs-internal
     deploy:
       resources:
         limits:
           memory: 256M
 
+# ===========================================================================
+# NETWORKS
+# ===========================================================================
+# En dev : réseau bridge interne suffit.
+# En prod (Coolify) : ajouter le réseau externe Coolify via override ou
+#   docker network connect coolify <container>
+networks:
+  cs-internal:
+    driver: bridge
+    name: cs-internal
+
+# ===========================================================================
+# VOLUMES
+# ===========================================================================
 volumes:
   platform-postgres-data:
+    name: cs-platform-postgres-data
   platform-mongo-data:
+    name: cs-platform-mongo-data
+  ai-models:
+    name: cs-ai-models
+  pgadmin-data:
+    name: cs-pgadmin-data
   prometheus-data:
+    name: cs-prometheus-data
   grafana-data:
+    name: cs-grafana-data

@@ -1,5 +1,5 @@
 {
-  "name": "cybersensei-central-dashboard",
+  "name": "cybersensei-platform-dashboard",
   "version": "1.0.0",
   "description": "React Dashboard pour CyberSensei Central - Administration SaaS multi-tenant",
   "type": "module",

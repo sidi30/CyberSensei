@@ -75,22 +75,22 @@ export default function SecurityPage() {
                 <li className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-cyber-400 flex-shrink-0 mt-0.5" />
                   <span className="text-gray-400">
-                    <strong className="text-white">Node Client :</strong> 
-                    {" "}Déployé dans votre environnement, contient toutes les données utilisateurs.
+                    <strong className="text-white">Agent On-Premise :</strong>
+                    {" "}Déployé dans votre environnement, contient toutes les données utilisateurs et l&apos;IA locale.
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-cyber-400 flex-shrink-0 mt-0.5" />
                   <span className="text-gray-400">
-                    <strong className="text-white">Central :</strong> 
-                    {" "}Fournit uniquement les mises à jour de contenu et de logiciel.
+                    <strong className="text-white">Plateforme SaaS :</strong>
+                    {" "}Gère les licences, les mises à jour, le scanner infra et les rapports IA.
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-cyber-400 flex-shrink-0 mt-0.5" />
                   <span className="text-gray-400">
-                    <strong className="text-white">Communication :</strong> 
-                    {" "}Le Node initie les connexions sortantes, jamais l&apos;inverse.
+                    <strong className="text-white">Communication :</strong>
+                    {" "}L&apos;agent initie les connexions sortantes, jamais l&apos;inverse.
                   </span>
                 </li>
               </ul>

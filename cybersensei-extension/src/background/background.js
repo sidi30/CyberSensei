@@ -1,202 +1,150 @@
 /**
  * CyberSensei Extension v2 - Background Service Worker
- * Gere : Side Panel, notifications quiz, analyse DLP, GA4
+ * ZERO imports (MV3 sans type:module)
  */
+var CS = {
+  backend: 'https://cs-api.gwani.fr',
+  dlp: 'https://cs-dlp.gwani.fr',
+  cfgUrl: 'https://cs-api.gwani.fr/api/extension/config',
+  gaId: 'G-E4R643JMG8',
+  gaSec: 'xnL7kDzVRpOwDYjx65_KHA',
+};
 
-import { sendGA4Event } from '../analytics/ga4.js';
-
-const ALARM_NAME = 'cybersensei-daily-quiz';
-const TELEMETRY_ALARM = 'cybersensei-telemetry';
-
-// ── Side Panel : ouvrir au clic sur l'icone ──
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 
-// ── Installation / Startup ──
-chrome.runtime.onInstalled.addListener(() => {
-  setupDailyAlarm();
-  setupTelemetryAlarm();
-  // Initialiser la config DLP par defaut si absente
-  chrome.storage.local.get('config', (result) => {
-    const cfg = result.config || {};
-    if (!cfg.dlpUrl) {
-      chrome.storage.local.set({
-        config: { ...cfg, dlpUrl: 'https://cs-dlp.gwani.fr', dlpEnabled: true },
-      });
+chrome.runtime.onInstalled.addListener(function() {
+  initCfg(); setupAlarms();
+  track('extension_installed', { version: '2.0.0' });
+  ga4('extension_installed', { version: '2.0.0' });
+});
+chrome.runtime.onStartup.addListener(function() {
+  initCfg(); setupAlarms(); track('extension_started');
+});
+
+function setupAlarms() {
+  chrome.alarms.get('cs-quiz', function(a) {
+    if (!a) {
+      var n = new Date(); n.setHours(9,0,0,0);
+      if (n <= new Date()) n.setDate(n.getDate()+1);
+      chrome.alarms.create('cs-quiz', { when: n.getTime(), periodInMinutes: 1440 });
     }
   });
-  trackEvent('extension_installed', { version: '2.0.0' });
-  sendGA4Event('extension_installed', { version: '2.0.0' });
-});
-
-chrome.runtime.onStartup.addListener(() => {
-  setupDailyAlarm();
-  setupTelemetryAlarm();
-  trackEvent('extension_started');
-});
-
-// ── Alarmes ──
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === ALARM_NAME) checkAndNotify();
-  if (alarm.name === TELEMETRY_ALARM) flushTelemetry();
-});
-
-function setupTelemetryAlarm() {
-  chrome.alarms.get(TELEMETRY_ALARM, (existing) => {
-    if (!existing) {
-      chrome.alarms.create(TELEMETRY_ALARM, { periodInMinutes: 5 });
-    }
+  chrome.alarms.get('cs-tele', function(a) {
+    if (!a) chrome.alarms.create('cs-tele', { periodInMinutes: 5 });
   });
 }
 
-chrome.notifications.onClicked.addListener(() => {
+chrome.alarms.onAlarm.addListener(function(a) {
+  if (a.name === 'cs-quiz') notify();
+  if (a.name === 'cs-tele') flush();
+});
+
+chrome.notifications.onClicked.addListener(function() {
   chrome.sidePanel.open({ windowId: undefined });
 });
 
-function setupDailyAlarm() {
-  chrome.alarms.get(ALARM_NAME, (existing) => {
-    if (!existing) {
-      const now = new Date();
-      const next = new Date();
-      next.setHours(9, 0, 0, 0);
-      if (next <= now) next.setDate(next.getDate() + 1);
-      chrome.alarms.create(ALARM_NAME, {
-        when: next.getTime(),
-        periodInMinutes: 24 * 60,
-      });
-    }
+function notify() {
+  chrome.storage.local.get(['config','lastQuizDate'], function(r) {
+    if (!r.config) return;
+    var t = new Date().toISOString().split('T')[0];
+    if (r.lastQuizDate === t) return;
+    chrome.notifications.create('dq', {
+      type:'basic', iconUrl:'src/assets/icon-128.png',
+      title:'CyberSensei - Defi du jour',
+      message:'Ton exercice quotidien t\'attend !', priority:2,
+    });
   });
 }
 
-async function checkAndNotify() {
-  const { config } = await chrome.storage.local.get('config');
-  if (!config?.backendUrl) return;
-
-  const today = new Date().toISOString().split('T')[0];
-  const { lastQuizDate } = await chrome.storage.local.get('lastQuizDate');
-  if (lastQuizDate === today) return;
-
-  chrome.notifications.create('daily-quiz', {
-    type: 'basic',
-    iconUrl: 'src/assets/icon-128.png',
-    title: '🛡️ CyberSensei - Défi du jour',
-    message: 'Ton exercice quotidien t\'attend ! Gagne des XP et maintiens ta série.',
-    priority: 2,
-  });
-}
-
-// ── Analyse DLP : intercepte les messages du content script ──
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'ANALYZE_PROMPT') {
-    analyzePrompt(message.payload)
-      .then(sendResponse)
-      .catch((err) => {
-        console.warn('[CyberSensei] DLP backend indisponible, blocage par securite:', err.message);
-        sendResponse({
-          riskLevel: 'HIGH',
-          riskScore: 0,
-          blocked: true,
-          detections: [],
-          recommendation: "Le service d'analyse est indisponible. Par sécurité, l'envoi est bloqué jusqu'à ce que le service soit rétabli.",
+function initCfg() {
+  chrome.storage.local.get('config', function(r) {
+    var c = r.config || {};
+    if (!c.backendUrl) c.backendUrl = CS.backend;
+    if (!c.dlpUrl) c.dlpUrl = CS.dlp;
+    if (c.dlpEnabled === undefined) c.dlpEnabled = true;
+    if (c.requireActivation === undefined) c.requireActivation = false;
+    chrome.storage.local.set({ config: c });
+    // Remote config
+    fetch(CS.cfgUrl, { signal: AbortSignal.timeout(5000) })
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(d) {
+        if (!d) return;
+        chrome.storage.local.get('config', function(r2) {
+          var c2 = r2.config || c;
+          c2.backendUrl = d.backendUrl || c2.backendUrl;
+          c2.dlpUrl = d.dlpUrl || c2.dlpUrl;
+          chrome.storage.local.set({ config: c2 });
         });
-      });
-    return true; // garder le canal ouvert pour la reponse async
-  }
+      }).catch(function(){});
+  });
+}
 
-  if (message.type === 'GET_DLP_STATUS') {
-    chrome.storage.local.get('config', (result) => {
-      const cfg = result.config || {};
-      sendResponse({ enabled: cfg.dlpEnabled !== false, dlpUrl: cfg.dlpUrl || '' });
+chrome.runtime.onMessage.addListener(function(msg, sender, reply) {
+  if (msg.type === 'ANALYZE_PROMPT') {
+    doAnalyze(msg.payload).then(reply).catch(function() {
+      reply({ riskLevel:'HIGH', riskScore:0, blocked:true, detections:[],
+        recommendation:'Service indisponible. Envoi bloque par securite.' });
+    });
+    return true;
+  }
+  if (msg.type === 'GET_DLP_STATUS') {
+    chrome.storage.local.get('config', function(r) {
+      reply({ enabled: r.config ? r.config.dlpEnabled !== false : true });
     });
     return true;
   }
 });
 
-async function analyzePrompt({ prompt, aiTool, sourceUrl }) {
-  const { config } = await chrome.storage.local.get('config');
-  const cfg = config || {};
-
-  if (cfg.dlpEnabled === false) {
-    return { riskLevel: 'SAFE', riskScore: 0, blocked: false };
-  }
-
-  const dlpUrl = cfg.dlpUrl || 'https://cs-dlp.gwani.fr';
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-
-  try {
-    const response = await fetch(`${dlpUrl}/api/extension/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt,
-        aiTool,
-        companyId: cfg.companyId || 1,
-        userId: cfg.userId || cfg.activationCode || 'unknown',
-        sourceUrl,
-      }),
-      signal: controller.signal,
+function doAnalyze(p) {
+  return new Promise(function(ok, fail) {
+    chrome.storage.local.get('config', function(r) {
+      var c = r.config || {};
+      if (c.dlpEnabled === false) { ok({ riskLevel:'SAFE', riskScore:0, blocked:false }); return; }
+      fetch((c.dlpUrl||CS.dlp)+'/api/extension/analyze', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ prompt:p.prompt, aiTool:p.aiTool, companyId:c.companyId||1,
+          userId:c.userId||c.activationCode||'community', sourceUrl:p.sourceUrl }),
+        signal: AbortSignal.timeout(10000),
+      }).then(function(r) { if(!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function(d) {
+          track('dlp_analyze',{aiTool:p.aiTool,riskLevel:d.riskLevel,blocked:d.blocked||false});
+          ga4('dlp_analyze',{ai_tool:p.aiTool,risk_level:d.riskLevel||'?',blocked:String(d.blocked||false)});
+          ok(d);
+        }).catch(fail);
     });
-
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    const result = await response.json();
-
-    // Tracker l'analyse DLP (anonymise — pas le contenu du prompt)
-    sendGA4Event('dlp_analyze', { ai_tool: aiTool, risk_level: result.riskLevel || 'UNKNOWN', blocked: String(result.blocked || false) });
-    trackEvent('dlp_analyze', {
-      aiTool,
-      riskLevel: result.riskLevel,
-      riskScore: result.riskScore,
-      blocked: result.blocked || false,
-      detectionsCount: result.detections?.length || 0,
-    });
-
-    return result;
-  } finally {
-    clearTimeout(timeout);
-  }
+  });
 }
 
-// ── Telemetrie anonyme ──────────────────────────────────────────
-
-/** Enregistre un event en local (sera flush toutes les 5 min) */
-async function trackEvent(event, data = {}) {
-  try {
-    const { telemetry } = await chrome.storage.local.get('telemetry');
-    const events = (telemetry?.events || []).slice(-200);
-    events.push({ e: event, d: data, t: Date.now() });
-    await chrome.storage.local.set({ telemetry: { events } });
-  } catch {
-    // Non-bloquant
-  }
+function track(e, d) {
+  chrome.storage.local.get('telemetry', function(r) {
+    var ev = (r.telemetry&&r.telemetry.events)||[];
+    ev = ev.slice(-200);
+    ev.push({e:e,d:d||{},t:Date.now()});
+    chrome.storage.local.set({telemetry:{events:ev}});
+  });
 }
 
-/** Envoie les events accumules vers le backend central */
-async function flushTelemetry() {
-  try {
-    const { telemetry, config } = await chrome.storage.local.get(['telemetry', 'config']);
-    const events = telemetry?.events || [];
-    if (events.length === 0) return;
+function flush() {
+  chrome.storage.local.get(['telemetry','config'], function(r) {
+    var ev = (r.telemetry&&r.telemetry.events)||[];
+    if (!ev.length) return;
+    var c = r.config||{};
+    fetch((c.backendUrl||CS.backend)+'/api/extension/telemetry', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ extensionVersion:'2.0.0', tenantId:c.tenantId||'community',
+        mode:c.requireActivation?'enterprise':'community', events:ev, sentAt:new Date().toISOString() }),
+      signal:AbortSignal.timeout(5000),
+    }).then(function() { chrome.storage.local.set({telemetry:{events:[]}}); }).catch(function(){});
+  });
+}
 
-    const url = config?.backendUrl || config?.telemetryUrl || 'https://cs-api.gwani.fr';
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-
-    await fetch(`${url}/api/extension/telemetry`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        extensionVersion: '2.0.0',
-        tenantId: config?.tenantId || 'community',
-        mode: config?.requireActivation ? 'enterprise' : 'community',
-        events,
-        sentAt: new Date().toISOString(),
-      }),
-      signal: controller.signal,
-    }).finally(() => clearTimeout(timeout));
-
-    await chrome.storage.local.set({ telemetry: { events: [] } });
-  } catch {
-    // Echec silencieux — on reessaie dans 5 min
-  }
+function ga4(name, params) {
+  chrome.storage.local.get('ga4ClientId', function(r) {
+    var cid = r.ga4ClientId;
+    if (!cid) { cid=Date.now()+'.'+Math.random().toString(36).slice(2); chrome.storage.local.set({ga4ClientId:cid}); }
+    fetch('https://www.google-analytics.com/mp/collect?measurement_id='+CS.gaId+'&api_secret='+CS.gaSec, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({client_id:cid,events:[{name:name,params:Object.assign({engagement_time_msec:'100'},params||{})}]}),
+    }).catch(function(){});
+  });
 }

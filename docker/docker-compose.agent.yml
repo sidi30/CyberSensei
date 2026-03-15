@@ -1,113 +1,181 @@
-# CyberSensei Agent — On-Premise Client Deployment
-# Usage: docker compose -f docker/docker-compose.agent.yml up -d
+# =============================================================================
+# CyberSensei Agent — On-Premise Client Deployment (Dev + Production)
+# =============================================================================
+#
+# Déploiement chez le client. Autonome, se connecte optionnellement à la
+# plateforme SaaS pour la sync des exercices et la remontée de métriques.
+#
+# USAGE :
+#   docker compose -f docker/docker-compose.agent.yml up -d
+#   docker compose -f docker/docker-compose.agent.yml --profile teams up -d
+#
+# CONFIGURATION :
+#   Copier docker/.env.agent → docker/.env
+#   Modifier les valeurs (POSTGRES_PASSWORD, JWT_SECRET, PLATFORM_API_URL, etc.)
+# =============================================================================
 
-version: '3.8'
+x-security: &security-defaults
+  security_opt:
+    - no-new-privileges:true
+  restart: unless-stopped
 
 services:
-  # ============================================
+  # ===========================================================================
   # DATABASE
-  # ============================================
+  # ===========================================================================
+
   postgres:
     image: postgres:16-alpine
     container_name: cs-agent-postgres
+    <<: *security-defaults
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-cybersensei_db}
       POSTGRES_USER: ${POSTGRES_USER:-cybersensei}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Europe/Paris
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - agent-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybersensei}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybersensei} -d ${POSTGRES_DB:-cybersensei_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+      start_period: 10s
+    networks:
+      - cs-agent
     deploy:
       resources:
         limits:
           memory: 512M
 
-  # ============================================
+  # ===========================================================================
   # AGENT API (Spring Boot)
-  # ============================================
+  # ===========================================================================
+
   agent-api:
     build:
-      context: ../agent/backend
+      context: ../agent/api
       dockerfile: Dockerfile
     container_name: cs-agent-api
+    <<: *security-defaults
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/logs
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-cybersensei_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-cybersensei}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-cybersensei123}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
       AI_SERVICE_URL: http://ai-service:8000
+      JWT_SECRET: ${JWT_SECRET:-cybersensei-jwt-secret-change-in-production}
+      SECURITY_BYPASS: ${SECURITY_BYPASS:-false}
+      DEV_MODE: ${DEV_MODE:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3005,http://localhost:5176}
+      SERVER_PORT: 8080
+      # Sync avec la plateforme SaaS (optionnel)
       PLATFORM_API_URL: ${PLATFORM_API_URL:-}
+      ACTIVATION_CODE: ${ACTIVATION_CODE:-}
+      # Email
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     ports:
       - "${AGENT_API_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1"]
       interval: 30s
       timeout: 10s
+      retries: 5
       start_period: 90s
-      retries: 3
-    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.agent-api.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.agent-api.entrypoints=web"
+      - "traefik.http.services.agent-api.loadbalancer.server.port=8080"
+    networks:
+      - cs-agent
     deploy:
       resources:
         limits:
           memory: 2G
 
-  # ============================================
+  # ===========================================================================
   # AGENT DASHBOARD (React)
-  # ============================================
+  # ===========================================================================
+
   agent-dashboard:
     build:
       context: ../agent/dashboard
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_AGENT_API_URL:-/api}
+        VITE_BYPASS_AUTH: "${VITE_BYPASS_AUTH:-false}"
     container_name: cs-agent-dashboard
-    environment:
-      VITE_API_URL: ${AGENT_API_URL:-http://localhost:8080}
+    <<: *security-defaults
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
+      - /run:uid=101,gid=101
+      - /tmp
     ports:
       - "${AGENT_DASHBOARD_PORT:-3005}:80"
     depends_on:
       agent-api:
         condition: service_healthy
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cs-agent
     deploy:
       resources:
         limits:
           memory: 128M
 
-  # ============================================
+  # ===========================================================================
   # AI SERVICE (Mistral 7B + Presidio + LLM Guard)
-  # ============================================
+  # ===========================================================================
+
   ai-service:
     build:
       context: ../agent/ai
       dockerfile: Dockerfile
     container_name: cs-agent-ai
+    <<: *security-defaults
     environment:
+      MODEL_PATH: /app/models/mistral-7b-instruct.Q4_K_M.gguf
+      LLAMA_HOST: 127.0.0.1
+      LLAMA_PORT: 8001
       API_PORT: 8000
       SEMANTIC_THRESHOLD: ${SEMANTIC_THRESHOLD:-30}
-      MODEL_PATH: ${MODEL_PATH:-/models/mistral-7b-instruct-v0.3.Q4_K_M.gguf}
-    volumes:
-      - ai-models:/models
+      PYTHONUNBUFFERED: 1
     ports:
       - "${AI_SERVICE_PORT:-8000}:8000"
+    volumes:
+      - ai-models:/app/models
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
-      interval: 30s
+      interval: 60s
       timeout: 10s
-      start_period: 180s
       retries: 3
-    restart: unless-stopped
+      start_period: 180s
+    networks:
+      - cs-agent
     deploy:
       resources:
         limits:
@@ -115,6 +183,91 @@ services:
         reservations:
           memory: 4G
 
+  # ===========================================================================
+  # TEAMS INTEGRATION (optionnel)
+  # ===========================================================================
+
+  teams-bot:
+    build:
+      context: ../integrations/teams/bot
+      dockerfile: Dockerfile
+    container_name: cs-agent-teams-bot
+    <<: *security-defaults
+    read_only: true
+    tmpfs:
+      - /tmp
+    profiles:
+      - teams
+    environment:
+      BOT_ID: ${TEAMS_BOT_ID:-}
+      BOT_PASSWORD: ${TEAMS_BOT_PASSWORD:-}
+      MICROSOFT_APP_ID: ${TEAMS_APP_ID:-}
+      MICROSOFT_APP_PASSWORD: ${TEAMS_APP_PASSWORD:-}
+      MICROSOFT_APP_TENANT_ID: ${TEAMS_APP_TENANT_ID:-}
+      BACKEND_URL: http://agent-api:8080
+      BACKEND_BASE_URL: http://agent-api:8080
+      PORT: 5175
+      NODE_ENV: production
+    ports:
+      - "${TEAMS_BOT_PORT:-5175}:5175"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:5175/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - cs-agent
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  teams-tabs:
+    build:
+      context: ../integrations/teams/tabs
+      dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8080}
+    container_name: cs-agent-teams-tabs
+    <<: *security-defaults
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
+      - /run:uid=101,gid=101
+      - /tmp
+    profiles:
+      - teams
+    ports:
+      - "${TEAMS_TABS_PORT:-5176}:80"
+    depends_on:
+      - agent-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tabs.rule=PathPrefix(`/tabs`)"
+      - "traefik.http.routers.tabs.entrypoints=web"
+      - "traefik.http.services.tabs.loadbalancer.server.port=80"
+    networks:
+      - cs-agent
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+# ===========================================================================
+# NETWORKS
+# ===========================================================================
+networks:
+  cs-agent:
+    driver: bridge
+    name: cs-agent
+
+# ===========================================================================
+# VOLUMES
+# ===========================================================================
 volumes:
   agent-postgres-data:
+    name: cs-agent-postgres-data
   ai-models:
+    name: cs-agent-ai-models

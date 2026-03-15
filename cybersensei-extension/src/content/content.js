@@ -164,8 +164,15 @@
   function interceptSubmit(e) {
     if (isAnalyzing) return;
 
+    // Verifier que le contexte de l'extension est encore valide
+    // (le service worker MV3 peut s'etre endormi et invalider le contexte)
+    if (!chrome.runtime || !chrome.runtime.id) {
+      console.warn("[CyberSensei] Contexte extension invalide — rechargement necessaire");
+      return; // Laisser passer sans bloquer
+    }
+
     const promptText = getPromptText().trim();
-    if (!promptText || promptText.trim().length < 10) return; // Ignorer les prompts vides ou tres courts
+    if (!promptText || promptText.length < 10) return;
 
     // Bloquer l'envoi
     e.preventDefault();
@@ -174,54 +181,63 @@
     isAnalyzing = true;
 
     // Appeler l'API via le background script
-    chrome.runtime.sendMessage(
-      {
-        type: "ANALYZE_PROMPT",
-        payload: {
-          prompt: promptText,
-          aiTool: siteConfig.tool,
-          sourceUrl: window.location.href,
+    try {
+      chrome.runtime.sendMessage(
+        {
+          type: "ANALYZE_PROMPT",
+          payload: {
+            prompt: promptText,
+            aiTool: siteConfig.tool,
+            sourceUrl: window.location.href,
+          },
         },
-      },
-      (response) => {
-        if (chrome.runtime.lastError) {
-          console.warn("[CyberSensei] Erreur de communication:", chrome.runtime.lastError.message);
-          showOverlay({
-            riskLevel: "HIGH",
-            riskScore: 0,
-            blocked: true,
-            detections: [],
-            recommendation: "Le service d'analyse est injoignable. Par sécurité, l'envoi est bloqué. Vérifiez votre connexion ou contactez votre administrateur.",
-          });
-          return;
+        (response) => {
+          // Verifier le contexte dans le callback aussi
+          if (chrome.runtime.lastError) {
+            console.warn("[CyberSensei] Communication:", chrome.runtime.lastError.message);
+            // Si le contexte est invalide, laisser passer plutot que bloquer
+            if (chrome.runtime.lastError.message.includes("invalidated")) {
+              isAnalyzing = false;
+              submitOriginalPrompt();
+              return;
+            }
+            showOverlay({
+              riskLevel: "HIGH",
+              riskScore: 0,
+              blocked: true,
+              detections: [],
+              recommendation: "Le service d'analyse est injoignable. Par securite, l'envoi est bloque.",
+            });
+            return;
+          }
+
+          if (!response || response.error) {
+            showOverlay({
+              riskLevel: "HIGH",
+              riskScore: 0,
+              blocked: true,
+              detections: [],
+              recommendation: "L'analyse a echoue. Par securite, l'envoi est bloque. Reessayez.",
+            });
+            return;
+          }
+
+          var riskLevel = response.riskLevel || "HIGH";
+
+          if (riskLevel === "SAFE" || riskLevel === "LOW") {
+            isAnalyzing = false;
+            submitOriginalPrompt();
+            return;
+          }
+
+          showOverlay({ ...response, riskLevel: riskLevel });
         }
-
-        if (!response || response.error) {
-          console.warn("[CyberSensei] Erreur API:", response?.error || "pas de réponse");
-          showOverlay({
-            riskLevel: "HIGH",
-            riskScore: 0,
-            blocked: true,
-            detections: [],
-            recommendation: "L'analyse du prompt a échoué. Par sécurité, l'envoi est bloqué. Réessayez ou contactez votre administrateur.",
-          });
-          return;
-        }
-
-        // Valider que la reponse a un riskLevel
-        const riskLevel = response.riskLevel || "HIGH";
-
-        // Si SAFE ou LOW → laisser passer sans interruption
-        if (riskLevel === "SAFE" || riskLevel === "LOW") {
-          isAnalyzing = false;
-          submitOriginalPrompt();
-          return;
-        }
-
-        // MEDIUM, HIGH, CRITICAL → afficher l'overlay
-        showOverlay({ ...response, riskLevel });
-      }
-    );
+      );
+    } catch (err) {
+      // Extension context invalidated — laisser passer
+      console.warn("[CyberSensei] Exception:", err.message);
+      isAnalyzing = false;
+    }
   }
 
   // ── Attachement des listeners ─────────────────────────────────────

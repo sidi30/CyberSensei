@@ -1,23 +1,12 @@
 #!/bin/bash
-# Startup script for CyberSensei AI Service
-# Launches llama.cpp server and FastAPI wrapper
-
 set -e
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+echo "========================================"
+echo " CyberSensei AI Security Service v2.0"
+echo " Layer 1: Presidio FR + LLM Guard"
+echo " Layer 2: Mistral 7B (Semantic + RGPD Art.9)"
+echo "========================================"
 
-echo -e "${BLUE}"
-echo "╔═══════════════════════════════════════════════╗"
-echo "║       CyberSensei AI Service Startup          ║"
-echo "╚═══════════════════════════════════════════════╝"
-echo -e "${NC}"
-
-# Configuration
 MODEL_PATH="${MODEL_PATH:-/app/models/mistral-7b-instruct.Q4_K_M.gguf}"
 LLAMA_HOST="${LLAMA_HOST:-127.0.0.1}"
 LLAMA_PORT="${LLAMA_PORT:-8001}"
@@ -25,96 +14,85 @@ API_PORT="${API_PORT:-8000}"
 CONTEXT_SIZE="${CONTEXT_SIZE:-4096}"
 THREADS="${THREADS:-4}"
 
-echo -e "${YELLOW}📋 Configuration:${NC}"
-echo "  Model: $MODEL_PATH"
-echo "  llama.cpp: $LLAMA_HOST:$LLAMA_PORT"
-echo "  FastAPI: 0.0.0.0:$API_PORT"
-echo "  Context: $CONTEXT_SIZE tokens"
-echo "  Threads: $THREADS"
+echo ""
+echo "Config:"
+echo "  MODEL_PATH:         $MODEL_PATH"
+echo "  LLAMA:              $LLAMA_HOST:$LLAMA_PORT"
+echo "  API_PORT:           $API_PORT"
+echo "  CONTEXT_SIZE:       $CONTEXT_SIZE"
+echo "  THREADS:            $THREADS"
+echo "  SEMANTIC_THRESHOLD: ${SEMANTIC_THRESHOLD:-30}"
 echo ""
 
 # Check if model exists
+LLAMA_PID=""
 if [ ! -f "$MODEL_PATH" ]; then
-    echo -e "${RED}❌ Error: Model file not found at $MODEL_PATH${NC}"
+    echo "WARNING: Model not found at $MODEL_PATH"
+    echo "Running in LAYER 1 ONLY mode (Presidio + LLM Guard)"
     echo ""
-    echo -e "${YELLOW}Please download the model:${NC}"
-    echo "  1. Visit: https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF"
-    echo "  2. Download: mistral-7b-instruct-v0.2.Q4_K_M.gguf"
-    echo "  3. Place it at: $MODEL_PATH"
+    echo "To enable Layer 2 (Mistral semantic analysis), download with:"
+    echo "  wget -O models/mistral-7b-instruct.Q4_K_M.gguf \\"
+    echo "    https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
     echo ""
-    echo "Or use this command:"
-    echo "  wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf -O $MODEL_PATH"
-    exit 1
+    export LAYER2_ENABLED=false
+else
+    echo "Model size: $(du -h "$MODEL_PATH" | cut -f1)"
+    echo ""
+    export LAYER2_ENABLED=true
+
+    # Start llama.cpp server (backend for Layer 2)
+    echo "Starting llama.cpp server..."
+    ./llama-server \
+        --model "$MODEL_PATH" \
+        --host "$LLAMA_HOST" \
+        --port "$LLAMA_PORT" \
+        --ctx-size "$CONTEXT_SIZE" \
+        --threads "$THREADS" \
+        --n-gpu-layers 0 \
+        --log-disable \
+        &
+    LLAMA_PID=$!
+    echo "llama.cpp started (PID: $LLAMA_PID)"
+
+    sleep 3
 fi
 
-# Get model size
-MODEL_SIZE=$(du -h "$MODEL_PATH" | cut -f1)
-echo -e "${GREEN}✅ Model found: $MODEL_SIZE${NC}"
-echo ""
-
-# Start llama.cpp server in background
-echo -e "${YELLOW}🚀 Starting llama.cpp server...${NC}"
-./llama-server \
-    --model "$MODEL_PATH" \
-    --host "$LLAMA_HOST" \
-    --port "$LLAMA_PORT" \
-    --ctx-size "$CONTEXT_SIZE" \
-    --threads "$THREADS" \
-    --n-gpu-layers 0 \
-    --log-disable \
-    &
-
-LLAMA_PID=$!
-echo -e "${GREEN}✅ llama.cpp started (PID: $LLAMA_PID)${NC}"
-
-# Wait a bit for llama.cpp to initialize
-sleep 3
-
-# Start FastAPI server
-echo -e "${YELLOW}🚀 Starting FastAPI server...${NC}"
+# Start FastAPI (orchestrates Layer 1 + optional Layer 2)
+echo "Starting AI Security API..."
 python3 server.py &
-
 API_PID=$!
-echo -e "${GREEN}✅ FastAPI started (PID: $API_PID)${NC}"
+echo "API started (PID: $API_PID)"
+
+echo ""
+echo "Service ready:"
+echo "  Analyze: POST http://0.0.0.0:$API_PORT/api/analyze"
+echo "  Health:  GET  http://0.0.0.0:$API_PORT/health"
+if [ "$LAYER2_ENABLED" = "false" ]; then
+    echo "  Mode:    Layer 1 only (Presidio + LLM Guard)"
+fi
 echo ""
 
-# Trap signals to gracefully shutdown
+# Cleanup handler
 cleanup() {
     echo ""
-    echo -e "${YELLOW}🛑 Shutting down services...${NC}"
+    echo "Shutting down..."
     kill $API_PID 2>/dev/null || true
-    kill $LLAMA_PID 2>/dev/null || true
-    echo -e "${GREEN}✅ Services stopped${NC}"
+    [ -n "$LLAMA_PID" ] && kill $LLAMA_PID 2>/dev/null || true
     exit 0
 }
-
 trap cleanup SIGINT SIGTERM
 
-# Keep script running and monitor processes
-echo -e "${GREEN}✅ All services running${NC}"
-echo -e "${BLUE}📡 Endpoints:${NC}"
-echo "  FastAPI: http://0.0.0.0:$API_PORT"
-echo "  Health:  http://0.0.0.0:$API_PORT/health"
-echo "  Chat:    POST http://0.0.0.0:$API_PORT/api/ai/chat"
-echo ""
-echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
-echo ""
-
-# Monitor processes
+# Monitor
 while true; do
-    if ! kill -0 $LLAMA_PID 2>/dev/null; then
-        echo -e "${RED}❌ llama.cpp server died${NC}"
+    if [ -n "$LLAMA_PID" ] && ! kill -0 $LLAMA_PID 2>/dev/null; then
+        echo "llama.cpp died, shutting down"
         kill $API_PID 2>/dev/null || true
         exit 1
     fi
-    
     if ! kill -0 $API_PID 2>/dev/null; then
-        echo -e "${RED}❌ FastAPI server died${NC}"
-        kill $LLAMA_PID 2>/dev/null || true
+        echo "API died, shutting down"
+        [ -n "$LLAMA_PID" ] && kill $LLAMA_PID 2>/dev/null || true
         exit 1
     fi
-    
     sleep 5
 done
-
-

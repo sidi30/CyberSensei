@@ -4,7 +4,26 @@
  */
 
 import api from './api.js';
-import { ga4 } from '../analytics/ga4.js';
+
+// GA4 inline (pas d'import cross-directory pour MV3)
+const ga4 = {
+  _s(n, p) {
+    chrome.storage.local.get('ga4ClientId', (r) => {
+      let c = r.ga4ClientId;
+      if (!c) { c = Date.now() + '.' + Math.random().toString(36).slice(2); chrome.storage.local.set({ ga4ClientId: c }); }
+      fetch('https://www.google-analytics.com/mp/collect?measurement_id=G-E4R643JMG8&api_secret=xnL7kDzVRpOwDYjx65_KHA', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: c, events: [{ name: n, params: { engagement_time_msec: '100', ...(p || {}) } }] }),
+      }).catch(() => {});
+    });
+  },
+  sessionStart(m) { this._s('session_start', { mode: m }); },
+  tabSwitch(t) { this._s('tab_switch', { tab_name: t }); },
+  quizComplete(t, s, l) { this._s('quiz_complete', { topic: t, score: String(s), level: String(l) }); },
+  glossaryView(t) { this._s('glossary_view', { term: t }); },
+  chatMessage() { this._s('chat_message'); },
+  themeChange(m, a) { this._s('theme_change', { mode: m, accent: a }); },
+};
 
 // ============================================
 // GAMIFICATION CONFIG
@@ -340,33 +359,29 @@ function setupSettings() {
   });
 
   document.getElementById('btn-save-settings').addEventListener('click', async () => {
-    const url = document.getElementById('setting-url').value.trim().replace(/\/+$/, '');
     const code = document.getElementById('setting-code').value.trim();
-    const dlpUrl = document.getElementById('setting-dlp-url').value.trim().replace(/\/+$/, '');
-    const gaId = document.getElementById('setting-ga-id').value.trim();
-    const gaSecret = document.getElementById('setting-ga-secret').value.trim();
+    const dlpEnabled = document.getElementById('setting-dlp-enabled').checked;
     const activeColor = document.querySelector('.color-swatch.active')?.dataset.color || 'default';
     const activeMode = document.querySelector('.theme-btn.active')?.dataset.mode || 'dark';
 
     const existing = (await chrome.storage.local.get('config')).config || {};
-    const newConfig = {
-      ...existing,
-      backendUrl: url || existing.backendUrl || '',
-      activationCode: code || existing.activationCode || '',
-      dlpUrl: dlpUrl || existing.dlpUrl || 'https://cs-dlp.gwani.fr',
-      dlpEnabled: existing.dlpEnabled !== false,
-      gaMeasurementId: gaId || existing.gaMeasurementId || '',
-      gaApiSecret: gaSecret || existing.gaApiSecret || '',
-      accentColor: activeColor,
-      themeMode: activeMode,
-    };
 
-    await chrome.storage.local.set({ config: newConfig });
-    api.baseUrl = newConfig.backendUrl;
-    api.activationCode = newConfig.activationCode;
-    api.tenantId = existing.tenantId || '';
+    // Activation si nouveau code
+    if (code && code !== existing.activationCode) {
+      try { await api.activate(code); } catch (e) { console.warn('Activation:', e.message); }
+    }
+
+    const updated = (await chrome.storage.local.get('config')).config || existing;
+    updated.dlpEnabled = dlpEnabled;
+    updated.accentColor = activeColor;
+    updated.themeMode = activeMode;
+    await chrome.storage.local.set({ config: updated });
+
     applyTheme(activeMode, activeColor);
+    ga4.themeChange(activeMode, activeColor);
     document.getElementById('modal-settings').classList.add('hidden');
+    // Rafraichir l'indicateur DLP
+    if (typeof updateDLPDisplayFromConfig === 'function') updateDLPDisplayFromConfig();
   });
 
   document.getElementById('btn-logout').addEventListener('click', async () => {
@@ -380,19 +395,14 @@ function setupSettings() {
 async function loadSettingsValues() {
   const { config } = await chrome.storage.local.get('config');
   if (config) {
-    document.getElementById('setting-url').value = config.backendUrl || '';
     document.getElementById('setting-code').value = config.activationCode || '';
-    document.getElementById('setting-dlp-url').value = config.dlpUrl || '';
-    document.getElementById('setting-ga-id').value = config.gaMeasurementId || '';
-    document.getElementById('setting-ga-secret').value = config.gaApiSecret || '';
+    document.getElementById('setting-dlp-enabled').checked = config.dlpEnabled !== false;
 
-    // Mode d'affichage (dark/light)
     const mode = config.themeMode || 'dark';
     document.querySelectorAll('.theme-btn').forEach((b) => {
       b.classList.toggle('active', b.dataset.mode === mode);
     });
 
-    // Couleur d'accentuation
     const color = config.accentColor || 'default';
     document.querySelectorAll('.color-swatch').forEach((s) => {
       s.classList.toggle('active', s.dataset.color === color);
@@ -466,6 +476,20 @@ function setupDLPTab() {
       headerDot.title = 'Protection DLP desactivee';
     }
   }
+}
+
+function updateDLPDisplayFromConfig() {
+  chrome.storage.local.get('config', (result) => {
+    const enabled = result.config?.dlpEnabled !== false;
+    const statusCard = document.getElementById('dlp-status-card');
+    const statusText = document.getElementById('dlp-status-text');
+    const headerDot = document.getElementById('dlp-status-dot');
+    const dlpToggle = document.getElementById('dlp-toggle');
+    if (statusCard) statusCard.className = enabled ? 'dlp-card dlp-card-active' : 'dlp-card dlp-card-inactive';
+    if (statusText) statusText.textContent = enabled ? 'Protection DLP active' : 'Protection DLP desactivee';
+    if (headerDot) { headerDot.className = enabled ? 'dlp-dot dlp-dot-active' : 'dlp-dot dlp-dot-inactive'; }
+    if (dlpToggle) dlpToggle.checked = enabled;
+  });
 }
 
 // ============================================

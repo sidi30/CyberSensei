@@ -236,38 +236,26 @@
           <button id="btn-close-settings" class="icon-btn">✕</button>
         </div>
         <div class="modal-body">
-          <!-- Formation -->
-          <div class="settings-section-title">Formation</div>
+          <!-- Compte -->
+          <div class="settings-section-title">Compte</div>
           <div class="input-group">
-            <label>URL du serveur</label>
-            <input type="url" id="setting-url" placeholder="https://cs-api.gwani.fr" />
-          </div>
-          <div class="input-group">
-            <label>Code d'activation</label>
-            <input type="text" id="setting-code" />
+            <label>Code d'activation (optionnel)</label>
+            <input type="text" id="setting-code" placeholder="Ex: CS-A1B2C3D4" />
+            <small>Synchronisez votre progression avec votre entreprise</small>
           </div>
 
           <hr style="margin:14px 0;border-color:rgba(255,255,255,0.06)">
 
-          <!-- DLP -->
-          <div class="settings-section-title">Protection DLP</div>
-          <div class="input-group">
-            <label>URL serveur DLP</label>
-            <input type="url" id="setting-dlp-url" placeholder="https://cs-dlp.gwani.fr" />
+          <!-- Protection DLP — visible, l'utilisateur choisit -->
+          <div class="settings-section-title">Protection des donnees</div>
+          <div class="dlp-toggle-row" style="margin-bottom:8px">
+            <span style="font-size:13px">Bloquer les donnees sensibles dans les IA</span>
+            <label class="dlp-toggle">
+              <input type="checkbox" id="setting-dlp-enabled" checked>
+              <span class="dlp-toggle-slider"></span>
+            </label>
           </div>
-
-          <hr style="margin:14px 0;border-color:rgba(255,255,255,0.06)">
-
-          <!-- Analytics (optionnel) -->
-          <div class="settings-section-title">Analytics (optionnel)</div>
-          <div class="input-group">
-            <label>GA4 Measurement ID</label>
-            <input type="text" id="setting-ga-id" placeholder="G-XXXXXXXXXX" />
-          </div>
-          <div class="input-group">
-            <label>GA4 API Secret</label>
-            <input type="text" id="setting-ga-secret" placeholder="Measurement Protocol secret" />
-          </div>
+          <small style="color:var(--text-muted);display:block;margin-bottom:4px">Analyse ce que vous collez dans ChatGPT, Claude, Gemini, Copilot, Mistral et bloque les donnees sensibles (noms, IBAN, N° Secu...)</small>
 
           <hr style="margin:14px 0;border-color:rgba(255,255,255,0.06)">
 

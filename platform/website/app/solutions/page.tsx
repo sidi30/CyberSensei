@@ -165,12 +165,12 @@ const features = [
   {
     id: "dashboard-central",
     icon: <Monitor className="w-6 h-6" />,
-    name: "Dashboard Central (SaaS)",
+    name: "Dashboard Plateforme (SaaS)",
     tagline: "Le QG de votre securite",
     color: "text-violet-400",
-    description: "Pour les prestataires IT qui gerent plusieurs clients : un seul tableau de bord pour voir l'etat de securite de toutes vos organisations. Gestion des licences, distribution des mises a jour, alertes centralisees.",
+    description: "Pour les prestataires IT qui gerent plusieurs clients : un seul tableau de bord pour voir l'etat de securite de toutes vos organisations. Scans infra, alertes DLP, rapports IA, conformite NIS2 — tout centralise.",
     analogy: "C'est comme une salle de controle avec toutes les cameras de tous vos batiments sur un seul ecran.",
-    benefits: ["Multi-tenant : un compte pour gerer N clients", "Audit Microsoft 365 avec score de securite A-F", "Gestion des abonnements et licences", "Distribution automatique des mises a jour"],
+    benefits: ["Multi-tenant : un compte pour gerer N clients", "Audit Microsoft 365 avec score de securite A-F", "Scanner infra + rapports SOC/NIS2 automatises", "Gestion des abonnements et licences"],
   },
   {
     id: "scanner",
