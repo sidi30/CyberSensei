@@ -26,27 +26,35 @@ export class AddAiExerciseGeneration1741600000000 implements MigrationInterface 
       )
     `);
 
-    // Add generated_by_ai column to exercises table
+    // Add generated_by_ai column to exercises table (if exercises table exists in this DB)
     await queryRunner.query(`
-      ALTER TABLE "exercises" ADD COLUMN "generatedByAi" boolean NOT NULL DEFAULT false
+      DO $$ BEGIN
+        ALTER TABLE "exercises" ADD COLUMN "generatedByAi" boolean NOT NULL DEFAULT false;
+      EXCEPTION WHEN undefined_table THEN NULL; END $$
     `);
 
     // Add tenant_id column to exercises table
     await queryRunner.query(`
-      ALTER TABLE "exercises" ADD COLUMN "tenantId" uuid NULL
+      DO $$ BEGIN
+        ALTER TABLE "exercises" ADD COLUMN "tenantId" uuid NULL;
+      EXCEPTION WHEN undefined_table THEN NULL; END $$
     `);
 
     // Create indexes
     await queryRunner.query(`
-      CREATE INDEX "IDX_ai_configs_tenant" ON "ai_configs" ("tenantId")
+      CREATE INDEX IF NOT EXISTS "IDX_ai_configs_tenant" ON "ai_configs" ("tenantId")
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "IDX_exercises_generated_by_ai" ON "exercises" ("generatedByAi")
+      DO $$ BEGIN
+        CREATE INDEX "IDX_exercises_generated_by_ai" ON "exercises" ("generatedByAi");
+      EXCEPTION WHEN undefined_table THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "IDX_exercises_tenant_id" ON "exercises" ("tenantId")
+      DO $$ BEGIN
+        CREATE INDEX "IDX_exercises_tenant_id" ON "exercises" ("tenantId");
+      EXCEPTION WHEN undefined_table THEN NULL; END $$
     `);
   }
 
