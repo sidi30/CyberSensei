@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Radar, Play, Clock, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Radar, Play, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import api from '../lib/api';
 
 interface ScanResult {
@@ -70,13 +70,6 @@ export default function InfraScanPage() {
     if (score >= 75) return 'text-green-600';
     if (score >= 50) return 'text-yellow-600';
     return 'text-red-600';
-  };
-
-  const getScoreBg = (score: number | null) => {
-    if (score === null) return 'bg-gray-100';
-    if (score >= 75) return 'bg-green-50';
-    if (score >= 50) return 'bg-yellow-50';
-    return 'bg-red-50';
   };
 
   const getStatusBadge = (status: string) => {

@@ -39,7 +39,7 @@ export default function ReportsPage() {
     if (!scanId) return;
     try {
       setGenerating(true);
-      const { data } = await (api as any).client.post(`/reports/generate/${scanId}`, { level });
+      await (api as any).client.post(`/reports/generate/${scanId}`, { level });
       // Now generate PDF
       const response = await (api as any).client.post('/reports/pdf', {
         scanResults: { domain: companyName, score: 0, company_name: companyName },
