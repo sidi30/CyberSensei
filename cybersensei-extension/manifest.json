@@ -5,7 +5,10 @@
   "version": "1.0.0",
   "description": "Votre assistant cybersécurité : quiz quotidiens, glossaire, chat IA et suivi de progression.",
   "permissions": [
-    "storage"
+    "storage",
+    "sidePanel",
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "https://cs-api.gwani.fr/*"

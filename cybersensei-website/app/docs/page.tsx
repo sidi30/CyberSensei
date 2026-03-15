@@ -42,6 +42,12 @@ import {
   Gauge,
   ShieldCheck,
   Crown,
+  ScanLine,
+  FileWarning,
+  Radar,
+  ClipboardCheck,
+  TrendingDown,
+  Webhook,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/sections/Footer";
@@ -1382,6 +1388,7 @@ function DocNav() {
     { id: "services", label: "Microservices", icon: <Server className="w-4 h-4" /> },
     { id: "flux", label: "Flux de donnees", icon: <Zap className="w-4 h-4" /> },
     { id: "techstack", label: "Technologies", icon: <Cpu className="w-4 h-4" /> },
+    { id: "securite-soc", label: "Niveaux SOC", icon: <Radar className="w-4 h-4" /> },
     { id: "demarrage", label: "Demarrage", icon: <Play className="w-4 h-4" /> },
     { id: "admin", label: "Administration", icon: <Key className="w-4 h-4" /> },
   ];
@@ -1452,10 +1459,10 @@ export default function DocsPage() {
 
             <div className="flex flex-wrap justify-center gap-3 mt-10">
               {[
-                { label: "14 Services", icon: <Server className="w-4 h-4" /> },
+                { label: "17 Services", icon: <Server className="w-4 h-4" /> },
                 { label: "6 Profiles Docker", icon: <Layers className="w-4 h-4" /> },
-                { label: "20+ Technologies", icon: <Cpu className="w-4 h-4" /> },
-                { label: "100% On-Premise possible", icon: <Lock className="w-4 h-4" /> },
+                { label: "25+ Technologies", icon: <Cpu className="w-4 h-4" /> },
+                { label: "Scanner + Rapports SOC + NIS2", icon: <Radar className="w-4 h-4" /> },
               ].map((badge) => (
                 <div
                   key={badge.label}
@@ -1617,6 +1624,361 @@ export default function DocsPage() {
           />
           <div className="glass-card p-8">
             <TechStackGrid />
+          </div>
+        </section>
+
+        {/* ─── SECURITE SOC / SCANNER / NIS2 ────────────────────────── */}
+        <section id="securite-soc">
+          <SectionTitle
+            icon={<Radar className="w-5 h-5" />}
+            title="Scanner, Rapports SOC & Conformite NIS2"
+            subtitle="Les nouveaux modules de securite offensive"
+          />
+          <p className="text-center text-white/40 -mt-10 mb-10 max-w-3xl mx-auto">
+            CyberSensei integre desormais un scanner de vulnerabilites automatise,
+            des rapports de securite generes par IA (Claude) et un module de conformite NIS2.
+            Voici comment chaque niveau fonctionne et a qui il s&apos;adresse.
+          </p>
+
+          {/* Scanner */}
+          <div className="glass-card p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <ScanLine className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Scanner de vulnerabilites</h3>
+                <p className="text-sm text-white/40">Microservice Python — 6 modules d&apos;analyse en parallele</p>
+              </div>
+            </div>
+            <p className="text-sm text-white/50 mb-4 leading-relaxed">
+              Le scanner analyse votre domaine sous 6 angles differents en meme temps,
+              comme un bilan de sante complet pour votre infrastructure web.
+              Chaque module est independant : si un outil n&apos;est pas disponible,
+              les autres continuent normalement.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { name: "nmap", desc: "Verifie quelles portes sont ouvertes sur votre serveur (ports et services exposes)", color: "text-red-400" },
+                { name: "nuclei", desc: "Cherche les failles connues (CVE) dans vos services, comme un rappel de securite automobile", color: "text-orange-400" },
+                { name: "testssl.sh", desc: "Analyse la qualite du chiffrement de vos connexions HTTPS et vos certificats", color: "text-yellow-400" },
+                { name: "dnstwist", desc: "Detecte les sites qui imitent le votre pour pieger vos clients (typosquatting)", color: "text-purple-400" },
+                { name: "Have I Been Pwned", desc: "Verifie si les emails de votre entreprise apparaissent dans des fuites de donnees", color: "text-pink-400" },
+                { name: "AbuseIPDB", desc: "Verifie si votre adresse IP est signalee comme malveillante par la communaute", color: "text-cyan-400" },
+              ].map((tool) => (
+                <div key={tool.name} className="rounded-lg border border-white/10 p-3 bg-white/[0.02]">
+                  <h4 className={`text-sm font-semibold ${tool.color} mb-1`}>{tool.name}</h4>
+                  <p className="text-xs text-white/40 leading-relaxed">{tool.desc}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-lg bg-white/[0.03] border border-white/10 p-4">
+              <h4 className="text-sm font-semibold text-white/80 mb-2 flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-cyber-400" />
+                Score de securite (0 a 100)
+              </h4>
+              <p className="text-xs text-white/40 mb-3">
+                Le score part de 100. Chaque probleme detecte fait baisser le score selon sa gravite.
+                Un score de 80+ est bon, 50-79 necessite des actions, en dessous de 50 c&apos;est urgent.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                {[
+                  { risk: "Port critique ouvert", pts: "-15 pts", max: "max -30" },
+                  { risk: "Faille critique (CVE)", pts: "-20 pts", max: "par faille" },
+                  { risk: "Chiffrement faible", pts: "-15 pts", max: "" },
+                  { risk: "SPF/DKIM/DMARC absent", pts: "-7 a -10", max: "par record" },
+                  { risk: "Site imitateur actif", pts: "-10 pts", max: "max -20" },
+                  { risk: "Email dans une fuite", pts: "-5 pts", max: "max -20" },
+                  { risk: "IP blacklistee", pts: "-10 pts", max: "" },
+                  { risk: "Faille haute (CVE)", pts: "-10 pts", max: "par faille" },
+                ].map((r) => (
+                  <div key={r.risk} className="rounded bg-red-500/5 border border-red-500/10 p-2">
+                    <span className="text-white/60 block">{r.risk}</span>
+                    <span className="text-red-400 font-semibold">{r.pts}</span>
+                    {r.max && <span className="text-white/30 block">{r.max}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Niveaux SOC */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-violet-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Rapports de securite par niveau SOC</h3>
+                <p className="text-sm text-white/40">Generes automatiquement par Claude (IA Anthropic)</p>
+              </div>
+            </div>
+            <p className="text-sm text-white/50 mb-6 leading-relaxed">
+              Un <strong className="text-white/70">SOC</strong> (Security Operations Center) est
+              l&apos;equivalent d&apos;une salle de controle pour la cybersecurite.
+              CyberSensei genere des rapports adaptes a chaque niveau d&apos;expertise,
+              du responsable IT au specialiste en reponse aux incidents.
+            </p>
+
+            <div className="space-y-4">
+              {[
+                {
+                  level: "SOC Niveau 1",
+                  subtitle: "Le gardien de l'entree",
+                  audience: "Responsables IT, DSI, chefs de projet",
+                  color: "from-green-500/10 to-green-500/5",
+                  border: "border-green-500/20",
+                  badge: "bg-green-500/10 text-green-400",
+                  icon: <Eye className="w-5 h-5 text-green-400" />,
+                  analogy: "Comme le rapport du mecanicien apres le controle technique : \"Vos pneus sont uses, vos freins sont bons, il faut changer l'huile.\"",
+                  contains: [
+                    "Resume executif en langage simple, sans jargon technique",
+                    "Score global avec explication concrete de ce qu'il signifie",
+                    "Liste des problemes classes par urgence (critique, eleve, modere)",
+                    "Plan d'action concret : 5 a 10 actions a faire, dans l'ordre",
+                    "Recommandations pour le prochain scan",
+                  ],
+                  useCase: "Vous etes DSI et vous devez presenter l'etat de la securite au comite de direction. Ce rapport vous donne les elements cles en 5 minutes de lecture.",
+                },
+                {
+                  level: "SOC Niveau 2",
+                  subtitle: "Le technicien specialise",
+                  audience: "Administrateurs systemes, DevOps, RSSI techniques",
+                  color: "from-orange-500/10 to-orange-500/5",
+                  border: "border-orange-500/20",
+                  badge: "bg-orange-500/10 text-orange-400",
+                  icon: <Settings className="w-5 h-5 text-orange-400" />,
+                  analogy: "Comme le rapport detaille d'un expert automobile : references exactes des pieces, temps de main-d'oeuvre, mesures precises.",
+                  contains: [
+                    "Matrice de risques complete avec probabilites et impacts",
+                    "Chaque CVE detaillee : score CVSS, vecteur d'attaque, patch exact",
+                    "Configuration TLS analysee avec score equivalent SSL Labs (A+ a F)",
+                    "Commandes de remediation directement copiables (nginx, Apache...)",
+                    "Audit DNS complet : SPF, DKIM, DMARC, DNSSEC, CAA",
+                    "Plan de remediation en 3 phases avec estimation d'effort",
+                  ],
+                  useCase: "Vous etes administrateur systeme et vous devez corriger les failles. Ce rapport vous donne exactement quoi faire, avec les commandes.",
+                },
+                {
+                  level: "SOC Niveau 3",
+                  subtitle: "Le detective",
+                  audience: "Analystes SOC seniors, equipes de reponse aux incidents, RSSI strategiques",
+                  color: "from-red-500/10 to-red-500/5",
+                  border: "border-red-500/20",
+                  badge: "bg-red-500/10 text-red-400",
+                  icon: <Target className="w-5 h-5 text-red-400" />,
+                  analogy: "Comme un expert en securite physique qui vous dit : \"Un cambrioleur pourrait entrer par cette fenetre, passer par ce couloir, et acceder au coffre en 3 minutes.\"",
+                  contains: [
+                    "Scenarios d'attaque realistes bases sur les failles trouvees",
+                    "Mapping MITRE ATT&CK (referentiel mondial des techniques d'attaque)",
+                    "Correlation entre les failles pour identifier des chaines d'attaque",
+                    "Indicateurs de compromission (IoC) a surveiller dans vos logs",
+                    "Regles de detection SIEM recommandees",
+                    "Evaluation de maturite par rapport aux standards (NIST, ISO 27001)",
+                  ],
+                  useCase: "Vous etes analyste SOC et vous devez anticiper les attaques. Ce rapport vous montre exactement ce qu'un attaquant pourrait faire.",
+                },
+                {
+                  level: "Rapport NIS2",
+                  subtitle: "Le conseiller conformite",
+                  audience: "DPO, RSSI, direction generale, audits reglementaires",
+                  color: "from-blue-500/10 to-blue-500/5",
+                  border: "border-blue-500/20",
+                  badge: "bg-blue-500/10 text-blue-400",
+                  icon: <ClipboardCheck className="w-5 h-5 text-blue-400" />,
+                  analogy: "Comme un audit de conformite qui verifie chaque article de loi et vous dit exactement ou vous etes conforme et ou il faut agir.",
+                  contains: [
+                    "Evaluation article par article (Articles 20, 21, 23 de la directive NIS2)",
+                    "Ecarts identifies avec niveau de severite par domaine",
+                    "Plan de mise en conformite en 4 phases (immediat a 12 mois)",
+                    "Estimation budgetaire indicative par categorie",
+                    "Liste des documents requis : PSSI, PCA, PRA...",
+                    "Sanctions encourues rappelees (jusqu'a 10M EUR ou 2% du CA)",
+                  ],
+                  useCase: "La directive NIS2 s'applique a votre entreprise et vous devez evaluer votre conformite. Ce rapport identifie vos ecarts et vous guide vers la mise en conformite.",
+                },
+                {
+                  level: "Rapport Mensuel",
+                  subtitle: "Le tableau de bord direction",
+                  audience: "Direction generale, DAF, comite de direction",
+                  color: "from-indigo-500/10 to-indigo-500/5",
+                  border: "border-indigo-500/20",
+                  badge: "bg-indigo-500/10 text-indigo-400",
+                  icon: <BarChart3 className="w-5 h-5 text-indigo-400" />,
+                  analogy: "Comme un rapport financier trimestriel, mais pour la securite : indicateurs cles, tendances, et decisions a prendre.",
+                  contains: [
+                    "Dashboard executif avec score global et tendance",
+                    "Traduction des risques en impact financier (cout moyen d'une fuite, amendes RGPD/NIS2)",
+                    "Points forts et points d'attention classes par impact business",
+                    "Recommandations d'investissement avec estimation de ROI",
+                    "Conformite reglementaire resumee (NIS2, RGPD)",
+                    "Comparaison avec les standards du secteur",
+                  ],
+                  useCase: "Vous presentez au comite de direction. Ce rapport traduit la securite en langage business : risques financiers, investissements, tendances.",
+                },
+              ].map((soc) => (
+                <div key={soc.level} className={`glass-card p-6 bg-gradient-to-br ${soc.color} border ${soc.border}`}>
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                      {soc.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-1 flex-wrap">
+                        <h4 className="text-lg font-semibold text-white">{soc.level}</h4>
+                        <span className="text-sm text-white/40">— {soc.subtitle}</span>
+                      </div>
+                      <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${soc.badge}`}>
+                        {soc.audience}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="ml-14 space-y-3">
+                    <div className="rounded-lg bg-white/[0.03] border border-white/10 p-3">
+                      <p className="text-sm text-white/50 italic leading-relaxed">
+                        &quot;{soc.analogy}&quot;
+                      </p>
+                    </div>
+
+                    <div>
+                      <h5 className="text-sm font-semibold text-white/70 mb-2">Ce que contient le rapport :</h5>
+                      <ul className="space-y-1">
+                        {soc.contains.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-white/40">
+                            <CheckCircle className="w-3.5 h-3.5 text-cyber-500/50 shrink-0 mt-0.5" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="rounded-lg bg-cyber-500/5 border border-cyber-500/10 p-3">
+                      <h5 className="text-xs font-semibold text-cyber-400 mb-1">Cas d&apos;usage concret :</h5>
+                      <p className="text-sm text-white/50 leading-relaxed">{soc.useCase}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* NIS2 Compliance */}
+          <div className="glass-card p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Module Conformite NIS2</h3>
+                <p className="text-sm text-white/40">Questionnaire interactif — 25 questions, 10 domaines</p>
+              </div>
+            </div>
+            <p className="text-sm text-white/50 mb-4 leading-relaxed">
+              La <strong className="text-white/70">directive NIS2</strong> (Network and Information Security)
+              est une loi europeenne qui oblige les entreprises de secteurs critiques a renforcer
+              leur cybersecurite. CyberSensei propose un questionnaire d&apos;auto-evaluation
+              qui couvre les 10 domaines de la directive et genere un plan d&apos;action personnalise.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+              {[
+                "Gouvernance", "Gestion des risques", "Continuite",
+                "Chaine d'approvisionnement", "Gestion des incidents",
+                "Cryptographie", "Securite RH", "Controle d'acces",
+                "Securite physique", "Audit",
+              ].map((domain) => (
+                <div key={domain} className="rounded-lg bg-emerald-500/5 border border-emerald-500/10 p-2 text-center">
+                  <span className="text-xs text-emerald-400/80">{domain}</span>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="rounded-lg border border-white/10 p-3 bg-white/[0.02]">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <span className="text-sm font-semibold text-white/70">Non conforme (&lt; 40)</span>
+                </div>
+                <p className="text-xs text-white/40">Actions urgentes requises. Plan P1 genere automatiquement.</p>
+              </div>
+              <div className="rounded-lg border border-white/10 p-3 bg-white/[0.02]">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-500" />
+                  <span className="text-sm font-semibold text-white/70">En cours (40-70)</span>
+                </div>
+                <p className="text-xs text-white/40">Des efforts significatifs sont necessaires. Plan P2 priorise.</p>
+              </div>
+              <div className="rounded-lg border border-white/10 p-3 bg-white/[0.02]">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="text-sm font-semibold text-white/70">Conforme (&gt; 70)</span>
+                </div>
+                <p className="text-xs text-white/40">Bon niveau. Amelioration continue recommandee.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Scheduler & Alertes */}
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Scans automatises & Alertes</h3>
+                <p className="text-sm text-white/40">Surveillance continue avec notifications intelligentes</p>
+              </div>
+            </div>
+            <p className="text-sm text-white/50 mb-4 leading-relaxed">
+              Les scans se declenchent automatiquement et comparent les resultats avec le scan precedent.
+              Vous etes alerte uniquement quand quelque chose change.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                {
+                  title: "Alerte CRITIQUE",
+                  desc: "Le score a chute de plus de 10 points. Investigation immediate recommandee.",
+                  color: "border-red-500/20 bg-red-500/5",
+                  dot: "bg-red-500",
+                  trigger: "Delta score < -10",
+                },
+                {
+                  title: "Alerte IMPORTANTE",
+                  desc: "De nouveaux risques ont ete detectes (nouvelle faille, port ouvert, etc.).",
+                  color: "border-orange-500/20 bg-orange-500/5",
+                  dot: "bg-orange-500",
+                  trigger: "Nouveaux risques",
+                },
+                {
+                  title: "Notification POSITIVE",
+                  desc: "Des risques precedemment detectes ont ete corriges. Felicitations !",
+                  color: "border-green-500/20 bg-green-500/5",
+                  dot: "bg-green-500",
+                  trigger: "Risques resolus",
+                },
+              ].map((alert) => (
+                <div key={alert.title} className={`rounded-lg border p-4 ${alert.color}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-2.5 h-2.5 rounded-full ${alert.dot}`} />
+                    <h4 className="text-sm font-semibold text-white/80">{alert.title}</h4>
+                  </div>
+                  <p className="text-xs text-white/40 mb-2">{alert.desc}</p>
+                  <span className="text-xs text-white/25">Declencheur : {alert.trigger}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                { label: "Scan quotidien a 02h00", icon: <Activity className="w-3 h-3" /> },
+                { label: "Scan hebdomadaire le lundi a 03h00", icon: <Activity className="w-3 h-3" /> },
+                { label: "Alertes par email HTML", icon: <Mail className="w-3 h-3" /> },
+                { label: "Webhooks optionnels par tenant", icon: <Webhook className="w-3 h-3" /> },
+                { label: "Max 5 scans en parallele (SaaS)", icon: <Layers className="w-3 h-3" /> },
+              ].map((tag) => (
+                <div key={tag.label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white/40">
+                  <span className="text-cyber-400">{tag.icon}</span>
+                  {tag.label}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 

@@ -111,7 +111,9 @@ let currentQuiz = null;
 let quizQuestions = [];
 let stepIndex = -1;
 let quizScore = { correct: 0, total: 0 };
+let userAnswers = []; // Stocke le choix de l'utilisateur pour chaque question
 let sessionComplete = false;
+let isLoadingQuiz = false;
 let chatContext = null;
 
 // Glossaire local
@@ -135,15 +137,21 @@ const GLOSSARY_TERMS_LIST = Object.keys(GLOSSARY);
 // INIT
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
-  await api.init();
-  await loadGamification();
+  try {
+    await api.init();
+    await loadGamification();
 
-  if (!api.isConfigured) {
+    if (!api.isConfigured) {
+      showScreen('onboarding');
+      setupOnboarding();
+    } else {
+      showScreen('main');
+      initMainScreen();
+    }
+  } catch (err) {
+    console.error('Erreur initialisation CyberSensei:', err);
     showScreen('onboarding');
     setupOnboarding();
-  } else {
-    showScreen('main');
-    initMainScreen();
   }
 });
 
@@ -411,6 +419,9 @@ function addUserMsg(text) {
 }
 
 async function loadQuiz() {
+  if (isLoadingQuiz) return;
+  isLoadingQuiz = true;
+
   const loading = document.getElementById('quiz-loading');
   const container = document.getElementById('quiz-container');
   const error = document.getElementById('quiz-error');
@@ -424,6 +435,7 @@ async function loadQuiz() {
 
   stepIndex = -1;
   quizScore = { correct: 0, total: 0 };
+  userAnswers = [];
   sessionComplete = false;
 
   try {
@@ -456,6 +468,8 @@ async function loadQuiz() {
     console.error('Quiz load error:', err);
     loading.classList.add('hidden');
     error.classList.remove('hidden');
+  } finally {
+    isLoadingQuiz = false;
   }
 
   document.getElementById('btn-retry-quiz')?.addEventListener('click', loadQuiz, { once: true });
@@ -501,6 +515,7 @@ async function handleUserAction(optionIndex, optionText) {
 
     quizScore.correct += isCorrect ? 1 : 0;
     quizScore.total += 1;
+    userAnswers[stepIndex] = optionIndex;
 
     // Réaction du bot
     const reaction = pick(isCorrect ? ENCOURAGEMENT.correct : ENCOURAGEMENT.incorrect);
@@ -552,7 +567,7 @@ async function handleUserAction(optionIndex, optionText) {
 }
 
 async function showBotQuestion(q) {
-  const originalQ = (currentQuiz.payloadJSON?.questions || [])[quizQuestions.indexOf(q)] || q;
+  const originalQ = (currentQuiz.payloadJSON?.questions || [])[stepIndex] || q;
 
   // Contexte si disponible
   if (originalQ.context || q.context) {
@@ -602,11 +617,11 @@ async function finishQuizModule() {
   addXP(xpEarned);
   await chrome.storage.local.set({ lastQuizDate: today });
 
-  // Soumettre au backend
+  // Soumettre au backend avec les vraies reponses de l'utilisateur
   try {
     const answers = quizQuestions.map((q, i) => ({
       questionId: q.id,
-      answer: (currentQuiz.payloadJSON?.questions || [])[i]?.correctAnswer ?? 0,
+      answer: userAnswers[i] ?? 0,
     }));
     await api.submitExercise(String(currentQuiz.id), answers);
   } catch (e) {
